@@ -8,8 +8,13 @@ const TZ = 'Europe/Warsaw'
 type Range = { start: number; end: number } // minutes in day
 
 const t2m = (t: string) => {
-  const [h, m] = t.split(':').map(Number)
-  return h * 60 + m
+  const s = String(t || '').trim()
+  // Support both HH:MM and HH.MM
+  const m = s.match(/^(\d{1,2})[:\.](\d{2})$/)
+  if (!m) return NaN
+  const h = Number(m[1])
+  const mm = Number(m[2])
+  return h * 60 + mm
 }
 const parseRanges = (s: string): Range[] =>
   String(s || '')
@@ -20,7 +25,7 @@ const parseRanges = (s: string): Range[] =>
     .map(x => x.split(/–|-/).map(y => y.trim()))
     .filter(p => p.length === 2)
     .map(([a, b]) => ({ start: t2m(a), end: t2m(b) }))
-    .filter(r => r.end > r.start)
+    .filter(r => Number.isFinite(r.start) && Number.isFinite(r.end) && r.end > r.start)
 
 function minusBusy(open: Range[], busy: Range[]): Range[] {
   const res: Range[] = []
@@ -40,7 +45,7 @@ function minusBusy(open: Range[], busy: Range[]): Range[] {
 
 function isoDate(d: Date) { return format(d, 'yyyy-MM-dd') }
 
-export async function getAvailableDays(fromISO: string, untilISO: string, minDuration: number) {
+export async function getAvailableDays(fromISO: string, untilISO: string, minDuration: number, opts?: { debug?: boolean }) {
   const weekly = await readWeekly()
   const exceptions = await readExceptions()
 
@@ -85,5 +90,14 @@ export async function getAvailableDays(fromISO: string, untilISO: string, minDur
     days.push({ date, hasWindow })
     cursor = addDays(cursor, 1)
   }
-  return { days }
+  const result: any = { days }
+  if (opts?.debug) {
+    result.debug = {
+      weeklyKeys: Object.keys(weekly).length,
+      exceptionsCount: Object.keys(exceptions).length,
+      busyCount: busy.length,
+      minDuration,
+    }
+  }
+  return result
 }

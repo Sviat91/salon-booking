@@ -86,22 +86,33 @@ export async function readWeekly(): Promise<WeeklyMap> {
   const res = await sheets.spreadsheets.values.get({ spreadsheetId: config.GOOGLE_SHEET_ID, range })
   const rows = res.data.values ?? []
   if (!rows.length) return {}
-  const [header, ...items] = rows
-  const idx = (key: string) => header.findIndex(h => String(h).toLowerCase().includes(key))
-  const gi = {
-    weekday: idx('week'),
-    hours: idx('work'),
-    dayoff: idx('day off'),
+
+  // Some sheets have a merged title row above the real headers.
+  // Find the first row that looks like headers (contains Weekday + Hours/Day Off).
+  const normRow = (row: any[]) => row.map(c => String(c ?? '').replace(/\u00A0/g, ' ').trim().toLowerCase())
+  let headerIdx = 0
+  let gi = { weekday: -1, hours: -1, dayoff: -1 }
+  for (let i = 0; i < Math.min(rows.length, 10); i++) {
+    const hdr = normRow(rows[i] as any[])
+    const find = (pred: (s: string) => boolean) => hdr.findIndex(pred)
+    const w = find(s => s.includes('weekday') || s.includes('week day') || s === 'weekday' || s === 'day')
+    const h = find(s => s.includes('working') || s.includes('work') || s.includes('hours') || s.includes('godziny'))
+    const d = find(s => s.includes('day off') || s.includes('closed') || s.includes('off') || s.includes('wolne'))
+    if (w >= 0 && (h >= 0 || d >= 0)) { headerIdx = i; gi = { weekday: w, hours: h, dayoff: d }; break }
   }
-  const isYes = (v: any) => String(v ?? '').trim().toLowerCase().includes('yes') || String(v ?? '').trim() === '1' || String(v ?? '').trim().toLowerCase() === 'true'
+  if (gi.weekday < 0) return {}
+
+  const items = rows.slice(headerIdx + 1)
+  const isYes = (v: any) => String(v ?? '').replace(/\u00A0/g, ' ').trim().toLowerCase() === 'yes' || String(v ?? '').trim() === '1' || String(v ?? '').trim().toLowerCase() === 'true'
   const norm = (s: any) => String(s ?? '').replace(/\u00A0/g, ' ').trim().toLowerCase()
   const weekly: WeeklyMap = {}
   for (const r of items) {
-    const k = norm(r[gi.weekday]) // monday, ...
-    if (!k) continue
+    const row = (r as any[]) || []
+    const k = norm(row[gi.weekday]) // monday, ...
+    if (!k || k === 'weekday') continue // skip accidental header rows
     weekly[k] = {
-      hours: String(r[gi.hours] ?? '').trim(),
-      isDayOff: isYes(r[gi.dayoff]),
+      hours: String(row[gi.hours] ?? '').replace(/\u00A0/g, ' ').trim(),
+      isDayOff: isYes(row[gi.dayoff]),
     }
   }
   return weekly
@@ -115,20 +126,29 @@ export async function readExceptions(): Promise<ExceptionsMap> {
   const res = await sheets.spreadsheets.values.get({ spreadsheetId: config.GOOGLE_SHEET_ID, range })
   const rows = res.data.values ?? []
   if (!rows.length) return {}
-  const [header, ...items] = rows
-  const idx = (key: string) => header.findIndex(h => String(h).toLowerCase().includes(key))
-  const gi = {
-    date: idx('date'),
-    hours: idx('work'),
-    dayoff: idx('day off'),
+
+  const normRow = (row: any[]) => row.map(c => String(c ?? '').replace(/\u00A0/g, ' ').trim().toLowerCase())
+  let headerIdx = 0
+  let gi = { date: -1, hours: -1, dayoff: -1 }
+  for (let i = 0; i < Math.min(rows.length, 10); i++) {
+    const hdr = normRow(rows[i] as any[])
+    const find = (pred: (s: string) => boolean) => hdr.findIndex(pred)
+    const date = find(s => s.includes('date') || s.includes('data'))
+    const hours = find(s => s.includes('working') || s.includes('work') || s.includes('hours') || s.includes('special') || s.includes('godziny'))
+    const dayoff = find(s => s.includes('day off') || s.includes('closed') || s.includes('off') || s.includes('wolne'))
+    if (date >= 0 && (hours >= 0 || dayoff >= 0)) { headerIdx = i; gi = { date, hours, dayoff }; break }
   }
-  const isYes = (v: any) => String(v ?? '').trim().toLowerCase().includes('yes') || String(v ?? '').trim() === '1' || String(v ?? '').trim().toLowerCase() === 'true'
-  const normDate = (s: any) => String(s ?? '').trim().slice(0, 10)
+  if (gi.date < 0) return {}
+
+  const items = rows.slice(headerIdx + 1)
+  const isYes = (v: any) => String(v ?? '').replace(/\u00A0/g, ' ').trim().toLowerCase() === 'yes' || String(v ?? '').trim() === '1' || String(v ?? '').trim().toLowerCase() === 'true'
+  const normDate = (s: any) => String(s ?? '').replace(/\u00A0/g, ' ').trim().slice(0, 10)
   const ex: ExceptionsMap = {}
   for (const r of items) {
-    const d = normDate(r[gi.date])
-    if (!d) continue
-    ex[d] = { hours: String(r[gi.hours] ?? '').trim(), isDayOff: isYes(r[gi.dayoff]) }
+    const row = (r as any[]) || []
+    const d = normDate(row[gi.date])
+    if (!d || d.toLowerCase() === 'date') continue // skip accidental header rows
+    ex[d] = { hours: String(row[gi.hours] ?? '').replace(/\u00A0/g, ' ').trim(), isDayOff: isYes(row[gi.dayoff]) }
   }
   return ex
 }

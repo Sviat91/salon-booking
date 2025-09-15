@@ -4,7 +4,13 @@ import { DayPicker } from 'react-day-picker'
 import 'react-day-picker/dist/style.css'
 import { useQuery } from '@tanstack/react-query'
 
-function toISO(d: Date) { return d.toISOString().slice(0, 10) }
+// Produce YYYY-MM-DD in LOCAL time, not UTC.
+function toISO(d: Date) {
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
 
 export default function DayCalendar({ procedureId }: { procedureId?: string }) {
   const [selected, setSelected] = useState<Date | undefined>(undefined)
