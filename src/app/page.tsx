@@ -1,6 +1,6 @@
+"use client"
 import BrandHeader from '../components/BrandHeader'
 import Card from '../components/ui/Card'
-"use client"
 import ProcedureSelect from '../components/ProcedureSelect'
 import DayCalendar from '../components/DayCalendar'
 import { useState } from 'react'

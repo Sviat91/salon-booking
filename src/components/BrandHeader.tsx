@@ -1,3 +1,4 @@
+"use client"
 import Image from 'next/image'
 
 export default function BrandHeader() {
@@ -10,4 +11,3 @@ export default function BrandHeader() {
     </header>
   )
 }
-

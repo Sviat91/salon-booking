@@ -1,3 +1,4 @@
+"use client"
 import type { ReactNode } from 'react'
 
 export default function Card({ title, children }: { title?: string; children: ReactNode }) {
@@ -8,4 +9,3 @@ export default function Card({ title, children }: { title?: string; children: Re
     </section>
   )
 }
-
