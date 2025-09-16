@@ -20,7 +20,7 @@ export default function BookingForm({
   const [ok, setOk] = useState(false)
   const [eventId, setEventId] = useState<string | null>(null)
   const [tsToken, setTsToken] = useState<string | null>(null)
-  const siteKey = (process as any).env?.NEXT_PUBLIC_TURNSTILE_SITE_KEY as string | undefined
+  const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY as string | undefined
   const tsRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {

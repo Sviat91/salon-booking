@@ -30,6 +30,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Too many requests', code: 'RATE_LIMITED' }, { status: 429 })
     }
 
+    // Optional Turnstile verification (only if secret configured)
+    const ts = await verifyTurnstile(body.turnstileToken, ip)
+    if (!ts.ok) {
+      return NextResponse.json({ error: 'Turnstile verification failed', code: ts.code || 'TURNSTILE' }, { status: 400 })
+    }
+
     // Check availability one more time to avoid race condition
     const busy = await freeBusy(body.startISO, body.endISO)
     if (busy.length > 0) {
@@ -65,8 +71,3 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Failed to book', details: msg }, { status })
   }
 }
-    // Optional Turnstile verification (only if secret configured)
-    const ts = await verifyTurnstile(body.turnstileToken, ip)
-    if (!ts.ok) {
-      return NextResponse.json({ error: 'Turnstile verification failed', code: ts.code || 'TURNSTILE' }, { status: 400 })
-    }
