@@ -1,5 +1,5 @@
 "use client"
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 
 export type Slot = { startISO: string; endISO: string }
 
@@ -18,8 +18,43 @@ export default function BookingForm({
   const [loading, setLoading] = useState(false)
   const [err, setErr] = useState<string | null>(null)
   const [ok, setOk] = useState(false)
+  const [eventId, setEventId] = useState<string | null>(null)
+  const [tsToken, setTsToken] = useState<string | null>(null)
+  const siteKey = (process as any).env?.NEXT_PUBLIC_TURNSTILE_SITE_KEY as string | undefined
+  const tsRef = useRef<HTMLDivElement | null>(null)
 
-  const canSubmit = useMemo(() => name.trim().length >= 2 && phone.trim().length >= 5 && !loading, [name, phone, loading])
+  useEffect(() => {
+    if (!siteKey) return
+    // load script once
+    const id = 'cf-turnstile'
+    if (!document.getElementById(id)) {
+      const s = document.createElement('script')
+      s.id = id
+      s.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js'
+      s.async = true; s.defer = true
+      document.head.appendChild(s)
+    }
+    // render widget when available
+    const iv = setInterval(() => {
+      // @ts-ignore
+      const t = (window as any).turnstile
+      if (t && tsRef.current) {
+        try {
+          t.render(tsRef.current, {
+            sitekey: siteKey,
+            callback: (token: string) => setTsToken(token),
+          })
+          clearInterval(iv)
+        } catch {}
+      }
+    }, 200)
+    return () => clearInterval(iv)
+  }, [siteKey])
+
+  const canSubmit = useMemo(() => {
+    const basic = name.trim().length >= 2 && phone.trim().length >= 5 && !loading
+    return siteKey ? basic && !!tsToken : basic
+  }, [name, phone, loading, siteKey, tsToken])
   const label = `${slot.startISO.slice(11, 16)} - ${slot.endISO.slice(11, 16)}`
 
   async function submit() {
@@ -29,9 +64,11 @@ export default function BookingForm({
       const res = await fetch('/api/book', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ startISO: slot.startISO, endISO: slot.endISO, procedureId, name, phone, email: email || undefined }),
+        body: JSON.stringify({ startISO: slot.startISO, endISO: slot.endISO, procedureId, name, phone, email: email || undefined, turnstileToken: tsToken || undefined }),
       })
       if (!res.ok) throw new Error(await res.text())
+      const body = await res.json()
+      setEventId(body.eventId || null)
       setOk(true)
       onSuccess?.()
     } catch (e: any) {
@@ -39,6 +76,17 @@ export default function BookingForm({
     } finally {
       setLoading(false)
     }
+  }
+
+  if (ok) {
+    return (
+      <div className="transition-all duration-300 ease-out">
+        <div className="text-lg font-medium mb-2">Бронирование подтверждено</div>
+        <div className="text-sm text-muted-foreground">Время: {label}</div>
+        {eventId && <div className="text-sm text-muted-foreground">ID: {eventId}</div>}
+        <div className="mt-3 text-emerald-700">Мы скоро свяжемся с вами для подтверждения деталей.</div>
+      </div>
+    )
   }
 
   return (
@@ -52,12 +100,11 @@ export default function BookingForm({
       <div className="mt-3">
         <input className="w-full rounded-xl border border-border bg-white/80 px-3 py-2" placeholder="Email (по желанию)" value={email} onChange={e => setEmail(e.target.value)} />
       </div>
+      {siteKey && <div ref={tsRef} className="mt-3" />}
       {err && <div className="mt-3 text-sm text-red-600">{err}</div>}
-      {ok && <div className="mt-3 text-sm text-emerald-600">Забронировано! Мы скоро свяжемся с вами.</div>}
       <button disabled={!canSubmit} onClick={submit} className={`btn btn-primary mt-4 w-full ${!canSubmit ? 'opacity-60 pointer-events-none' : ''}`}>
         {loading ? 'Отправка…' : 'Забронировать'}
       </button>
     </div>
   )
 }
-

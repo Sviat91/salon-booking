@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { freeBusy, createEvent } from '../../../lib/google/calendar'
 import { readProcedures } from '../../../lib/google/sheets'
 import { cacheSetNX, cacheDel, rateLimit } from '../../../lib/cache'
+import { verifyTurnstile } from '../../../lib/turnstile'
 
 export const runtime = 'nodejs'
 
@@ -64,3 +65,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Failed to book', details: msg }, { status })
   }
 }
+    // Optional Turnstile verification (only if secret configured)
+    const ts = await verifyTurnstile(body.turnstileToken, ip)
+    if (!ts.ok) {
+      return NextResponse.json({ error: 'Turnstile verification failed', code: ts.code || 'TURNSTILE' }, { status: 400 })
+    }
