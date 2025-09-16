@@ -4,6 +4,7 @@ import { freeBusy, createEvent } from '../../../lib/google/calendar'
 import { readProcedures } from '../../../lib/google/sheets'
 import { cacheSetNX, cacheDel, rateLimit } from '../../../lib/cache'
 import { verifyTurnstile } from '../../../lib/turnstile'
+import { config } from '../../../lib/env'
 
 export const runtime = 'nodejs'
 
@@ -31,9 +32,13 @@ export async function POST(req: NextRequest) {
     }
 
     // Optional Turnstile verification (only if secret configured)
-    const ts = await verifyTurnstile(body.turnstileToken, ip)
-    if (!ts.ok) {
-      return NextResponse.json({ error: 'Turnstile verification failed', code: ts.code || 'TURNSTILE' }, { status: 400 })
+    const needTs = !!config.TURNSTILE_SECRET_EFFECTIVE
+    if (needTs) {
+      const ts = await verifyTurnstile(body.turnstileToken, ip)
+      if (!ts.ok) {
+        console.warn('book.turnstile_fail', { ip, code: ts.code, tokenPresent: !!body.turnstileToken })
+        return NextResponse.json({ error: 'Turnstile verification failed', code: ts.code || 'TURNSTILE', details: { tokenPresent: !!body.turnstileToken } }, { status: 400 })
+      }
     }
 
     // Check availability one more time to avoid race condition
