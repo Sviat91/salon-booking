@@ -41,3 +41,33 @@ export async function cacheSet(key: string, value: any, ttlSec: number) {
   try { await r.set(key, value, { ex: ttlSec }) } catch { /* ignore */ }
 }
 
+export async function cacheDel(key: string) {
+  const r = getRedis()
+  try { await r?.del(key) } catch {}
+  mem.delete(key)
+}
+
+// Try to set a key once; returns true if set, false if key exists
+export async function cacheSetNX(key: string, ttlSec: number): Promise<boolean> {
+  const r = getRedis()
+  if (!r) return true // no redis -> allow
+  try {
+    const res = await r.set(key, '1', { nx: true, ex: ttlSec })
+    return res === 'OK'
+  } catch {
+    return true
+  }
+}
+
+// Simple token bucket: limit N per windowSec per key
+export async function rateLimit(key: string, limit: number, windowSec: number): Promise<{ allowed: boolean; count: number }> {
+  const r = getRedis()
+  if (!r) return { allowed: true, count: 1 }
+  try {
+    const cnt = await r.incr(key)
+    if (cnt === 1) { await r.expire(key, windowSec) }
+    return { allowed: cnt <= limit, count: cnt }
+  } catch {
+    return { allowed: true, count: 1 }
+  }
+}
