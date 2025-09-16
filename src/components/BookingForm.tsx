@@ -66,13 +66,22 @@ export default function BookingForm({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ startISO: slot.startISO, endISO: slot.endISO, procedureId, name, phone, email: email || undefined, turnstileToken: tsToken || undefined }),
       })
-      if (!res.ok) throw new Error(await res.text())
       const body = await res.json()
+      if (!res.ok) {
+        const code = (body && body.code) || 'UNKNOWN'
+        const details = (body && body.details) || ''
+        throw new Error(`BOOKING_${code}${details ? `: ${details}` : ''}`)
+      }
       setEventId(body.eventId || null)
       setOk(true)
       onSuccess?.()
     } catch (e: any) {
-      setErr('Не удалось забронировать. Попробуйте другое время.')
+      const msg = String(e?.message || '')
+      if (msg.startsWith('BOOKING_TURNSTILE')) setErr('Подтвердите проверку Turnstile и попробуйте ещё раз.')
+      else if (msg.startsWith('BOOKING_DUPLICATE')) setErr('Вы уже отправили бронь для этого интервала. Подождите 5 минут или выберите другой слот.')
+      else if (msg.startsWith('BOOKING_CONFLICT')) setErr('Слот уже занят. Выберите другой интервал.')
+      else if (msg.startsWith('BOOKING_RATE_LIMITED')) setErr('Слишком много попыток. Попробуйте позже.')
+      else setErr('Не удалось забронировать. Попробуйте другое время.')
     } finally {
       setLoading(false)
     }

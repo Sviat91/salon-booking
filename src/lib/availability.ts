@@ -49,8 +49,19 @@ export async function getAvailableDays(fromISO: string, untilISO: string, minDur
   const weekly = await readWeekly()
   const exceptions = await readExceptions()
 
-  // one freeBusy for the whole period
-  const busy = await freeBusy(`${fromISO}T00:00:00Z`, `${untilISO}T23:59:59Z`)
+  // Fetch busy in chunks (max 30 days per request) to avoid API range limits
+  const busy: { start: string; end: string }[] = []
+  const from = new Date(fromISO + 'T00:00:00Z')
+  const until = new Date(untilISO + 'T23:59:59Z')
+  for (let start = new Date(from); start <= until; ) {
+    const chunkStart = new Date(start)
+    const chunkEnd = new Date(Math.min(until.getTime(), start.getTime() + 29 * 24 * 3600 * 1000))
+    const part = await freeBusy(chunkStart.toISOString(), chunkEnd.toISOString())
+    busy.push(...part)
+    // next day after chunkEnd
+    const next = new Date(chunkEnd); next.setUTCDate(next.getUTCDate() + 1); next.setUTCHours(0,0,0,0)
+    start = next
+  }
 
   // bucket busy by date in Warsaw TZ
   const busyByDate = new Map<string, Range[]>()
@@ -97,6 +108,8 @@ export async function getAvailableDays(fromISO: string, untilISO: string, minDur
       exceptionsCount: Object.keys(exceptions).length,
       busyCount: busy.length,
       minDuration,
+      fromISO,
+      untilISO,
     }
   }
   return result

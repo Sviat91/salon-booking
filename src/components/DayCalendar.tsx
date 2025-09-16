@@ -76,11 +76,12 @@ export default function DayCalendar({ procedureId, onChange }: { procedureId?: s
     startOfMonth.setHours(0,0,0,0)
     const thresholdStart = new Date(rangeFrom); thresholdStart.setDate(thresholdStart.getDate()+7)
     if (startOfMonth < thresholdStart) {
-      const newFrom = new Date(rangeFrom); newFrom.setDate(newFrom.getDate()-30)
-      setRangeFrom(newFrom)
+      const newFromUnclamped = new Date(rangeFrom); newFromUnclamped.setDate(newFromUnclamped.getDate()-30)
+      const clamped = newFromUnclamped < today ? new Date(today) : newFromUnclamped
+      setRangeFrom(clamped)
       // Keep max window ~120 days
       const maxDays = 120
-      const diffDays = Math.floor((rangeUntil.getTime() - newFrom.getTime())/(24*3600*1000))
+      const diffDays = Math.floor((rangeUntil.getTime() - clamped.getTime())/(24*3600*1000))
       if (diffDays > maxDays) {
         const newUntil = new Date(rangeUntil); newUntil.setDate(newUntil.getDate()-30)
         setRangeUntil(newUntil)
