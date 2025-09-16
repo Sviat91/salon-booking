@@ -18,3 +18,23 @@ export async function freeBusy(timeMin: string, timeMax: string) {
   return busy
 }
 
+export async function createEvent(params: {
+  startISO: string
+  endISO: string
+  summary: string
+  description?: string
+  attendees?: { email: string }[]
+}) {
+  const { calendar } = getClients()
+  const res = await calendar.events.insert({
+    calendarId: config.GOOGLE_CALENDAR_ID,
+    requestBody: {
+      summary: params.summary,
+      description: params.description,
+      start: { dateTime: params.startISO, timeZone: 'Europe/Warsaw' },
+      end: { dateTime: params.endISO, timeZone: 'Europe/Warsaw' },
+      attendees: params.attendees,
+    },
+  })
+  return res.data
+}

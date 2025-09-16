@@ -4,11 +4,13 @@ import Card from '../components/ui/Card'
 import ProcedureSelect from '../components/ProcedureSelect'
 import DayCalendar from '../components/DayCalendar'
 import SlotsList from '../components/SlotsList'
+import BookingForm from '../components/BookingForm'
 import { useState } from 'react'
 
 export default function Page() {
   const [procId, setProcId] = useState<string | undefined>(undefined)
   const [date, setDate] = useState<Date | undefined>(undefined)
+  const [selectedSlot, setSelectedSlot] = useState<{ startISO: string; endISO: string } | null>(null)
   return (
     <main className="min-h-screen p-6">
       <div className="mx-auto max-w-5xl">
@@ -16,10 +18,15 @@ export default function Page() {
         <div className="grid grid-cols-12 gap-6">
           <div className="col-span-7">
             <Card title="Time">
-              <DayCalendar procedureId={procId} onChange={setDate} />
+              <DayCalendar procedureId={procId} onChange={(d) => { setDate(d); setSelectedSlot(null) }} />
               <div className="mt-4">
-                <SlotsList date={date} procedureId={procId} />
+                <SlotsList date={date} procedureId={procId} onPick={setSelectedSlot} />
               </div>
+              {selectedSlot && (
+                <div className="mt-4 rounded-2xl border border-border bg-white/70 p-4 transition-all duration-300 ease-out">
+                  <BookingForm slot={selectedSlot} procedureId={procId} />
+                </div>
+              )}
             </Card>
           </div>
           <div className="col-span-5">
