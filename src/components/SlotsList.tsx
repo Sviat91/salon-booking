@@ -7,7 +7,7 @@ function toISO(d: Date) {
   return `${y}-${m}-${day}`
 }
 
-export default function SlotsList({ date, procedureId, onPick }: { date?: Date; procedureId?: string; onPick?: (slot: { startISO: string; endISO: string }) => void }) {
+export default function SlotsList({ date, procedureId, selected, onPick }: { date?: Date; procedureId?: string; selected?: { startISO: string; endISO: string } | null; onPick?: (slot: { startISO: string; endISO: string }) => void }) {
   const dateISO = date ? toISO(date) : null
 
   const { data, isFetching, error } = useQuery({
@@ -35,8 +35,10 @@ export default function SlotsList({ date, procedureId, onPick }: { date?: Date; 
     <div className="grid grid-cols-3 gap-2">
       {slots.map((s) => {
         const label = `${s.startISO.slice(11, 16)} - ${s.endISO.slice(11, 16)}`
+        const isSelected = selected?.startISO === s.startISO && selected?.endISO === s.endISO
+        const cls = isSelected ? 'btn btn-primary' : 'btn btn-outline'
         return (
-          <button key={s.startISO} className="btn btn-outline" onClick={() => onPick?.(s)}>
+          <button key={s.startISO} className={cls} aria-pressed={isSelected} onClick={() => onPick?.(s)}>
             {label}
           </button>
         )

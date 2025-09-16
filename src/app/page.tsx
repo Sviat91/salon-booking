@@ -20,13 +20,8 @@ export default function Page() {
             <Card title="Time">
               <DayCalendar procedureId={procId} onChange={(d) => { setDate(d); setSelectedSlot(null) }} />
               <div className="mt-4">
-                <SlotsList date={date} procedureId={procId} onPick={setSelectedSlot} />
+                <SlotsList date={date} procedureId={procId} selected={selectedSlot} onPick={setSelectedSlot} />
               </div>
-              {selectedSlot && (
-                <div className="mt-4 rounded-2xl border border-border bg-white/70 p-4 transition-all duration-300 ease-out">
-                  <BookingForm slot={selectedSlot} procedureId={procId} />
-                </div>
-              )}
             </Card>
           </div>
           <div className="col-span-5">
@@ -41,6 +36,11 @@ export default function Page() {
                 </div>
                 <button className="btn btn-primary mt-4">Submit</button>
               </Card>
+              {selectedSlot && (
+                <Card title="Booking">
+                  <BookingForm slot={selectedSlot} procedureId={procId} />
+                </Card>
+              )}
             </div>
           </div>
         </div>
