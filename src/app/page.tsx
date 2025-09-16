@@ -3,10 +3,12 @@ import BrandHeader from '../components/BrandHeader'
 import Card from '../components/ui/Card'
 import ProcedureSelect from '../components/ProcedureSelect'
 import DayCalendar from '../components/DayCalendar'
+import SlotsList from '../components/SlotsList'
 import { useState } from 'react'
 
 export default function Page() {
   const [procId, setProcId] = useState<string | undefined>(undefined)
+  const [date, setDate] = useState<Date | undefined>(undefined)
   return (
     <main className="min-h-screen p-6">
       <div className="mx-auto max-w-5xl">
@@ -14,7 +16,10 @@ export default function Page() {
         <div className="grid grid-cols-12 gap-6">
           <div className="col-span-7">
             <Card title="Time">
-              <DayCalendar procedureId={procId} />
+              <DayCalendar procedureId={procId} onChange={setDate} />
+              <div className="mt-4">
+                <SlotsList date={date} procedureId={procId} />
+              </div>
             </Card>
           </div>
           <div className="col-span-5">

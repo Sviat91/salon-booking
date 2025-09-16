@@ -1,5 +1,5 @@
 import { format, addDays } from 'date-fns'
-import { toZonedTime } from 'date-fns-tz'
+import { toZonedTime, fromZonedTime, formatInTimeZone } from 'date-fns-tz'
 import { readExceptions, readWeekly } from './google/sheets'
 import { freeBusy } from './google/calendar'
 
@@ -100,4 +100,66 @@ export async function getAvailableDays(fromISO: string, untilISO: string, minDur
     }
   }
   return result
+}
+
+// Generate concrete slots for a specific date in Europe/Warsaw
+export async function getDaySlots(dateISO: string, minDuration: number, stepMin: number = 15) {
+  const weekly = await readWeekly()
+  const exceptions = await readExceptions()
+
+  // Determine working hours for the specific date
+  const base = new Date(dateISO + 'T00:00:00')
+  const weekday = base.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase()
+  let hours = weekly[weekday]?.hours || ''
+  let isDayOff = weekly[weekday]?.isDayOff || false
+  if (exceptions[dateISO]) {
+    const ex = exceptions[dateISO]
+    if (ex.hours) hours = ex.hours
+    isDayOff = ex.isDayOff
+  }
+  if (isDayOff || !hours) return { slots: [] as { startISO: string; endISO: string }[] }
+
+  const open = parseRanges(hours)
+  if (!open.length) return { slots: [] as { startISO: string; endISO: string }[] }
+
+  // Query busy periods only for this day (in UTC, but interpreted with TZ on the API side)
+  const dayStartUtc = fromZonedTime(dateISO + 'T00:00:00', TZ).toISOString()
+  const dayEndUtc = fromZonedTime(dateISO + 'T23:59:59', TZ).toISOString()
+  const busy = await freeBusy(dayStartUtc, dayEndUtc)
+
+  // Convert busy intervals to minutes of the local day and clamp to [0..1440]
+  const clamp = (x: number, a: number, b: number) => Math.max(a, Math.min(b, x))
+  const busyRanges: Range[] = busy.map(b => {
+    const s = toZonedTime(new Date(b.start), TZ)
+    const e = toZonedTime(new Date(b.end), TZ)
+    let start = s.getHours() * 60 + s.getMinutes()
+    let end = e.getHours() * 60 + e.getMinutes()
+    start = clamp(start, 0, 24 * 60)
+    end = clamp(end, 0, 24 * 60)
+    return { start, end }
+  }).filter(r => r.end > r.start)
+
+  const free = minusBusy(open, busyRanges)
+
+  // Build slots with step alignment
+  const slots: { startISO: string; endISO: string }[] = []
+  for (const r of free) {
+    let start = Math.ceil(r.start / stepMin) * stepMin
+    while (start + minDuration <= r.end) {
+      const end = start + minDuration
+      const hhS = String(Math.floor(start / 60)).padStart(2, '0')
+      const mmS = String(start % 60).padStart(2, '0')
+      const hhE = String(Math.floor(end / 60)).padStart(2, '0')
+      const mmE = String(end % 60).padStart(2, '0')
+      const localStartStr = `${dateISO}T${hhS}:${mmS}:00`
+      const localEndStr = `${dateISO}T${hhE}:${mmE}:00`
+      const startUtc = fromZonedTime(localStartStr, TZ)
+      const endUtc = fromZonedTime(localEndStr, TZ)
+      const startISO = formatInTimeZone(startUtc, TZ, "yyyy-MM-dd'T'HH:mm:ssXXX")
+      const endISO = formatInTimeZone(endUtc, TZ, "yyyy-MM-dd'T'HH:mm:ssXXX")
+      slots.push({ startISO, endISO })
+      start += stepMin
+    }
+  }
+  return { slots }
 }

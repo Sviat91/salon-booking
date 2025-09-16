@@ -12,7 +12,7 @@ function toISO(d: Date) {
   return `${y}-${m}-${day}`
 }
 
-export default function DayCalendar({ procedureId }: { procedureId?: string }) {
+export default function DayCalendar({ procedureId, onChange }: { procedureId?: string; onChange?: (d: Date | undefined) => void }) {
   const [selected, setSelected] = useState<Date | undefined>(undefined)
   const today = new Date(); today.setHours(0, 0, 0, 0)
   const until = new Date(); until.setDate(until.getDate() + 90); until.setHours(0, 0, 0, 0)
@@ -41,7 +41,7 @@ export default function DayCalendar({ procedureId }: { procedureId?: string }) {
     <DayPicker
       mode="single"
       selected={selected}
-      onSelect={setSelected}
+      onSelect={(d) => { setSelected(d); onChange?.(d) }}
       fromDate={today}
       toDate={until}
       disabled={isDisabled}
