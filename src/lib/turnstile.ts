@@ -2,8 +2,7 @@ import { config } from './env'
 
 export async function verifyTurnstile(token: string | undefined | null, remoteIp?: string | null) {
   if (!config.TURNSTILE_SECRET_EFFECTIVE) return { ok: true } // disabled
-  // In development allow missing token to ease local testing
-  if (!token) return { ok: config.NODE_ENV !== 'production', code: 'NO_TOKEN' as const }
+  if (!token) return { ok: false, code: 'NO_TOKEN' as const }
   try {
     const form = new URLSearchParams()
     form.set('secret', config.TURNSTILE_SECRET_EFFECTIVE)
