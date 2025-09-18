@@ -1,6 +1,7 @@
 "use client"
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { DayPicker, type CaptionProps } from 'react-day-picker'
+import type { MouseEvent as ReactMouseEvent } from 'react'
+import { DayPicker, type CaptionProps, type DayButtonProps } from 'react-day-picker'
 import 'react-day-picker/dist/style.css'
 import { useQuery } from '@tanstack/react-query'
 
@@ -31,6 +32,7 @@ export default function DayCalendar({ procedureId, onChange }: { procedureId?: s
   })
   const [daysMap, setDaysMap] = useState<Map<string, boolean>>(new Map())
   const monthRef = useRef<Date>(initialMonth)
+  const containerRef = useRef<HTMLDivElement | null>(null)
 
   const fromISO = toISO(rangeFrom)
   const untilISO = toISO(rangeUntil)
@@ -144,7 +146,7 @@ export default function DayCalendar({ procedureId, onChange }: { procedureId?: s
     const minMonth = new Date(today.getFullYear(), today.getMonth(), 1)
     const isPrevDisabled = prevMonth < minMonth
 
-    const buttonBase = "flex h-8 w-8 items-center justify-center rounded-full border border-neutral-300 text-sm font-medium text-neutral-700 transition hover:bg-neutral-100 disabled:opacity-40 disabled:hover:bg-transparent"
+    const buttonBase = "flex h-8 w-8 items-center justify-center rounded-full border border-neutral-300 text-sm font-medium text-neutral-700 transition hover:bg-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60 disabled:opacity-40 disabled:hover:bg-transparent"
     const enterClass = navDirection === 'forward' ? 'opacity-0 translate-x-4' : 'opacity-0 -translate-x-4'
     const finalClass = 'opacity-100 translate-x-0'
 
@@ -153,7 +155,8 @@ export default function DayCalendar({ procedureId, onChange }: { procedureId?: s
         <button
           type="button"
           aria-label="Предыдущий месяц"
-          onClick={() => {
+          onClick={(event) => {
+            event.stopPropagation()
             if (!isPrevDisabled) handleMonthChange(prevMonth)
           }}
           disabled={isPrevDisabled}
@@ -164,6 +167,7 @@ export default function DayCalendar({ procedureId, onChange }: { procedureId?: s
         <div className="relative flex-1 text-center">
           <div className="h-6 overflow-hidden">
             <span
+              onClick={(event) => event.stopPropagation()}
               className={`inline-block text-base font-medium capitalize text-neutral-800 transition-all duration-300 ease-out ${stage === 'enterStart' ? enterClass : finalClass}`}
             >
               {label}
@@ -173,7 +177,10 @@ export default function DayCalendar({ procedureId, onChange }: { procedureId?: s
         <button
           type="button"
           aria-label="Следующий месяц"
-          onClick={() => handleMonthChange(nextMonthValue)}
+          onClick={(event) => {
+            event.stopPropagation()
+            handleMonthChange(nextMonthValue)
+          }}
           className={buttonBase}
         >
           ›
@@ -184,8 +191,43 @@ export default function DayCalendar({ procedureId, onChange }: { procedureId?: s
 
   const isLoadingDays = !!procedureId && (isFetching || isLoading)
 
+  const DayButton = ({ className, children, onClick, onMouseDown, onTouchStart, ...rest }: DayButtonProps) => {
+    return (
+      <button
+        {...rest}
+        onClick={(event) => {
+          event.stopPropagation()
+          onClick?.(event)
+        }}
+        onMouseDown={(event) => {
+          event.stopPropagation()
+          onMouseDown?.(event)
+        }}
+        onTouchStart={(event) => {
+          event.stopPropagation()
+          onTouchStart?.(event)
+        }}
+        className={`${className ?? ''} transition-transform duration-200 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/60`}
+      >
+        {children}
+      </button>
+    )
+  }
+
+  function handleContainerClick(event: ReactMouseEvent<HTMLDivElement>) {
+    if (!containerRef.current) return
+    if (event.target instanceof HTMLElement && containerRef.current.contains(event.target)) {
+      setSelected(undefined)
+      onChange?.(undefined)
+    }
+  }
+
   return (
-    <div className="relative">
+    <div
+      ref={containerRef}
+      className="relative"
+      onClick={handleContainerClick}
+    >
       <DayPicker
         mode="single"
         month={month}
@@ -198,13 +240,21 @@ export default function DayCalendar({ procedureId, onChange }: { procedureId?: s
         toDate={rangeUntil}
         disabled={isDisabled}
         modifiers={{ available }}
-        modifiersClassNames={{ available: 'bg-accent/40 rounded-full', disabled: 'opacity-30 pointer-events-none' }}
+        modifiersClassNames={{
+          available: 'bg-accent/40 rounded-full hover:scale-105 hover:ring-1 hover:ring-accent focus-visible:ring-2 focus-visible:ring-accent/70',
+          disabled: 'opacity-30 pointer-events-none',
+        }}
         onMonthChange={handleMonthChange}
-        components={{ Caption: CustomCaption }}
-        className="w-full"
+        components={{ Caption: CustomCaption, DayButton }}
+        className="w-full select-none"
       />
       {isLoadingDays && (
-        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center rounded-2xl bg-white/80 backdrop-blur-sm">
+        <div
+          className="absolute inset-0 z-10 flex flex-col items-center justify-center rounded-2xl bg-white/80 backdrop-blur-sm"
+          onClick={(event) => event.stopPropagation()}
+          onMouseDown={(event) => event.stopPropagation()}
+          onTouchStart={(event) => event.stopPropagation()}
+        >
           <div className="h-10 w-10 animate-spin rounded-full border-2 border-neutral-300 border-t-neutral-500" />
           <p className="mt-3 text-sm font-medium text-neutral-600">Подбираем доступные дни…</p>
         </div>

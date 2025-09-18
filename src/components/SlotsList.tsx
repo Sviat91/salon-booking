@@ -27,13 +27,16 @@ export default function SlotsList({ date, procedureId, selected, onPick }: { dat
   const slots = useMemo(() => (data?.slots ?? []) as { startISO: string; endISO: string }[], [data])
 
   const ready = !!procedureId && !!dateISO
-  const containerState = ready ? 'mt-3 max-h-[26rem] opacity-100' : 'max-h-0 opacity-0 pointer-events-none'
+  const panelOpen = ready
+  const panelState = panelOpen
+    ? 'mt-4 max-h-[26rem] opacity-100 overflow-y-auto'
+    : 'mt-0 max-h-0 opacity-0 overflow-hidden pointer-events-none'
 
   return (
     <div>
       {!procedureId && <div className="text-sm text-neutral-500">Сначала выберите услугу</div>}
       {procedureId && !dateISO && <div className="text-sm text-neutral-500">Выберите дату</div>}
-      <div className={`relative overflow-hidden transition-[max-height,opacity] duration-300 ease-out ${containerState}`}>
+      <div className={`relative transition-[max-height,opacity] duration-300 ease-out ${panelState}`}>
         <div className="relative rounded-2xl border border-neutral-200 bg-white/80 p-4">
           {ready && (
             <>
@@ -48,7 +51,7 @@ export default function SlotsList({ date, procedureId, selected, onPick }: { dat
                 <div className="text-sm text-neutral-500">Нет доступных слотов</div>
               )}
               {!error && slots.length > 0 && (
-                <div className="grid max-h-80 grid-cols-2 gap-2 overflow-y-auto pr-1">
+                <div className="grid grid-cols-2 gap-2 pr-1">
                   {slots.map((s) => {
                     const label = `${s.startISO.slice(11, 16)} - ${s.endISO.slice(11, 16)}`
                     const isSelected = selected?.startISO === s.startISO && selected?.endISO === s.endISO

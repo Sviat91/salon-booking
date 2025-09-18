@@ -91,8 +91,8 @@ export default function BookingForm({
     return (
       <div className="transition-all duration-300 ease-out">
         <div className="text-lg font-medium mb-2">Бронирование подтверждено</div>
-        <div className="text-sm text-muted-foreground">Время: {label}</div>
-        {eventId && <div className="text-sm text-muted-foreground">ID: {eventId}</div>}
+        <div className="text-sm text-neutral-600">Время: {label}</div>
+        {eventId && <div className="text-sm text-neutral-600">ID: {eventId}</div>}
         <div className="mt-3 text-emerald-700">Мы скоро свяжемся с вами для подтверждения деталей.</div>
       </div>
     )
@@ -100,7 +100,7 @@ export default function BookingForm({
 
   return (
     <div className={"transition-all duration-300 ease-out transform opacity-100 translate-y-0"}>
-      <div className="text-sm text-muted-foreground mb-2">Для завершения бронирования заполните данные:</div>
+      <div className="text-sm text-neutral-600 mb-2">Для завершения бронирования заполните данные:</div>
       <div className="mb-3 text-[15px]"><span className="font-medium">Выбранное время:</span> {label}</div>
       <div className="grid grid-cols-2 gap-3">
         <input className="rounded-xl border border-border bg-white/80 px-3 py-2" placeholder="Имя и Фамилия" value={name} onChange={e => setName(e.target.value)} />
@@ -111,9 +111,7 @@ export default function BookingForm({
       </div>
       {siteKey && (
         <div className="mt-3">
-          <div className="bg-white border border-neutral-200 rounded-xl p-3">
-            <div ref={tsRef} />
-          </div>
+          <div ref={tsRef} />
         </div>
       )}
       {err && <div className="mt-3 text-sm text-red-600">{err}</div>}
