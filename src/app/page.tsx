@@ -27,23 +27,21 @@ export default function Page() {
       {/* основной центрированный контейнер */}
       <div className="mx-auto max-w-5xl">
         <BrandHeader />
-        <div className="mt-8 flex flex-col items-center gap-6 lg:flex-row lg:justify-center">
-          <div className="w-full max-w-md">
-            <Card className="w-full">
-              <DayCalendar
-                key={procId ?? 'none'}
-                procedureId={procId}
-                onChange={(d) => {
-                  setDate(d)
-                  setSelectedSlot(null)
-                }}
-              />
-              <SlotsList date={date} procedureId={procId} selected={selectedSlot} onPick={setSelectedSlot} />
-            </Card>
-          </div>
-          <div className="w-full max-w-sm">
-            <div className="space-y-4">
-              <Card title="Service" className="w-full">
+        <div className="mt-8 grid gap-6 lg:grid-cols-[360px_minmax(0,_1fr)]">
+          <Card className="max-w-md lg:max-w-none">
+            <DayCalendar
+              key={procId ?? 'none'}
+              procedureId={procId}
+              onChange={(d) => {
+                setDate(d)
+                setSelectedSlot(null)
+              }}
+            />
+            <SlotsList date={date} procedureId={procId} selected={selectedSlot} onPick={setSelectedSlot} />
+          </Card>
+          <div className="lg:pl-2">
+            <div className="space-y-4 lg:max-w-sm">
+              <Card title="Service" className="lg:max-w-sm">
                 <ProcedureSelect
                   onChange={(p) => {
                     setProcId(p?.id)
@@ -53,7 +51,7 @@ export default function Page() {
                 />
               </Card>
               {selectedSlot && (
-                <Card title="Booking" className="w-full">
+                <Card title="Booking" className="lg:max-w-sm">
                   <BookingForm slot={selectedSlot} procedureId={procId} />
                 </Card>
               )}
