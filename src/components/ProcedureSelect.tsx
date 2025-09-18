@@ -49,7 +49,7 @@ export default function ProcedureSelect({ valueId, onChange }: { valueId?: strin
         </span>
       </button>
       <div
-        className={`absolute left-0 top-full z-10 mt-2 w-full rounded-xl border border-border bg-white/95 shadow-lg transition-opacity duration-150 ${open ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'}`}
+        className={`overflow-hidden transition-all duration-200 ease-out ${open ? 'max-h-72 opacity-100 mt-2' : 'max-h-0 opacity-0'} bg-white/90 border border-border rounded-xl`}
       >
         <ul className="max-h-72 overflow-auto p-1">
           {items.map(p => (
