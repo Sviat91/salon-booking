@@ -15,8 +15,8 @@ export default function Page() {
   return (
     <main className="min-h-screen p-6">
       <div className="mx-auto max-w-5xl">
-        <div className="ml-6 mt-6 w-[180px]">
-          <Image src="/head_logo.png" alt="Massage logo" width={200} height={80} className="h-auto w-full" priority />
+        <div className="mt-6">
+          <Image src="/head_logo.png" alt="Massage logo" width={220} height={88} className="h-auto" priority />
         </div>
         <BrandHeader />
         <div className="mt-8 grid gap-6 lg:grid-cols-[360px_minmax(0,_1fr)]">
