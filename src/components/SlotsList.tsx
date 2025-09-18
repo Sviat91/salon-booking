@@ -26,24 +26,45 @@ export default function SlotsList({ date, procedureId, selected, onPick }: { dat
 
   const slots = useMemo(() => (data?.slots ?? []) as { startISO: string; endISO: string }[], [data])
 
-  if (!dateISO) return <div className="text-sm text-muted-foreground">Выберите дату</div>
-  if (!procedureId) return <div className="text-sm text-muted-foreground">Сначала выберите услугу</div>
-  if (isFetching) return <div className="text-sm text-muted-foreground">Загрузка слотов…</div>
-  if (error) return <div className="text-sm text-red-600">Ошибка загрузки слотов</div>
-  if (!slots.length) return <div className="text-sm text-muted-foreground">Нет доступных слотов</div>
+  const ready = !!procedureId && !!dateISO
+  const containerState = ready ? 'mt-3 max-h-[26rem] opacity-100' : 'max-h-0 opacity-0 pointer-events-none'
 
   return (
-    <div className="grid grid-cols-3 gap-2">
-      {slots.map((s) => {
-        const label = `${s.startISO.slice(11, 16)} - ${s.endISO.slice(11, 16)}`
-        const isSelected = selected?.startISO === s.startISO && selected?.endISO === s.endISO
-        const cls = isSelected ? 'btn btn-primary' : 'btn btn-outline'
-        return (
-          <button key={s.startISO} className={cls} aria-pressed={isSelected} onClick={() => onPick?.(s)}>
-            {label}
-          </button>
-        )
-      })}
+    <div>
+      {!procedureId && <div className="text-sm text-neutral-500">Сначала выберите услугу</div>}
+      {procedureId && !dateISO && <div className="text-sm text-neutral-500">Выберите дату</div>}
+      <div className={`relative overflow-hidden transition-[max-height,opacity] duration-300 ease-out ${containerState}`}>
+        <div className="relative rounded-2xl border border-neutral-200 bg-white/80 p-4">
+          {ready && (
+            <>
+              {isFetching && (
+                <div className="absolute inset-0 z-10 flex flex-col items-center justify-center rounded-2xl bg-white/80 backdrop-blur-sm">
+                  <div className="h-9 w-9 animate-spin rounded-full border-2 border-neutral-300 border-t-neutral-500" />
+                  <p className="mt-3 text-sm font-medium text-neutral-600">Подбираем свободное время…</p>
+                </div>
+              )}
+              {error && <div className="text-sm text-red-600">Ошибка загрузки слотов</div>}
+              {!error && slots.length === 0 && !isFetching && (
+                <div className="text-sm text-neutral-500">Нет доступных слотов</div>
+              )}
+              {!error && slots.length > 0 && (
+                <div className="grid max-h-80 grid-cols-2 gap-2 overflow-y-auto pr-1">
+                  {slots.map((s) => {
+                    const label = `${s.startISO.slice(11, 16)} - ${s.endISO.slice(11, 16)}`
+                    const isSelected = selected?.startISO === s.startISO && selected?.endISO === s.endISO
+                    const cls = isSelected ? 'btn btn-primary' : 'btn btn-outline'
+                    return (
+                      <button key={s.startISO} className={cls} aria-pressed={isSelected} onClick={() => onPick?.(s)}>
+                        {label}
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      </div>
     </div>
   )
 }
