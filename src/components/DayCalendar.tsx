@@ -153,8 +153,7 @@ export default function DayCalendar({ procedureId, onChange }: { procedureId?: s
         <button
           type="button"
           aria-label="Предыдущий месяц"
-          onClick={(event) => {
-            event.stopPropagation()
+          onClick={() => {
             if (!isPrevDisabled) handleMonthChange(prevMonth)
           }}
           disabled={isPrevDisabled}
@@ -162,7 +161,7 @@ export default function DayCalendar({ procedureId, onChange }: { procedureId?: s
         >
           ‹
         </button>
-        <div className="relative flex-1 text-center" onClick={(event) => event.stopPropagation()}>
+        <div className="relative flex-1 text-center">
           <div className="h-6 overflow-hidden">
             <span
               className={`inline-block text-base font-medium capitalize text-neutral-800 transition-all duration-300 ease-out ${stage === 'enterStart' ? enterClass : finalClass}`}
@@ -174,10 +173,7 @@ export default function DayCalendar({ procedureId, onChange }: { procedureId?: s
         <button
           type="button"
           aria-label="Следующий месяц"
-          onClick={(event) => {
-            event.stopPropagation()
-            handleMonthChange(nextMonthValue)
-          }}
+          onClick={() => handleMonthChange(nextMonthValue)}
           className={buttonBase}
         >
           ›
@@ -188,47 +184,27 @@ export default function DayCalendar({ procedureId, onChange }: { procedureId?: s
 
   const isLoadingDays = !!procedureId && (isFetching || isLoading)
 
-  function handleContainerClick() {
-    if (selected !== undefined) setSelected(undefined)
-    onChange?.(undefined)
-  }
-
   return (
-    <div className="relative" onClick={handleContainerClick}>
+    <div className="relative">
       <DayPicker
         mode="single"
         month={month}
         selected={selected}
         onSelect={(d) => {
-          setSelected(d || undefined)
-          onChange?.(d || undefined)
-        }}
-        onDayClick={(_, __, event) => {
-          event.stopPropagation()
+          setSelected(d)
+          onChange?.(d)
         }}
         fromDate={today}
         toDate={rangeUntil}
         disabled={isDisabled}
         modifiers={{ available }}
-        modifiersClassNames={{
-          available:
-            'bg-accent/40 rounded-full transition duration-200 hover:scale-105 hover:ring-2 hover:ring-accent/50 focus-visible:ring-2 focus-visible:ring-accent/60',
-          disabled: 'opacity-30 pointer-events-none',
-        }}
-        classNames={{
-          day: 'h-10 w-10 rounded-full transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60',
-          month: 'space-y-2',
-          table: 'w-full border-collapse',
-        }}
+        modifiersClassNames={{ available: 'bg-accent/40 rounded-full', disabled: 'opacity-30 pointer-events-none' }}
         onMonthChange={handleMonthChange}
         components={{ Caption: CustomCaption }}
         className="w-full"
       />
       {isLoadingDays && (
-        <div
-          className="absolute inset-0 z-10 flex flex-col items-center justify-center rounded-2xl bg-white/80 backdrop-blur-sm"
-          onClick={(event) => event.stopPropagation()}
-        >
+        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center rounded-2xl bg-white/80 backdrop-blur-sm">
           <div className="h-10 w-10 animate-spin rounded-full border-2 border-neutral-300 border-t-neutral-500" />
           <p className="mt-3 text-sm font-medium text-neutral-600">Подбираем доступные дни…</p>
         </div>
