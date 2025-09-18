@@ -91,8 +91,8 @@ export default function BookingForm({
     return (
       <div className="transition-all duration-300 ease-out">
         <div className="text-lg font-medium mb-2">Бронирование подтверждено</div>
-        <div className="text-sm text-muted-foreground">Время: {label}</div>
-        {eventId && <div className="text-sm text-muted-foreground">ID: {eventId}</div>}
+        <div className="text-sm text-neutral-500">Время: {label}</div>
+        {eventId && <div className="text-sm text-neutral-500">ID: {eventId}</div>}
         <div className="mt-3 text-emerald-700">Мы скоро свяжемся с вами для подтверждения деталей.</div>
       </div>
     )
@@ -100,7 +100,7 @@ export default function BookingForm({
 
   return (
     <div className={"transition-all duration-300 ease-out transform opacity-100 translate-y-0"}>
-      <div className="text-sm text-muted-foreground mb-2">Для завершения бронирования заполните данные:</div>
+      <div className="mb-2 text-sm text-neutral-500">Для завершения бронирования заполните данные:</div>
       <div className="mb-3 text-[15px]"><span className="font-medium">Выбранное время:</span> {label}</div>
       <div className="grid grid-cols-2 gap-3">
         <input className="rounded-xl border border-border bg-white/80 px-3 py-2" placeholder="Имя и Фамилия" value={name} onChange={e => setName(e.target.value)} />
@@ -109,7 +109,11 @@ export default function BookingForm({
       <div className="mt-3">
         <input className="w-full rounded-xl border border-border bg-white/80 px-3 py-2" placeholder="Email (по желанию)" value={email} onChange={e => setEmail(e.target.value)} />
       </div>
-      {siteKey && <div ref={tsRef} className="mt-3" />}
+      {siteKey && (
+        <div className="mt-3">
+          <div ref={tsRef} className="rounded-xl border border-neutral-200 bg-white p-3" />
+        </div>
+      )}
       {err && <div className="mt-3 text-sm text-red-600">{err}</div>}
       <button disabled={!canSubmit} onClick={submit} className={`btn btn-primary mt-4 w-full ${!canSubmit ? 'opacity-60 pointer-events-none' : ''}`}>
         {loading ? 'Отправка…' : 'Забронировать'}

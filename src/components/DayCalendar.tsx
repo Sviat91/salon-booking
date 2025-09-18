@@ -1,6 +1,7 @@
 "use client"
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { DayPicker } from 'react-day-picker'
+import type { CaptionProps } from 'react-day-picker'
 import 'react-day-picker/dist/style.css'
 import { useQuery } from '@tanstack/react-query'
 
@@ -20,11 +21,17 @@ export default function DayCalendar({ procedureId, onChange }: { procedureId?: s
   const [rangeUntil, setRangeUntil] = useState<Date>(() => { const d=new Date(today); d.setDate(d.getDate()+90); d.setHours(0,0,0,0); return d })
   const [daysMap, setDaysMap] = useState<Map<string, boolean>>(new Map())
   const monthRef = useRef<Date>(new Date())
+  const [month, setMonth] = useState<Date>(() => {
+    const m = new Date(today)
+    m.setDate(1)
+    return m
+  })
+  const [monthAnimationClass, setMonthAnimationClass] = useState('opacity-100 translate-x-0')
 
   const fromISO = toISO(rangeFrom)
   const untilISO = toISO(rangeUntil)
 
-  const { data } = useQuery({
+  const { data, isFetching, isLoading } = useQuery({
     queryKey: ['availability', procedureId, fromISO, untilISO],
     enabled: !!procedureId, // подсветку дней делаем только после выбора процедуры
     queryFn: async () => {
@@ -99,18 +106,75 @@ export default function DayCalendar({ procedureId, onChange }: { procedureId?: s
     return !set.has(iso)
   }
 
+  function goToMonth(next: Date) {
+    const normalized = new Date(next.getFullYear(), next.getMonth(), 1)
+    if (normalized.getTime() === month.getTime()) return
+    setMonthAnimationClass(normalized > month ? 'opacity-0 translate-x-4' : 'opacity-0 -translate-x-4')
+    setMonth(normalized)
+    extendWindowIfNeeded(normalized)
+  }
+
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => setMonthAnimationClass('opacity-100 translate-x-0'))
+    return () => cancelAnimationFrame(frame)
+  }, [month])
+
+  const monthFormatter = useMemo(() => new Intl.DateTimeFormat('ru-RU', { month: 'long', year: 'numeric' }), [])
+  const showLoader = !!procedureId && (isLoading || isFetching)
+
   return (
-    <DayPicker
-      mode="single"
-      selected={selected}
-      onSelect={(d) => { setSelected(d); onChange?.(d) }}
-      fromDate={today}
-      toDate={rangeUntil}
-      disabled={isDisabled}
-      modifiers={{ available }}
-      modifiersClassNames={{ available: 'bg-accent/40 rounded-full', disabled: 'opacity-30 pointer-events-none' }}
-      styles={{ caption: { color: '#2B2B2B' } }}
-      onMonthChange={extendWindowIfNeeded}
-    />
+    <div className="relative">
+      <DayPicker
+        mode="single"
+        month={month}
+        selected={selected}
+        onSelect={(d) => { setSelected(d); onChange?.(d) }}
+        fromDate={today}
+        toDate={rangeUntil}
+        disabled={isDisabled}
+        modifiers={{ available }}
+        modifiersClassNames={{ available: 'bg-accent/40 rounded-full', disabled: 'opacity-30 pointer-events-none' }}
+        styles={{ caption: { color: '#2B2B2B' } }}
+        onMonthChange={extendWindowIfNeeded}
+        classNames={{
+          months: `relative transition duration-300 ease-out ${monthAnimationClass}`,
+          month: 'w-full',
+          caption: 'px-1 py-2',
+          caption_label: 'text-sm font-medium text-neutral-800 capitalize',
+          nav: 'hidden',
+        }}
+        components={{
+          Caption: ({ displayMonth }: CaptionProps) => (
+            <div className="grid grid-cols-[auto_1fr_auto] items-center gap-2 px-1 py-2">
+              <button
+                type="button"
+                onClick={() => goToMonth(new Date(month.getFullYear(), month.getMonth() - 1, 1))}
+                className="flex h-8 w-8 items-center justify-center rounded-full border border-neutral-300 bg-white text-neutral-600 transition hover:bg-neutral-100"
+                aria-label="Предыдущий месяц"
+              >
+                ‹
+              </button>
+              <div className="text-center text-sm font-medium text-neutral-800 capitalize">
+                {monthFormatter.format(displayMonth)}
+              </div>
+              <button
+                type="button"
+                onClick={() => goToMonth(new Date(month.getFullYear(), month.getMonth() + 1, 1))}
+                className="flex h-8 w-8 items-center justify-center rounded-full border border-neutral-300 bg-white text-neutral-600 transition hover:bg-neutral-100"
+                aria-label="Следующий месяц"
+              >
+                ›
+              </button>
+            </div>
+          ),
+        }}
+      />
+      {showLoader && (
+        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 rounded-2xl bg-white/80 backdrop-blur-sm">
+          <span className="h-8 w-8 animate-spin rounded-full border-2 border-neutral-300 border-t-transparent" />
+          <span className="text-sm font-medium text-neutral-700">Подбираем доступные дни…</span>
+        </div>
+      )}
+    </div>
   )
 }
