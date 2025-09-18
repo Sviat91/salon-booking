@@ -15,16 +15,14 @@ export default function Page() {
     <main className="min-h-screen p-6">
       <div className="mx-auto max-w-5xl">
         <BrandHeader />
-        <div className="grid grid-cols-12 gap-6">
-          <div className="col-span-7">
-            <Card title="Time">
-              <DayCalendar procedureId={procId} onChange={(d) => { setDate(d); setSelectedSlot(null) }} />
-              <div className="mt-4">
-                <SlotsList date={date} procedureId={procId} selected={selectedSlot} onPick={setSelectedSlot} />
-              </div>
-            </Card>
-          </div>
-          <div className="col-span-5">
+        <div className="mt-8 grid gap-6 lg:grid-cols-[360px_minmax(0,_1fr)]">
+          <Card className="max-w-md lg:max-w-none">
+            <DayCalendar procedureId={procId} onChange={(d) => { setDate(d); setSelectedSlot(null) }} />
+            <div className="mt-4">
+              <SlotsList date={date} procedureId={procId} selected={selectedSlot} onPick={setSelectedSlot} />
+            </div>
+          </Card>
+          <div>
             <div className="space-y-4">
               <Card title="Service">
                 <ProcedureSelect onChange={(p) => setProcId(p?.id)} />

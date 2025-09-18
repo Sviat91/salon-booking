@@ -109,7 +109,13 @@ export default function BookingForm({
       <div className="mt-3">
         <input className="w-full rounded-xl border border-border bg-white/80 px-3 py-2" placeholder="Email (по желанию)" value={email} onChange={e => setEmail(e.target.value)} />
       </div>
-      {siteKey && <div ref={tsRef} className="mt-3" />}
+      {siteKey && (
+        <div className="mt-3">
+          <div className="bg-white border border-neutral-200 rounded-xl p-3">
+            <div ref={tsRef} />
+          </div>
+        </div>
+      )}
       {err && <div className="mt-3 text-sm text-red-600">{err}</div>}
       <button disabled={!canSubmit} onClick={submit} className={`btn btn-primary mt-4 w-full ${!canSubmit ? 'opacity-60 pointer-events-none' : ''}`}>
         {loading ? 'Отправка…' : 'Забронировать'}
