@@ -27,7 +27,7 @@ export default function Page() {
       {/* основной центрированный контейнер */}
       <div className="mx-auto max-w-5xl">
         <BrandHeader />
-        <div className="mt-8 grid gap-6 lg:grid-cols-[360px_minmax(0,_1fr)]">
+        <div className="mt-8 grid items-start justify-center gap-6 lg:grid-cols-[auto,auto]">
           <Card className="max-w-md lg:max-w-none">
             <DayCalendar
               key={procId ?? 'none'}
