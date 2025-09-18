@@ -27,14 +27,20 @@ export default function SlotsList({ date, procedureId, selected, onPick }: { dat
   const slots = useMemo(() => (data?.slots ?? []) as { startISO: string; endISO: string }[], [data])
 
   const ready = !!procedureId && !!dateISO
-  const containerState = ready ? 'mt-3 max-h-[26rem] opacity-100' : 'max-h-0 opacity-0 pointer-events-none'
+  const containerState = ready
+    ? 'mt-3 max-h-[26rem] opacity-100'
+    : 'mt-0 max-h-0 opacity-0 pointer-events-none overflow-hidden'
 
   return (
     <div>
       {!procedureId && <div className="text-sm text-neutral-500">Сначала выберите услугу</div>}
       {procedureId && !dateISO && <div className="text-sm text-neutral-500">Выберите дату</div>}
       <div className={`relative overflow-hidden transition-[max-height,opacity] duration-300 ease-out ${containerState}`}>
-        <div className="relative rounded-2xl border border-neutral-200 bg-white/80 p-4">
+        <div
+          className={`relative rounded-2xl border border-neutral-200 bg-white/80 p-4 transition-opacity duration-200 ease-out ${
+            ready ? 'opacity-100' : 'opacity-0'
+          }`}
+        >
           {ready && (
             <>
               {isFetching && (

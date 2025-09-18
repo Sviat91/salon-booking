@@ -1,5 +1,5 @@
 "use client"
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { type MouseEvent, useEffect, useMemo, useRef, useState } from 'react'
 import { DayPicker, type CaptionProps } from 'react-day-picker'
 import 'react-day-picker/dist/style.css'
 import { useQuery } from '@tanstack/react-query'
@@ -31,6 +31,7 @@ export default function DayCalendar({ procedureId, onChange }: { procedureId?: s
   })
   const [daysMap, setDaysMap] = useState<Map<string, boolean>>(new Map())
   const monthRef = useRef<Date>(initialMonth)
+  const containerRef = useRef<HTMLDivElement | null>(null)
 
   const fromISO = toISO(rangeFrom)
   const untilISO = toISO(rangeUntil)
@@ -153,11 +154,13 @@ export default function DayCalendar({ procedureId, onChange }: { procedureId?: s
         <button
           type="button"
           aria-label="Предыдущий месяц"
-          onClick={() => {
+          onClick={(event) => {
+            event.stopPropagation()
             if (!isPrevDisabled) handleMonthChange(prevMonth)
           }}
           disabled={isPrevDisabled}
           className={buttonBase}
+          data-calendar-nav
         >
           ‹
         </button>
@@ -165,6 +168,7 @@ export default function DayCalendar({ procedureId, onChange }: { procedureId?: s
           <div className="h-6 overflow-hidden">
             <span
               className={`inline-block text-base font-medium capitalize text-neutral-800 transition-all duration-300 ease-out ${stage === 'enterStart' ? enterClass : finalClass}`}
+              onClick={(event) => event.stopPropagation()}
             >
               {label}
             </span>
@@ -173,8 +177,12 @@ export default function DayCalendar({ procedureId, onChange }: { procedureId?: s
         <button
           type="button"
           aria-label="Следующий месяц"
-          onClick={() => handleMonthChange(nextMonthValue)}
+          onClick={(event) => {
+            event.stopPropagation()
+            handleMonthChange(nextMonthValue)
+          }}
           className={buttonBase}
+          data-calendar-nav
         >
           ›
         </button>
@@ -184,8 +192,30 @@ export default function DayCalendar({ procedureId, onChange }: { procedureId?: s
 
   const isLoadingDays = !!procedureId && (isFetching || isLoading)
 
+  useEffect(() => {
+    if (!procedureId && selected) {
+      setSelected(undefined)
+      onChange?.(undefined)
+    }
+  }, [procedureId, selected, onChange])
+
+  function clearSelection() {
+    if (!selected) return
+    setSelected(undefined)
+    onChange?.(undefined)
+  }
+
+  function handleContainerClick(event: MouseEvent<HTMLDivElement>) {
+    const target = event.target as HTMLElement
+    if (!containerRef.current) return
+    if (!containerRef.current.contains(target)) return
+    if (target.closest('.rdp-day')) return
+    if (target.closest('[data-calendar-nav]')) return
+    clearSelection()
+  }
+
   return (
-    <div className="relative">
+    <div ref={containerRef} className="relative" onClick={handleContainerClick}>
       <DayPicker
         mode="single"
         month={month}
@@ -198,10 +228,17 @@ export default function DayCalendar({ procedureId, onChange }: { procedureId?: s
         toDate={rangeUntil}
         disabled={isDisabled}
         modifiers={{ available }}
-        modifiersClassNames={{ available: 'bg-accent/40 rounded-full', disabled: 'opacity-30 pointer-events-none' }}
+        modifiersClassNames={{
+          available:
+            'bg-accent/40 rounded-full transition duration-200 ease-out hover:scale-105 hover:ring-1 hover:ring-neutral-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400',
+          disabled: 'opacity-30 pointer-events-none',
+        }}
         onMonthChange={handleMonthChange}
+        onDayClick={(_, __, event) => {
+          event.stopPropagation()
+        }}
         components={{ Caption: CustomCaption }}
-        className="w-full"
+        className="mx-auto w-[320px] max-w-full"
       />
       {isLoadingDays && (
         <div className="absolute inset-0 z-10 flex flex-col items-center justify-center rounded-2xl bg-white/80 backdrop-blur-sm">
