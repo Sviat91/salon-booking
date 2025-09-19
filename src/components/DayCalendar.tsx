@@ -125,8 +125,9 @@ export default function DayCalendar({ procedureId, onChange }: { procedureId?: s
     extendWindowIfNeeded(normalized)
   }
 
-  const CustomCaption = ({ calendarMonth, displayMonth }: { calendarMonth?: Date; displayMonth?: Date }) => {
-    const targetMonth = calendarMonth ?? displayMonth ?? today
+  const CustomCaption = (props: any) => {
+    const month: Date = (props?.calendarMonth ?? props?.displayMonth) as Date
+    const targetMonth = month ?? today
     const rawLabel = targetMonth.toLocaleDateString('pl-PL', { month: 'long', year: 'numeric' })
     const label = rawLabel
       ? `${rawLabel.charAt(0).toLocaleUpperCase('pl-PL')}${rawLabel.slice(1)}`
@@ -229,7 +230,8 @@ export default function DayCalendar({ procedureId, onChange }: { procedureId?: s
           table: 'w-full border-collapse',
         }}
         onMonthChange={handleMonthChange}
-        components={{ Caption: CustomCaption }}
+        // совместимо с v9/v10, глушим несовпадение тайпов:
+        components={{ Caption: CustomCaption } as any}
         className="w-full"
       />
       {isLoadingDays && (
