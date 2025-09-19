@@ -1,6 +1,6 @@
 "use client"
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { DayPicker, type CaptionProps } from 'react-day-picker'
+import { DayPicker } from 'react-day-picker'
 import { pl } from 'date-fns/locale'
 import 'react-day-picker/dist/style.css'
 import { useQuery } from '@tanstack/react-query'
@@ -125,8 +125,9 @@ export default function DayCalendar({ procedureId, onChange }: { procedureId?: s
     extendWindowIfNeeded(normalized)
   }
 
-  const CustomCaption = ({ displayMonth }: CaptionProps) => {
-    const rawLabel = displayMonth.toLocaleDateString('pl-PL', { month: 'long', year: 'numeric' })
+  const CustomCaption = ({ calendarMonth, displayMonth }: { calendarMonth?: Date; displayMonth?: Date }) => {
+    const targetMonth = calendarMonth ?? displayMonth ?? today
+    const rawLabel = targetMonth.toLocaleDateString('pl-PL', { month: 'long', year: 'numeric' })
     const label = rawLabel
       ? `${rawLabel.charAt(0).toLocaleUpperCase('pl-PL')}${rawLabel.slice(1)}`
       : rawLabel
@@ -143,8 +144,8 @@ export default function DayCalendar({ procedureId, onChange }: { procedureId?: s
       return () => cancelAnimationFrame(id)
     }, [label])
 
-    const prevMonth = new Date(displayMonth.getFullYear(), displayMonth.getMonth() - 1, 1)
-    const nextMonthValue = new Date(displayMonth.getFullYear(), displayMonth.getMonth() + 1, 1)
+    const prevMonth = new Date(targetMonth.getFullYear(), targetMonth.getMonth() - 1, 1)
+    const nextMonthValue = new Date(targetMonth.getFullYear(), targetMonth.getMonth() + 1, 1)
     const minMonth = new Date(today.getFullYear(), today.getMonth(), 1)
     const isPrevDisabled = prevMonth < minMonth
 
