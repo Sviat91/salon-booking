@@ -39,7 +39,7 @@ export default function ProcedureSelect({ valueId, onChange }: { valueId?: strin
 
   return (
     <div className="relative -m-4 p-4" onClick={handleCardClick}>
-      <label className="block text-sm text-muted">Service</label>
+      <label className="block text-sm text-muted">Usługa</label>
       <button
         type="button"
         onClick={() => setOpen(o => !o)}
@@ -50,7 +50,7 @@ export default function ProcedureSelect({ valueId, onChange }: { valueId?: strin
             {selected.name_pl} - {selected.duration_min} min
           </span>
         ) : (
-          <span className="text-muted">{isLoading ? 'Loading...' : 'Choose a service'}</span>
+          <span className="text-muted">{isLoading ? 'Ładowanie…' : 'Wybierz usługę'}</span>
         )}
         <span
           className={`absolute right-3 top-1/2 -translate-y-1/2 transition-transform ${open ? 'rotate-180' : ''}`}
