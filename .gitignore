@@ -26,6 +26,7 @@ pnpm-debug.log*
 .DS_Store
 .idea/
 .vscode/
+.cursorrules
 
 # Local-only docs
 PLAN.MD

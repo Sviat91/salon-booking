@@ -6,9 +6,16 @@ const SCOPES = [
   'https://www.googleapis.com/auth/spreadsheets.readonly',
 ]
 
-let cached: ReturnType<typeof getClients> | null = null
+// Define the type explicitly to break the circular dependency.
+export type GoogleClients = {
+  auth: import('google-auth-library').JWT
+  calendar: import('googleapis').calendar_v3.Calendar
+  sheets: import('googleapis').sheets_v4.Sheets
+}
 
-export function getClients() {
+let cached: GoogleClients | null = null
+
+export function getClients(): GoogleClients {
   if (cached) return cached
 
   const jwt = new google.auth.JWT({
@@ -22,6 +29,4 @@ export function getClients() {
   cached = { auth: jwt, calendar, sheets }
   return cached
 }
-
-export type GoogleClients = ReturnType<typeof getClients>
 

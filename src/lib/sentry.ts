@@ -1,5 +1,5 @@
 import * as Sentry from '@sentry/nextjs'
-import type { SeverityLevel } from '@sentry/types'
+import type { SeverityLevel } from '@sentry/nextjs'
 import { config } from './env'
 
 const sentryEnabled = Boolean(config.SENTRY_DSN)
