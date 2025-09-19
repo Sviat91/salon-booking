@@ -1,5 +1,6 @@
 const defaultPrivateKey = '-----BEGIN PRIVATE KEY-----\nTESTKEY\n-----END PRIVATE KEY-----\n'
 
+// @ts-expect-error - NODE_ENV is read-only, but we need to set it for tests
 process.env.NODE_ENV = process.env.NODE_ENV || 'test'
 process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON =
   process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON ||

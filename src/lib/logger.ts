@@ -1,4 +1,4 @@
-import pino, { type Binding, type Logger, type LoggerOptions } from 'pino'
+import pino, { type Bindings, type Logger, type LoggerOptions } from 'pino'
 import { config } from './env'
 
 const level = process.env.LOG_LEVEL ?? (config.NODE_ENV === 'development' ? 'debug' : 'info')
@@ -14,7 +14,7 @@ const rootLogger: Logger = pino(options)
 
 export type AppLogger = Logger
 
-export function getLogger(bindings?: Binding): AppLogger {
+export function getLogger(bindings?: Bindings): AppLogger {
   return bindings ? rootLogger.child(bindings) : rootLogger
 }
 
