@@ -19,12 +19,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Загружаем приватный ключ в ssh-agent
-      - name: Start ssh-agent
-        uses: webfactory/ssh-agent@v0.9.0
-        with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+      # 1) Поднимаем ssh-agent и добавляем ключ из секрета (чистим CR)
+      - name: Add SSH key
+        run: |
+          mkdir -p ~/.ssh
+          printf "%s" "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_actions
+          sed -i 's/\r$//' ~/.ssh/id_actions
+          chmod 600 ~/.ssh/id_actions
+          eval "$(ssh-agent -s)"
+          ssh-add ~/.ssh/id_actions
+          ssh -o StrictHostKeyChecking=no -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" "echo ok-ssh"
 
+      # 2) Готовим сервер (папка, pm2)
       - name: Prepare server
         run: |
           ssh -o StrictHostKeyChecking=no -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" "
@@ -33,6 +39,7 @@ jobs:
             command -v pm2 >/dev/null 2>&1 || npm i -g pm2
           "
 
+      # 3) Rsync кода с исключениями
       - name: Rsync files
         run: |
           rsync -az --delete \
@@ -42,6 +49,7 @@ jobs:
             --exclude '.env' --exclude '.env.*' \
             ./ "$SSH_USER@$SSH_HOST:$APP_DIR/"
 
+      # 4) Build + PM2 restart на сервере
       - name: Build & restart
         run: |
           ssh -o StrictHostKeyChecking=no -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" "
