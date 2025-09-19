@@ -5,50 +5,52 @@ on:
 permissions: { contents: read }
 concurrency: { group: deploy-prod, cancel-in-progress: true }
 
+env:
+  SSH_HOST: ${{ secrets.SERVER_HOST }}
+  SSH_USER: ${{ secrets.SERVER_USER }}
+  SSH_PORT: ${{ secrets.SERVER_PORT || 22 }}
+  APP_DIR: /var/www/somique.beauty
+  PM2_NAME: somique
+  APP_PORT: 3011
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      # подготовить сервер (pm2 и папку)
+      # Загружаем приватный ключ в ssh-agent
+      - name: Start ssh-agent
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
       - name: Prepare server
-        uses: appleboy/ssh-action@v1.2.0
-        with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: ${{ secrets.SERVER_PORT || 22 }}
-          script: |
+        run: |
+          ssh -o StrictHostKeyChecking=no -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" "
             set -e
-            mkdir -p /var/www/somique.beauty
+            mkdir -p '$APP_DIR'
             command -v pm2 >/dev/null 2>&1 || npm i -g pm2
+          "
 
-      # синхронизация файлов по rsync с исключениями
       - name: Rsync files
-        uses: easingthemes/ssh-deploy@v5.0.3
-        env:
-          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-          REMOTE_HOST: ${{ secrets.SERVER_HOST }}
-          REMOTE_USER: ${{ secrets.SERVER_USER }}
-          REMOTE_PORT: ${{ secrets.SERVER_PORT || 22 }}
-          SOURCE: "./"
-          TARGET: "/var/www/somique.beauty"
-          EXCLUDE: ".git*,.github*,node_modules/*,.next/*,.env,.env.*"
-          ARGS: "-rlgoDzvc --delete"
+        run: |
+          rsync -az --delete \
+            -e "ssh -p $SSH_PORT -o StrictHostKeyChecking=no" \
+            --exclude '.git*' --exclude '.github*' \
+            --exclude 'node_modules/' --exclude '.next/' \
+            --exclude '.env' --exclude '.env.*' \
+            ./ "$SSH_USER@$SSH_HOST:$APP_DIR/"
 
-      # установка, билд и рестарт PM2 (порт 3011)
-      - name: Build & restart on server
-        uses: appleboy/ssh-action@v1.2.0
-        with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: ${{ secrets.SERVER_PORT || 22 }}
-          script: |
+      - name: Build & restart
+        run: |
+          ssh -o StrictHostKeyChecking=no -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" "
             set -e
-            cd /var/www/somique.beauty
+            cd '$APP_DIR'
             npm ci || npm install
             TSC_COMPILE_ON_ERROR=1 npm run build
-            pm2 describe somique >/dev/null 2>&1 && pm2 reload somique || PORT=3011 NODE_ENV=production pm2 start npm --name somique -- start -- -p 3011
+            pm2 describe '$PM2_NAME' >/dev/null 2>&1 \
+              && pm2 reload '$PM2_NAME' \
+              || PORT=$APP_PORT NODE_ENV=production pm2 start npm --name '$PM2_NAME' -- start -- -p $APP_PORT
             pm2 save
+          "
