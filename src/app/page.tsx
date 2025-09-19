@@ -18,7 +18,7 @@ export default function Page() {
       <div className="absolute left-4 top-4 z-10">
         <Image
           src="/head_logo.png"
-          alt="Somique beauty logo"
+          alt="Logo Somique Beauty"
           width={242}  // +~10%
           height={97}
           className="h-auto"
@@ -41,7 +41,7 @@ export default function Page() {
           </Card>
           <div className="lg:pl-2">
             <div className="space-y-4 lg:max-w-sm">
-              <Card title="Service" className="lg:max-w-sm">
+              <Card title="Usługa" className="lg:max-w-sm">
                 <ProcedureSelect
                   onChange={(p) => {
                     setProcId(p?.id)
@@ -51,7 +51,7 @@ export default function Page() {
                 />
               </Card>
               {selectedSlot && (
-                <Card title="Booking" className="lg:max-w-sm">
+                <Card title="Rezerwacja" className="lg:max-w-sm">
                   <BookingForm slot={selectedSlot} procedureId={procId} />
                 </Card>
               )}

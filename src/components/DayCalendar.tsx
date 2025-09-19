@@ -1,6 +1,7 @@
 "use client"
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { DayPicker, type CaptionProps } from 'react-day-picker'
+import { pl } from 'date-fns/locale'
 import 'react-day-picker/dist/style.css'
 import { useQuery } from '@tanstack/react-query'
 
@@ -125,7 +126,7 @@ export default function DayCalendar({ procedureId, onChange }: { procedureId?: s
   }
 
   const CustomCaption = ({ displayMonth }: CaptionProps) => {
-    const label = displayMonth.toLocaleDateString('ru-RU', { month: 'long', year: 'numeric' })
+    const label = displayMonth.toLocaleDateString('pl-PL', { month: 'long', year: 'numeric' })
     const [stage, setStage] = useState<'enterStart' | 'enterEnd'>('enterEnd')
     const mountedRef = useRef(false)
 
@@ -152,7 +153,7 @@ export default function DayCalendar({ procedureId, onChange }: { procedureId?: s
       <div className="flex items-center justify-between px-2 pb-3">
         <button
           type="button"
-          aria-label="Предыдущий месяц"
+          aria-label="Poprzedni miesiąc"
           onClick={(event) => {
             event.stopPropagation()
             if (!isPrevDisabled) handleMonthChange(prevMonth)
@@ -173,7 +174,7 @@ export default function DayCalendar({ procedureId, onChange }: { procedureId?: s
         </div>
         <button
           type="button"
-          aria-label="Следующий месяц"
+          aria-label="Następny miesiąc"
           onClick={(event) => {
             event.stopPropagation()
             handleMonthChange(nextMonthValue)
@@ -198,6 +199,7 @@ export default function DayCalendar({ procedureId, onChange }: { procedureId?: s
       <DayPicker
         mode="single"
         month={month}
+        locale={pl}
         selected={selected}
         onSelect={(d) => {
           setSelected(d || undefined)
@@ -230,7 +232,7 @@ export default function DayCalendar({ procedureId, onChange }: { procedureId?: s
           onClick={(event) => event.stopPropagation()}
         >
           <div className="h-10 w-10 animate-spin rounded-full border-2 border-neutral-300 border-t-neutral-500" />
-          <p className="mt-3 text-sm font-medium text-neutral-600">Подбираем доступные дни…</p>
+          <p className="mt-3 text-sm font-medium text-neutral-600">Wyszukujemy dostępne dni…</p>
         </div>
       )}
     </div>
