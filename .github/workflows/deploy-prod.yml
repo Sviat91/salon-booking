@@ -1,14 +1,18 @@
 name: Deploy prod
+
 on:
-  push: { branches: [ master ] }
+  push:
+    branches: [ master ]
   workflow_dispatch:
-permissions: { contents: read }
-concurrency: { group: deploy-prod, cancel-in-progress: true }
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-prod
+  cancel-in-progress: true
 
 env:
-  SSH_HOST: ${{ secrets.SERVER_HOST }}
-  SSH_USER: ${{ secrets.SERVER_USER }}
-  SSH_PORT: ${{ secrets.SERVER_PORT || 22 }}
   APP_DIR: /var/www/somique.beauty
   PM2_NAME: somique
   APP_PORT: 3011
@@ -16,43 +20,36 @@ env:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
 
-      # 1) Поднимаем ssh-agent и добавляем ключ из секрета (чистим CR)
-      - name: Add SSH key
-        run: |
-          mkdir -p ~/.ssh
-          printf "%s" "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_actions
-          sed -i 's/\r$//' ~/.ssh/id_actions
-          chmod 600 ~/.ssh/id_actions
-          eval "$(ssh-agent -s)"
-          ssh-add ~/.ssh/id_actions
-          ssh -o StrictHostKeyChecking=no -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" "echo ok-ssh"
+      # тот же подход, что в другом твоём репо
+      - name: Set up SSH
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-      # 2) Готовим сервер (папка, pm2)
       - name: Prepare server
         run: |
-          ssh -o StrictHostKeyChecking=no -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" "
+          ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} "
             set -e
             mkdir -p '$APP_DIR'
             command -v pm2 >/dev/null 2>&1 || npm i -g pm2
           "
 
-      # 3) Rsync кода с исключениями
       - name: Rsync files
         run: |
           rsync -az --delete \
-            -e "ssh -p $SSH_PORT -o StrictHostKeyChecking=no" \
+            -e "ssh -o StrictHostKeyChecking=no" \
             --exclude '.git*' --exclude '.github*' \
             --exclude 'node_modules/' --exclude '.next/' \
             --exclude '.env' --exclude '.env.*' \
-            ./ "$SSH_USER@$SSH_HOST:$APP_DIR/"
+            ./ ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:$APP_DIR/
 
-      # 4) Build + PM2 restart на сервере
-      - name: Build & restart
+      - name: Build & restart on server
         run: |
-          ssh -o StrictHostKeyChecking=no -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" "
+          ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} "
             set -e
             cd '$APP_DIR'
             npm ci || npm install
