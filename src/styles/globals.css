@@ -33,3 +33,36 @@ body {
 .btn-primary { @apply bg-accent text-text hover:opacity-90 dark:bg-accent dark:text-dark-text; }
 .btn-outline { @apply border border-border text-text hover:bg-primary dark:border-dark-border dark:text-dark-text dark:hover:bg-dark-card; }
 
+/* scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* Dark theme scrollbars */
+.dark ::-webkit-scrollbar-track {
+  background: #404040;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #6B4423;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #7A4F35;
+}
+
