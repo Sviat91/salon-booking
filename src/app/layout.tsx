@@ -8,12 +8,13 @@ const inter = Inter({ subsets: ['latin'] })
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
 const metadataTitle = 'Somique Beauty'
-const metadataDescription = 'Szybka rezerwacja wizyty.'
+const metadataDescription = 'Zarezerwuj wizytę w Somique Beauty. Szybka i wygodna rezerwacja online.'
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: metadataTitle,
   description: metadataDescription,
+  keywords: ['masaż twarzy', 'beauty', 'kosmetologia', 'rezerwacja online', 'somique beauty', 'spa', 'relaks'],
   icons: {
     icon: '/logo.png',
     shortcut: '/logo.png',
@@ -21,16 +22,31 @@ export const metadata: Metadata = {
   },
   openGraph: {
     type: 'website',
+    siteName: 'Somique Beauty',
     url: '/',
     title: metadataTitle,
     description: metadataDescription,
-    images: [{ url: '/prev.png' }],
+    locale: 'pl_PL',
+    images: [
+      {
+        url: '/prev.png',
+        width: 1200,
+        height: 630,
+        alt: 'Somique Beauty',
+        type: 'image/png',
+      }
+    ],
   },
   twitter: {
     card: 'summary_large_image',
     title: metadataTitle,
     description: metadataDescription,
-    images: ['/prev.png'],
+    images: [
+      {
+        url: '/prev.png',
+        alt: 'Somique Beauty',
+      }
+    ],
   },
 }
 
