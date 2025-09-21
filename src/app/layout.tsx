@@ -6,7 +6,7 @@ import Providers from './providers'
 
 const inter = Inter({ subsets: ['latin'] })
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://somique.beauty'
 const metadataTitle = 'Somique Beauty'
 const metadataDescription = 'Zarezerwuj wizytę w Somique Beauty. Szybka i wygodna rezerwacja online.'
 
