@@ -202,38 +202,40 @@ export default function DayCalendar({ procedureId, onChange }: { procedureId?: s
   }
 
   return (
-    <div className="relative" onClick={handleContainerClick}>
-      <DayPicker
-        mode="single"
-        month={month}
-        locale={pl}
-        selected={selected}
-        onSelect={(d) => {
-          setSelected(d || undefined)
-          onChange?.(d || undefined)
-        }}
-        onDayClick={(_, __, event) => {
-          event.stopPropagation()
-        }}
-        fromDate={today}
-        toDate={rangeUntil}
-        disabled={isDisabled}
-        modifiers={{ available }}
+    <div className="relative overflow-visible" onClick={handleContainerClick}>
+      <div className="p-4 -m-4 overflow-visible">
+        <DayPicker
+          mode="single"
+          month={month}
+          locale={pl}
+          selected={selected}
+          onSelect={(d) => {
+            setSelected(d || undefined)
+            onChange?.(d || undefined)
+          }}
+          onDayClick={(_, __, event) => {
+            event.stopPropagation()
+          }}
+          fromDate={today}
+          toDate={rangeUntil}
+          disabled={isDisabled}
+          modifiers={{ available }}
         modifiersClassNames={{
           available:
-            'bg-accent/40 rounded-full transition duration-200 hover:scale-105 hover:ring-2 hover:ring-accent/50 focus-visible:ring-2 focus-visible:ring-accent/60',
+            'bg-accent/40 rounded-full transition duration-200 hover:scale-103 hover:bg-accent/60 hover:shadow-lg focus-visible:ring-2 focus-visible:ring-accent/60',
           disabled: 'opacity-30 pointer-events-none',
         }}
-        classNames={{
-          day: 'h-10 w-10 rounded-full transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60',
-          month: 'space-y-2',
-          table: 'w-full border-collapse',
-        }}
-        onMonthChange={handleMonthChange}
-        // совместимо с v9/v10, глушим несовпадение тайпов:
-        components={{ Caption: CustomCaption } as any}
-        className="w-full"
-      />
+          classNames={{
+            day: 'h-10 w-10 rounded-full transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60',
+            month: 'space-y-2',
+            table: 'w-full border-collapse',
+          }}
+          onMonthChange={handleMonthChange}
+          // совместимо с v9/v10, глушим несовпадение тайпов:
+          components={{ Caption: CustomCaption } as any}
+          className="w-full"
+        />
+      </div>
       {isLoadingDays && (
         <div
           className="absolute inset-0 z-10 flex flex-col items-center justify-center rounded-2xl bg-white/80 backdrop-blur-sm"
