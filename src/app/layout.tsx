@@ -7,8 +7,8 @@ import Providers from './providers'
 const inter = Inter({ subsets: ['latin'] })
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
-const metadataTitle = 'Facemassage — Rezerwacja'
-const metadataDescription = 'Szybka rezerwacja wizyty. 90 dni do przodu.'
+const metadataTitle = 'Somique Beauty'
+const metadataDescription = 'Szybka rezerwacja wizyty.'
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
