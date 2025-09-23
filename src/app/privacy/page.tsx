@@ -39,7 +39,7 @@ export default function PrivacyPage() {
                   <p><strong>KOSMETOLOGIA I MASAŻ YULIIA YAKOVENKO</strong></p>
                   <p>NIP: 9512580063</p>
                   <p>Adres: Herbu Janina 3a/40, 02-972 Warszawa</p>
-                  <p>Telefon: +48 789 894 948</p>
+                  <p>Email: facemassageyakovenko@gmail.com</p>
                 </div>
               </div>
             </section>
@@ -141,7 +141,7 @@ export default function PrivacyPage() {
               <div className="bg-neutral-50 dark:bg-dark-border/30 rounded-lg p-6">
                 <div className="space-y-2 text-neutral-700 dark:text-dark-text">
                   <p><strong>Poprzez stronę wsparcia:</strong> <Link href="/support" className="text-primary hover:text-primary/80 dark:text-accent dark:hover:text-accent/80">Centrum pomocy</Link></p>
-                  <p><strong>Telefonicznie:</strong> +48 789 894 948</p>
+                  <p><strong>E-mailem:</strong> facemassageyakovenko@gmail.com</p>
                   <p><strong>Pisemnie:</strong> Herbu Janina 3a/40, 02-972 Warszawa</p>
                 </div>
                 <p className="text-sm text-neutral-600 dark:text-dark-muted mt-4">

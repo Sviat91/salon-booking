@@ -26,7 +26,7 @@ export default function TermsPage() {
             <section className="mb-8">
               <h2 className="text-xl font-semibold text-text dark:text-dark-text mb-4">§ 1. POSTANOWIENIA OGÓLNE</h2>
               <p className="text-neutral-700 dark:text-dark-text mb-4">
-                Niniejszy regulamin określa zasady korzystania z usług świadczonych przez <strong>KOSMETOLOGIA I MASAŻ YULIIA YAKOVENKO</strong>, NIP: 9512580063, z siedzibą przy ul. Herbu Janina 3a/40, 02-972 Warszawa, tel. +48 789 894 948.
+                Niniejszy regulamin określa zasady korzystania z usług świadczonych przez <strong>KOSMETOLOGIA I MASAŻ YULIIA YAKOVENKO</strong>, NIP: 9512580063, z siedzibą przy ul. Herbu Janina 3a/40, 02-972 Warszawa, Email: facemassageyakovenko@gmail.com. 
               </p>
               <p className="text-neutral-700 dark:text-dark-text mb-4">
                 Regulamin stanowi integralną część umowy o świadczenie usług zawartej między Usługodawcą a Klientem.
@@ -124,7 +124,7 @@ export default function TermsPage() {
                 <h3 className="font-medium text-text dark:text-dark-text mb-3">KOSMETOLOGIA I MASAŻ YULIIA YAKOVENKO</h3>
                 <div className="space-y-2 text-neutral-700 dark:text-dark-text">
                   <p><strong>Adres:</strong> Herbu Janina 3a/40, 02-972 Warszawa</p>
-                  <p><strong>Telefon:</strong> +48 789 894 948</p>
+                  <p><strong>Email:</strong> facemassageyakovenko@gmail.com</p>
                   <p><strong>NIP:</strong> 9512580063</p>
                   <p><strong>Strona wsparcia:</strong> <Link href="/support" className="text-primary hover:text-primary/80 dark:text-accent dark:hover:text-accent/80">Centrum pomocy</Link></p>
                 </div>
