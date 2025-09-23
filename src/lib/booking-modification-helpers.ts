@@ -1,6 +1,5 @@
 import { getClients } from './google/auth'
-import { parseBookingData } from './google/calendar'
-import { freeBusy } from './availability'
+import { parseBookingData, freeBusy } from './google/calendar'
 import { readProcedures } from './google/sheets'
 import { verifyBookingAccess, canModifyBooking, BookingErrors, type UserAccessCriteria } from './booking-helpers'
 import { config } from './env'

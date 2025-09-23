@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
-import { validateTurnstileForAPI } from '../../../../../../lib/turnstile'
-import { getClients } from '../../../../../../lib/google/auth'
-import { parseBookingData } from '../../../../../../lib/google/calendar'
+import { validateTurnstileForAPI } from '../../../../../lib/turnstile'
+import { getClients } from '../../../../../lib/google/auth'
+import { parseBookingData } from '../../../../../lib/google/calendar'
 import { 
   verifyBookingAccess, 
   canModifyBooking, 
@@ -10,11 +10,11 @@ import {
   getProcedureDuration,
   BookingErrors,
   type UserAccessCriteria 
-} from '../../../../../../lib/booking-helpers'
-import { readProcedures } from '../../../../../../lib/google/sheets'
-import { config } from '../../../../../../lib/env'
-import { getLogger } from '../../../../../../lib/logger'
-import { reportError } from '../../../../../../lib/sentry'
+} from '../../../../../lib/booking-helpers'
+import { readProcedures } from '../../../../../lib/google/sheets'
+import { config } from '../../../../../lib/env'
+import { getLogger } from '../../../../../lib/logger'
+import { reportError } from '../../../../../lib/sentry'
 
 export const runtime = 'nodejs'
 
@@ -68,7 +68,7 @@ export async function POST(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  let body: z.infer<typeof AvailabilityQuerySchema> | null = null
+  let body: z.infer<typeof AvailabilityQuerySchema>
   let ip = '0.0.0.0'
 
   try {
