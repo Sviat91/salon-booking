@@ -1,6 +1,7 @@
 "use client"
 import { useQuery } from '@tanstack/react-query'
 import { useEffect, useMemo, useRef, useState } from 'react'
+import Link from 'next/link'
 import PhoneInput from './ui/PhoneInput'
 
 export type Slot = { startISO: string; endISO: string }
@@ -26,6 +27,13 @@ export default function BookingForm({
   const [ok, setOk] = useState(false)
   const [, setEventId] = useState<string | null>(null)
   const [tsToken, setTsToken] = useState<string | null>(null)
+  
+  // ConsentModal states
+  type BookingState = 'form' | 'consent' | 'success'
+  const [bookingState, setBookingState] = useState<BookingState>('form')
+  const [dataProcessingConsent, setDataProcessingConsent] = useState(false)
+  const [termsConsent, setTermsConsent] = useState(false)
+  const [notificationsConsent, setNotificationsConsent] = useState(false)
   const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY as string | undefined
   const tsRef = useRef<HTMLDivElement | null>(null)
 
@@ -90,14 +98,44 @@ export default function BookingForm({
   )
   const terminLabel = `${fullDateFormatter.format(startDate)}, ${label}`
 
-  async function submit() {
+  // Show consent modal when user clicks "Zarezerwuj"
+  function showConsentModal() {
     if (!canSubmit) return
-    setLoading(true); setErr(null)
+    setErr(null)
+    setBookingState('consent')
+    
+    // Hide Turnstile widget if visible
+    if (tsRef.current) {
+      tsRef.current.style.display = 'none'
+    }
+  }
+
+  // Final booking after consent is given
+  async function finalizeBooking() {
+    if (!dataProcessingConsent || !termsConsent) return
+    
+    setLoading(true)
+    setErr(null)
+    
     try {
       const res = await fetch('/api/book', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ startISO: slot.startISO, endISO: slot.endISO, procedureId, name, phone, email: email || undefined, turnstileToken: tsToken || undefined }),
+        body: JSON.stringify({ 
+          startISO: slot.startISO, 
+          endISO: slot.endISO, 
+          procedureId, 
+          name, 
+          phone, 
+          email: email || undefined, 
+          turnstileToken: tsToken, // Use token from first step
+          // TODO: Add consent data for future backend integration
+          consents: {
+            dataProcessing: dataProcessingConsent,
+            terms: termsConsent,
+            notifications: notificationsConsent
+          }
+        }),
       })
       const body = await res.json()
       if (!res.ok) {
@@ -106,7 +144,7 @@ export default function BookingForm({
         throw new Error(`BOOKING_${code}${details ? `: ${details}` : ''}`)
       }
       setEventId(body.eventId || null)
-      setOk(true)
+      setBookingState('success')
       onSuccess?.()
     } catch (e: any) {
       const msg = String(e?.message || '')
@@ -120,7 +158,8 @@ export default function BookingForm({
     }
   }
 
-  if (ok) {
+  // Success state (either new state or old ok flag)
+  if (bookingState === 'success' || ok) {
     return (
       <div className="transition-all duration-300 ease-out">
         <div className="text-lg font-medium mb-2 dark:text-dark-text">Rezerwacja potwierdzona</div>
@@ -131,9 +170,164 @@ export default function BookingForm({
     )
   }
 
-  return (
-    <div className={"transition-all duration-300 ease-out transform opacity-100 translate-y-0"}>
-      <div className="mb-2 text-sm text-neutral-600 dark:text-dark-muted">Aby zakończyć rezerwację, uzupełnij dane:</div>
+  // Consent modal state
+  if (bookingState === 'consent') {
+    const canConfirm = dataProcessingConsent && termsConsent && !loading
+    
+    return (
+      <div className="transition-all duration-300 ease-out">
+        <div className="text-lg font-medium mb-4 dark:text-dark-text">Przed dokonaniem rezerwacji:</div>
+        
+        {/* Booking summary */}
+        <div className="mb-4 p-3 bg-neutral-50 dark:bg-dark-border/30 rounded-lg">
+          <div className="text-sm text-neutral-600 dark:text-dark-muted">
+            <strong className="text-text dark:text-dark-text">{selectedProcedureName}</strong>
+            <br />
+            {terminLabel}
+          </div>
+        </div>
+
+        {/* Consent checkboxes */}
+        <div className="space-y-4 mb-6">
+          {/* Terms consent */}
+          <label className="flex items-start space-x-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={termsConsent}
+              onChange={(e) => setTermsConsent(e.target.checked)}
+              className="mt-1 h-4 w-4 text-primary focus:ring-primary border-border dark:border-dark-border rounded"
+            />
+            <span className="text-sm text-text dark:text-dark-text leading-5">
+              Przeczytałem/am i akceptuję{' '}
+              <Link 
+                href="/terms" 
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary hover:text-primary/80 dark:text-accent dark:hover:text-accent/80 underline"
+              >
+                Warunki korzystania z usług
+              </Link>
+            </span>
+          </label>
+
+          {/* Data processing consent */}
+          <label className="flex items-start space-x-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={dataProcessingConsent}
+              onChange={(e) => setDataProcessingConsent(e.target.checked)}
+              className="mt-1 h-4 w-4 text-primary focus:ring-primary border-border dark:border-dark-border rounded"
+            />
+            <span className="text-sm text-text dark:text-dark-text leading-5">
+              Wyrażam zgodę na przetwarzanie moich danych osobowych w celu realizacji rezerwacji zgodnie z{' '}
+              <Link 
+                href="/privacy" 
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary hover:text-primary/80 dark:text-accent dark:hover:text-accent/80 underline"
+              >
+                Polityką Prywatności
+              </Link>
+            </span>
+          </label>
+
+          {/* Notifications consent (optional) */}
+          <label className="flex items-start space-x-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={notificationsConsent}
+              onChange={(e) => setNotificationsConsent(e.target.checked)}
+              className="mt-1 h-4 w-4 text-primary focus:ring-primary border-border dark:border-dark-border rounded"
+            />
+            <span className="text-sm text-text dark:text-dark-text leading-5">
+              Wyrażam zgodę na otrzymywanie powiadomień SMS/e-mail o zbliżających się wizytach{' '}
+              <span className="text-neutral-500 dark:text-dark-muted">(opcjonalnie)</span>
+            </span>
+          </label>
+        </div>
+
+        {/* Info about withdrawal */}
+        <div style={{
+          backgroundColor: document.documentElement.classList.contains('dark') ? 'rgba(30, 58, 138, 0.3)' : '#eff6ff',
+          border: document.documentElement.classList.contains('dark') ? '1px solid rgba(59, 130, 246, 0.7)' : '1px solid #bfdbfe',
+          borderRadius: '8px',
+          padding: '16px',
+          marginBottom: '16px',
+          display: 'flex',
+          alignItems: 'flex-start',
+          gap: '12px'
+        }}>
+          <span style={{
+            color: document.documentElement.classList.contains('dark') ? '#93c5fd' : '#2563eb',
+            fontSize: '14px',
+            marginTop: '2px',
+            flexShrink: 0
+          }}>ⓘ</span>
+          <p style={{
+            color: document.documentElement.classList.contains('dark') ? '#dbeafe' : '#1e40af',
+            fontSize: '14px',
+            lineHeight: '1.5',
+            margin: 0
+          }}>
+            Zgoda może być wycofana w każdym momencie poprzez naszą{' '}
+            <Link 
+              href="/support" 
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                color: document.documentElement.classList.contains('dark') ? '#bfdbfe' : '#1d4ed8',
+                textDecoration: 'underline',
+                fontWeight: '500'
+              }}
+            >
+              stronę wsparcia
+            </Link>
+          </p>
+        </div>
+
+        {/* Error message */}
+        {err && <div className="mb-4 text-sm text-red-600 dark:text-red-400">{err}</div>}
+
+        {/* Action buttons */}
+        <div className="flex space-x-3">
+          <button
+            onClick={() => {
+              // Minimal reset to prevent flickering but keep consent data
+              setBookingState('form')
+              setErr(null)
+              setLoading(false)
+              // DON'T reset consent states - keep them for potential re-use
+              // Clear form data to prevent conflicts  
+              setName('')
+              setPhone('')
+              setEmail('')
+              // Restore Turnstile widget
+              if (tsRef.current) {
+                tsRef.current.style.display = ''
+              }
+            }}
+            className="btn btn-outline flex-1"
+            disabled={loading}
+          >
+            Powrót
+          </button>
+          <button
+            onClick={finalizeBooking}
+            disabled={!canConfirm}
+            className={`btn btn-primary flex-1 ${!canConfirm ? 'opacity-60 pointer-events-none' : ''}`}
+          >
+            {loading ? 'Rezerwowanie…' : 'Potwierdź i zarezerwuj'}
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  // Form state (default)
+  if (bookingState === 'form' || !bookingState) {
+    return (
+      <div className={"transition-all duration-300 ease-out transform opacity-100 translate-y-0"}>
+        <div className="mb-2 text-sm text-neutral-600 dark:text-dark-muted">Aby zakończyć rezerwację, uzupełnij dane:</div>
       <div className="mb-3 text-[15px] dark:text-dark-text"><span className="font-medium">Wybrany czas:</span> {label}</div>
       <div className="space-y-3">
         <input className="w-full rounded-xl border border-border bg-white/80 px-3 py-2 dark:bg-dark-card/80 dark:border-dark-border dark:text-dark-text dark:placeholder-dark-muted" placeholder="Imię i nazwisko" value={name} onChange={e => setName(e.target.value)} />
@@ -151,9 +345,13 @@ export default function BookingForm({
         </div>
       )}
         {err && <div className="mt-3 text-sm text-red-600 dark:text-red-400">{err}</div>}
-        <button disabled={!canSubmit} onClick={submit} className={`btn btn-primary mt-4 w-full ${!canSubmit ? 'opacity-60 pointer-events-none' : ''}`}>
-          {loading ? 'Wysyłanie…' : 'Zarezerwuj'}
+        <button disabled={!canSubmit} onClick={showConsentModal} className={`btn btn-primary mt-4 w-full ${!canSubmit ? 'opacity-60 pointer-events-none' : ''}`}>
+          Zarezerwuj
         </button>
-    </div>
-  )
+      </div>
+    )
+  }
+  
+  // Fallback (should not happen)
+  return <div>Unknown state: {bookingState}</div>
 }
