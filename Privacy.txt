@@ -1,0 +1,162 @@
+POLITYKA PRYWATNOŚCI
+KOSMETOLOGIA I MASAŻ YULIIA YAKOVENKO
+
+Zgodnie z art. 13 ust. 1 i ust. 2 Ogólnego Rozporządzenia o Ochronie Danych Osobowych (GDPR) z dnia 27 kwietnia 2016 r. informujemy:
+
+§ 1. ADMINISTRATOR DANYCH
+Administratorem Państwa danych osobowych jest:
+
+KOSMETOLOGIA I MASAŻ YULIIA YAKOVENKO
+
+NIP: 9512580063
+
+Adres: Herbu Janina 3a/40, 02-972 Warszawa
+
+Telefon: +48 789 894 948
+
+Email: [dodaj email kontaktowy]
+
+§ 2. ZAKRES PRZETWARZANYCH DANYCH
+W ramach rezerwacji zabiegów przetwarzamy następujące dane osobowe:
+
+Imię i nazwisko
+
+Numer telefonu
+
+Adres e-mail (jeśli podany)
+
+Data i godzina zabiegu
+
+Rodzaj wybranej usługi
+
+Adres IP (automatycznie przy korzystaniu ze strony)
+
+Informacje o udzielonych zgodach (data, wersja dokumentów, status zgód)
+
+§ 3. CELE I PODSTAWA PRAWNA PRZETWARZANIA
+Główny cel przetwarzania: Organizacja i realizacja rezerwacji zabiegów kosmetycznych i masażu
+
+Podstawa prawna: Art. 6 ust. 1 lit. b) GDPR - przetwarzanie niezbędne do wykonania umowy świadczenia usług
+
+Dodatkowe cele:
+
+Zarządzanie zgodami na przetwarzanie danych (podstawa: art. 6 ust. 1 lit. c) GDPR - obowiązek prawny)
+
+Powiadomienia wewnętrzne o rezerwacjach (podstawa: art. 6 ust. 1 lit. f) GDPR - prawnie uzasadniony interes)
+
+Przyszłe powiadomienia SMS/e-mail o zbliżających się wizytach (na podstawie zgody - art. 6 ust. 1 lit. a) GDPR)
+
+§ 4. ODBIORCY DANYCH
+Państwa dane mogą być przekazywane następującym podmiotom:
+
+Google LLC (Google Calendar) - przechowywanie kalendarza rezerwacji
+
+Google LLC (Google Sheets) - rejestrowanie i zarządzanie zgodami na przetwarzanie danych
+
+n8n - automatyzacja powiadomień i przetwarzania formularzy
+
+Telegram - powiadomienia wewnętrzne dla salonu
+
+Baserow - logowanie operacji systemowych
+
+Wszystkie podmioty działają jako powiernik danych i zapewniają odpowiedni poziom ochrony zgodny z GDPR oraz posiadają odpowiednie certyfikacje bezpieczeństwa.
+
+§ 5. CZAS PRZECHOWYWANIA DANYCH
+Dane osobowe przechowujemy:
+
+Dane rezerwacji: do czasu realizacji zabiegu, następnie automatyczne usunięcie z Google Calendar
+
+Dane zgód: do momentu wycofania zgody przez użytkownika lub przez maksymalnie 3 lata od ostatniej aktywności
+
+Logi systemowe: maksymalnie 12 miesięcy
+
+W przypadku anulowania rezerwacji - dane usuwane niezwłocznie
+
+§ 6. ZARZĄDZANIE ZGODAMI
+Rejestrowanie zgód: Informacje o udzielonych zgodach przechowujemy w Google Sheets w celu:
+
+Unikania wielokrotnego wyświetlania formularza zgody stałym klientom
+
+Dokumentowania podstawy prawnej przetwarzania zgodnie z wymogami GDPR
+
+Zarządzania procesem wycofania zgód
+
+Zapewnienia compliance z wymogami transparentności
+
+Zakres rejestrowanych informacji o zgodach:
+
+Numer telefonu (w formie zahashowanej dla ochrony prywatności)
+
+Data i dokładny czas udzielenia zgody
+
+Wersja akceptowanych dokumentów (Polityka Prywatności, Warunki Korzystania)
+
+Informacja o ewentualnym wycofaniu zgody i jego dacie
+
+Adres IP (częściowo zamaskowany) w momencie udzielenia zgody
+
+Aktualizacja zgód: Po istotnej zmianie Polityki Prywatności lub Warunków Korzystania, system automatycznie wyświetli formularz zgody z zaktualizowanymi dokumentami wszystkim użytkownikom.
+
+Bezpieczeństwo danych zgód: Dane zgód są chronione tym samym poziomem zabezpieczeń co inne dane osobowe zgodnie z polityką bezpieczeństwa Google oraz dodatkowymi środkami kontroli dostępu.
+
+§ 7. PRAWA OSOBY, KTÓREJ DANE DOTYCZĄ
+Przysługują Państwu następujące prawa:
+
+Prawo dostępu do swoich danych osobowych (art. 15 GDPR)
+
+Prawo do sprostowania danych (art. 16 GDPR)
+
+Prawo do usunięcia danych (art. 17 GDPR)
+
+Prawo do ograniczenia przetwarzania (art. 18 GDPR)
+
+Prawo do przenoszenia danych (art. 20 GDPR)
+
+Prawo sprzeciwu wobec przetwarzania (art. 21 GDPR)
+
+Prawo do cofnięcia zgody w dowolnym momencie
+
+Aby skorzystać z powyższych praw, prosimy o kontakt poprzez naszą stronę wsparcia lub bezpośrednio pod podanymi kontaktami.
+
+§ 8. PRAWO DO SKARGI
+W przypadku naruszenia przepisów o ochronie danych osobowych, przysługuje Państwu prawo wniesienia skargi do organu nadzorczego:
+
+Urząd Ochrony Danych Osobowych
+
+ul. Stawki 2, 00-193 Warszawa
+
+Tel.: +48 22 531 03 00
+
+E-mail: kancelaria@uodo.gov.pl
+
+§ 9. DOBROWOLNOŚĆ PODANIA DANYCH
+Podanie danych osobowych jest dobrowolne, ale niezbędne do realizacji rezerwacji zabiegu. Niepodanie wymaganych danych uniemożliwi świadczenie usługi. Zgoda na dodatkowe powiadomienia jest całkowicie opcjonalna.
+
+§ 10. BEZPIECZEŃSTWO DANYCH
+Stosujemy odpowiednie środki techniczne i organizacyjne zapewniające bezpieczeństwo przetwarzanych danych osobowych, w tym:
+
+Szyfrowanie danych w tranzycie i spoczynku
+
+Kontrola dostępu i autoryzacja
+
+Regularne audyty bezpieczeństwa
+
+Pseudonimizacja danych wrażliwych
+
+Ochrona przed nieuprawnionym dostępem, utratą, zniszczeniem lub uszkodzeniem
+
+§ 11. ZAUTOMATYZOWANE PODEJMOWANIE DECYZJI
+Nie stosujemy zautomatyzowanego podejmowania decyzji ani profilowania, które mogłyby wywrzeć skutki prawne lub w podobny sposób znacząco wpłynąć na osobę fizyczną.
+
+§ 12. KONTAKT W SPRAWACH OCHRONY DANYCH
+W sprawach dotyczących ochrony danych osobowych można kontaktować się:
+
+Poprzez stronę wsparcia: [link do support page]
+
+Telefonicznie: +48 789 894 948
+
+E-mailem: [dodaj email kontaktowy]
+
+Pisemnie: Herbu Janina 3a/40, 02-972 Warszawa
+
+Data ostatniej aktualizacji: 23 września 2025 r.
