@@ -73,7 +73,7 @@ export default function Page() {
     }
   }, [selectedSlot, userScrolled])
   return (
-    <main className="min-h-screen p-6 relative">
+    <main className="p-6 relative flex-1 flex flex-col justify-center">
       <ThemeToggle />
       {/* фиксированный логотип в левом верхнем углу - скрыт на мобильных */}
       <div className="absolute left-4 top-4 z-10 hidden lg:block">
