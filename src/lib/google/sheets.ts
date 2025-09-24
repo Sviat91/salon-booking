@@ -203,10 +203,6 @@ function hashIpPartially(ip: string): string {
  * Save user consent to Google Sheets
  */
 export async function saveUserConsent(consent: Omit<UserConsent, 'consentDate' | 'ipHash'> & { ip: string }): Promise<void> {
-  if (!config.USER_CONSENTS_GOOGLE_SHEET_ID) {
-    throw new Error('USER_CONSENTS_GOOGLE_SHEET_ID environment variable is required for consent functionality')
-  }
-  
   const { sheets } = getClients()
   
   const now = new Date().toISOString()
@@ -251,10 +247,6 @@ function normalizeName(name: string): string {
  * Find existing consent by phone number, name and optionally email for better security
  */
 export async function findUserConsent(phone: string, name: string, email?: string): Promise<UserConsent | null> {
-  if (!config.USER_CONSENTS_GOOGLE_SHEET_ID) {
-    throw new Error('USER_CONSENTS_GOOGLE_SHEET_ID environment variable is required for consent functionality')
-  }
-  
   const { sheets } = getClients()
   
   try {
