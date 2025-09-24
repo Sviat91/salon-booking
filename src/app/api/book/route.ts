@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { freeBusy, createEvent } from '../../../lib/google/calendar'
-import { readProcedures } from '../../../lib/google/sheets'
+import { readProcedures, saveUserConsent } from '../../../lib/google/sheets'
 import { cacheSetNX, cacheDel, rateLimit } from '../../../lib/cache'
 import { verifyTurnstile } from '../../../lib/turnstile'
 import { config } from '../../../lib/env'
@@ -20,6 +20,11 @@ const BodySchema = z.object({
   phone: z.string().min(5),
   email: z.string().email().optional(),
   turnstileToken: z.string().optional(),
+  consents: z.object({
+    dataProcessing: z.boolean(),
+    terms: z.boolean(),
+    notifications: z.boolean(),
+  }).optional(),
 })
 
 export async function POST(req: NextRequest) {
@@ -103,6 +108,28 @@ Utworzono: ${new Date().toLocaleString('pl-PL', { timeZone: 'Europe/Warsaw' })}`
 
     const ev = await createEvent({ startISO: booking.startISO, endISO: booking.endISO, summary, description })
     log.info({ ip, startISO: booking.startISO, endISO: booking.endISO, eventId: ev.id }, 'Booking created successfully')
+
+    // Save user consents if provided
+    if (booking.consents) {
+      try {
+        await saveUserConsent({
+          phone: booking.phone,
+          name: booking.name,
+          ip,
+          consentPrivacyV10: booking.consents.dataProcessing,
+          consentTermsV10: booking.consents.terms,
+          consentNotificationsV10: booking.consents.notifications,
+        })
+        log.info({ ip, phone: booking.phone }, 'User consents saved successfully')
+      } catch (consentError) {
+        // Don't fail the booking if consent saving fails
+        log.warn({ err: consentError, ip, phone: booking.phone }, 'Failed to save user consents')
+        await reportError(consentError, {
+          tags: { module: 'api.book.consents' },
+          extras: { ip, phone: booking.phone, eventId: ev.id },
+        })
+      }
+    }
 
     const res = NextResponse.json({ ok: true, eventId: ev.id })
     res.headers.set('Cache-Control', 'no-store')

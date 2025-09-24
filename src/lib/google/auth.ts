@@ -4,6 +4,7 @@ import { config } from '../env'
 const SCOPES = [
   'https://www.googleapis.com/auth/calendar',
   'https://www.googleapis.com/auth/spreadsheets.readonly',
+  'https://www.googleapis.com/auth/spreadsheets', // For writing consents data
 ]
 
 // Define the type explicitly to break the circular dependency.

@@ -99,14 +99,80 @@ export default function BookingForm({
   const terminLabel = `${fullDateFormatter.format(startDate)}, ${label}`
 
   // Show consent modal when user clicks "Zarezerwuj"
-  function showConsentModal() {
+  async function showConsentModal() {
     if (!canSubmit) return
     setErr(null)
-    setBookingState('consent')
+    setLoading(true)
     
-    // Hide Turnstile widget if visible
-    if (tsRef.current) {
-      tsRef.current.style.display = 'none'
+    try {
+      // Check if user already has valid consents (using phone + name for security)
+      const consentCheckRes = await fetch('/api/consents/check', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone, name }),
+      })
+      
+      if (consentCheckRes.ok) {
+        const consentData = await consentCheckRes.json()
+        if (consentData.skipConsentModal) {
+          // User already has valid consent, proceed directly to booking
+          await finalizeBookingWithoutConsents()
+          return
+        }
+      }
+      
+      // User needs to give consent, show modal
+      setBookingState('consent')
+      
+      // Hide Turnstile widget if visible
+      if (tsRef.current) {
+        tsRef.current.style.display = 'none'
+      }
+    } catch (e: any) {
+      setErr('Nie udało się sprawdzić zgód. Spróbuj ponownie.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Booking when consents already exist (no need to save them again)
+  async function finalizeBookingWithoutConsents() {
+    setLoading(true)
+    setErr(null)
+    
+    try {
+      const res = await fetch('/api/book', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          startISO: slot.startISO, 
+          endISO: slot.endISO, 
+          procedureId, 
+          name, 
+          phone, 
+          email: email || undefined, 
+          turnstileToken: tsToken,
+          // No consents object - user already has valid consents
+        }),
+      })
+      const body = await res.json()
+      if (!res.ok) {
+        const code = (body && body.code) || 'UNKNOWN'
+        const details = (body && body.details) || ''
+        throw new Error(`BOOKING_${code}${details ? `: ${details}` : ''}`)
+      }
+      setEventId(body.eventId || null)
+      setBookingState('success')
+      onSuccess?.()
+    } catch (e: any) {
+      const msg = String(e?.message || '')
+      if (msg.startsWith('BOOKING_TURNSTILE')) setErr('Potwierdź weryfikację Turnstile i spróbuj ponownie.')
+      else if (msg.startsWith('BOOKING_DUPLICATE')) setErr('Już wysłałaś/-eś rezerwację na ten przedział. Odczekaj 5 minut lub wybierz inny termin.')
+      else if (msg.startsWith('BOOKING_CONFLICT')) setErr('Ten termin jest już zajęty. Wybierz inny przedział.')
+      else if (msg.startsWith('BOOKING_RATE_LIMITED')) setErr('Zbyt wiele prób. Spróbuj później.')
+      else setErr('Nie udało się zarezerwować. Wybierz inny termin i spróbuj ponownie.')
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -129,7 +195,6 @@ export default function BookingForm({
           phone, 
           email: email || undefined, 
           turnstileToken: tsToken, // Use token from first step
-          // TODO: Add consent data for future backend integration
           consents: {
             dataProcessing: dataProcessingConsent,
             terms: termsConsent,

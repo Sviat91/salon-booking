@@ -21,6 +21,7 @@ const EnvSchema = z.object({
   GOOGLE_APPLICATION_CREDENTIALS_JSON: z.string(),
   GOOGLE_CALENDAR_ID: z.string(),
   GOOGLE_SHEET_ID: z.string(),
+  USER_CONSENTS_GOOGLE_SHEET_ID: z.string(),
   UPSTASH_REDIS_REST_URL: z.string().url(),
   UPSTASH_REDIS_REST_TOKEN: z.string(),
   TURNSTILE_SITE_KEY: z.string().optional(),

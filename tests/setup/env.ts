@@ -7,6 +7,7 @@ process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON =
   JSON.stringify({ client_email: 'test@example.com', private_key: defaultPrivateKey })
 process.env.GOOGLE_CALENDAR_ID = process.env.GOOGLE_CALENDAR_ID || 'test-calendar'
 process.env.GOOGLE_SHEET_ID = process.env.GOOGLE_SHEET_ID || 'test-sheet'
+process.env.USER_CONSENTS_GOOGLE_SHEET_ID = process.env.USER_CONSENTS_GOOGLE_SHEET_ID || 'test-consents-sheet'
 process.env.UPSTASH_REDIS_REST_URL = process.env.UPSTASH_REDIS_REST_URL || 'https://example.com'
 process.env.UPSTASH_REDIS_REST_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || 'token'
 process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || ''
