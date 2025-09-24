@@ -16,7 +16,7 @@ yarn-error.log*
 pnpm-debug.log*
 
 # Env
-# keep .env tracked for now per request
+.env
 .env.*
 .env.local
 .env.*.local
