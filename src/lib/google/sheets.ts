@@ -1,3 +1,4 @@
+import { createHash } from 'crypto'
 import { config } from '../env'
 import { getClients } from './auth'
 
@@ -171,6 +172,32 @@ export interface UserConsent {
   withdrawalMethod?: string // Column J (empty if not withdrawn)
 }
 
+const PHONE_MASK_SALT = 'gdpr_withdraw_salt_v1'
+
+function maskPhoneHash(phone: string): string {
+  const normalized = phone.replace(/\D/g, '') || 'unknown'
+  return createHash('sha256')
+    .update(PHONE_MASK_SALT)
+    .update(':')
+    .update(normalized)
+    .digest('hex')
+    .slice(0, 16)
+}
+
+function trimToSheetLimit(value: string, max = 500): string {
+  return value.length > max ? `${value.slice(0, max - 3)}...` : value
+}
+
+function maskEmailHash(email: string): string {
+  if (!email) return 'unknown'
+  return createHash('sha256')
+    .update(PHONE_MASK_SALT)
+    .update(':email:')
+    .update(email.trim().toLowerCase())
+    .digest('hex')
+    .slice(0, 16)
+}
+
 /**
  * Hash IP address partially for privacy compliance
  * Shows first 3 octets, masks last octet: 192.168.1.123 → 192.168.1.xxx
@@ -328,4 +355,111 @@ export async function hasValidConsent(phone: string, name: string, email?: strin
   
   // Check if required consents are given (privacy AND terms required)
   return consent.consentPrivacyV10 && consent.consentTermsV10
+}
+
+interface UpdateConsentWithdrawalOptions {
+  phone: string
+  name: string
+  email?: string
+  withdrawalMethod: 'support_form' | 'manual' | string
+  requestId?: string
+}
+
+type WithdrawOutcome = {
+  updated: boolean
+  reason?: 'NOT_FOUND' | 'MULTIPLE_MATCHES'
+  incident?: string
+}
+
+export async function withdrawUserConsent(options: UpdateConsentWithdrawalOptions): Promise<WithdrawOutcome> {
+  const { sheets } = getClients()
+  const { phone, name, email, withdrawalMethod, requestId } = options
+
+  const normalizedPhone = phone.replace(/[^\d+]/g, '')
+  const normalizedName = normalizeName(name)
+  const normalizedEmail = email?.trim().toLowerCase() ?? ''
+
+  const range = 'A:J'
+  const res = await sheets.spreadsheets.values.get({
+    spreadsheetId: config.USER_CONSENTS_GOOGLE_SHEET_ID,
+    range,
+  })
+
+  const rows = res.data.values ?? []
+  if (rows.length <= 1) {
+    console.warn('[withdrawUserConsent] No consent rows found', {
+      requestId,
+    })
+    return { updated: false, reason: 'NOT_FOUND' }
+  }
+
+  const phoneCol = 0
+  const emailCol = 1
+  const nameCol = 2
+  const privacyCol = 5
+  const termsCol = 6
+  const notificationsCol = 7
+  const withdrawnDateCol = 8
+  const withdrawalMethodCol = 9
+
+  const matches: number[] = []
+
+  for (let i = 1; i < rows.length; i++) {
+    const row = rows[i] || []
+    const rowPhone = String(row[phoneCol] || '').replace(/[^\d+]/g, '')
+    const rowName = normalizeName(String(row[nameCol] || ''))
+    const rowEmail = String(row[emailCol] || '').trim().toLowerCase()
+
+    const phoneMatch = rowPhone === normalizedPhone
+    const nameMatch = rowName === normalizedName
+    const emailMatch = !normalizedEmail || !rowEmail ? true : rowEmail === normalizedEmail
+
+    if (phoneMatch && nameMatch && emailMatch) {
+      matches.push(i)
+    }
+  }
+
+  if (!matches.length) {
+    console.warn('[withdrawUserConsent] Consent not found', {
+      requestId,
+      phone: maskPhoneHash(normalizedPhone),
+      email: normalizedEmail ? maskEmailHash(normalizedEmail) : undefined,
+      name: normalizedName,
+    })
+    return { updated: false, reason: 'NOT_FOUND' }
+  }
+
+  if (matches.length > 1) {
+    const incident = `duplicate-consent-${Date.now()}`
+    console.warn('[withdrawUserConsent] Multiple matches detected', {
+      requestId,
+      incident,
+      phone: maskPhoneHash(normalizedPhone),
+      totalMatches: matches.length,
+    })
+    return { updated: false, reason: 'MULTIPLE_MATCHES', incident }
+  }
+
+  const rowIndex = matches[0]
+  const row = rows[rowIndex] || []
+  row[phoneCol] = maskPhoneHash(String(row[phoneCol] ?? ''))
+  row[emailCol] = ''
+  row[nameCol] = ''
+  row[privacyCol] = 'FALSE'
+  row[termsCol] = 'FALSE'
+  row[notificationsCol] = 'FALSE'
+  row[withdrawnDateCol] = new Date().toISOString()
+  row[withdrawalMethodCol] = trimToSheetLimit(withdrawalMethod)
+
+  const updateRange = `A${rowIndex + 1}:J${rowIndex + 1}`
+  await sheets.spreadsheets.values.update({
+    spreadsheetId: config.USER_CONSENTS_GOOGLE_SHEET_ID,
+    range: updateRange,
+    valueInputOption: 'USER_ENTERED',
+    requestBody: {
+      values: [row],
+    },
+  })
+
+  return { updated: true }
 }

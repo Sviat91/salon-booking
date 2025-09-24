@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 
-const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://facemassage.net'
+const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://somique.beauty/'
 
 const staticPaths = ['/', '/privacy', '/terms', '/support']
 

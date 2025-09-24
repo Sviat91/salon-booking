@@ -1,6 +1,7 @@
 "use client"
 import type { Metadata } from 'next'
 import BackButton from '../../components/BackButton'
+import ConsentWithdrawalModal from '../../components/ConsentWithdrawalModal'
 import { useState } from 'react'
 
 export default function SupportPage() {
@@ -12,6 +13,7 @@ export default function SupportPage() {
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
+  const [isConsentModalOpen, setConsentModalOpen] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -216,10 +218,7 @@ export default function SupportPage() {
                 </button>
                 
                 <button 
-                  onClick={() => {
-                    // TODO: Implement consent withdrawal
-                    alert('Funkcja wycofania zgód - wkrótce dostępna')
-                  }}
+                  onClick={() => setConsentModalOpen(true)}
                   className="w-full text-left p-3 rounded-lg border border-border dark:border-dark-border hover:bg-primary/5 dark:hover:bg-accent/5 transition-colors"
                 >
                   <div className="font-medium text-text dark:text-dark-text text-sm">Wycofaj zgody</div>
@@ -231,6 +230,7 @@ export default function SupportPage() {
           </div>
         </div>
       </div>
+      <ConsentWithdrawalModal isOpen={isConsentModalOpen} onClose={() => setConsentModalOpen(false)} />
     </main>
   )
 }
