@@ -98,7 +98,6 @@ export async function POST(req: NextRequest) {
     const nameParts = booking.name.trim().split(' ')
     const firstName = nameParts[0] || ''
     const lastName = nameParts.slice(1).join(' ') || ''
-
     // Create structured description in new format
     const description = `Imię Nazwisko: ${firstName} ${lastName}
 Telefon: ${booking.phone}${booking.email ? `\nEmail: ${booking.email}` : ''}
@@ -114,6 +113,7 @@ Utworzono: ${new Date().toLocaleString('pl-PL', { timeZone: 'Europe/Warsaw' })}`
       try {
         await saveUserConsent({
           phone: booking.phone,
+          email: booking.email,
           name: booking.name,
           ip,
           consentPrivacyV10: booking.consents.dataProcessing,
