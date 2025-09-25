@@ -12,14 +12,41 @@
   --bg-end: #7A4F35;   /* darker variant */
 }
 
-html, body {
-  height: 100%;
+html {
+  min-height: 100%;
+  background-color: var(--bg-end);
 }
 
 body {
+  min-height: 100%;
+  margin: 0;
+  position: relative;
   color: theme('colors.text');
-  background: radial-gradient(1200px 800px at 20% 10%, var(--bg-start), var(--bg-end));
-  transition: background 0.3s ease;
+  background-color: var(--bg-end);
+  transition: background-color 0.3s ease;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(1600px 1100px at 20% 0%, var(--bg-start), var(--bg-end));
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+@media (max-width: 1024px) {
+  body::before {
+    background: radial-gradient(1400px 1400px at 50% -10%, var(--bg-start), var(--bg-end));
+  }
+}
+
+@media (max-width: 640px) {
+  body::before {
+    background: radial-gradient(1200px 1600px at 50% -20%, var(--bg-start), var(--bg-end));
+  }
 }
 
 .dark body {

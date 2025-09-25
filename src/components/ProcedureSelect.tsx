@@ -2,7 +2,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { useEffect, useState, MouseEvent } from 'react'
 
-type Procedure = { id: string; name_pl: string; duration_min: number }
+type Procedure = { id: string; name_pl: string; duration_min: number; price_pln?: number }
 
 export default function ProcedureSelect({ valueId, onChange }: { valueId?: string; onChange?: (p: Procedure | null) => void }) {
   const { data, isLoading } = useQuery({
@@ -47,7 +47,7 @@ export default function ProcedureSelect({ valueId, onChange }: { valueId?: strin
       >
         {selected ? (
           <span className="block whitespace-normal break-words">
-            {selected.name_pl} - {selected.duration_min} min
+            {selected.name_pl} - {selected.duration_min} min{typeof selected.price_pln === 'number' && selected.price_pln > 0 ? ` / ${selected.price_pln} zł` : ''}
           </span>
         ) : (
           <span className="text-muted dark:text-dark-muted">{isLoading ? 'Ładowanie…' : 'Wybierz usługę'}</span>
@@ -73,7 +73,7 @@ export default function ProcedureSelect({ valueId, onChange }: { valueId?: strin
                   onChange?.(p)
                 }}
               >
-                {p.name_pl} - {p.duration_min} min
+                {p.name_pl} - {p.duration_min} min{typeof p.price_pln === 'number' && p.price_pln > 0 ? ` / ${p.price_pln} zł` : ''}
               </button>
             </li>
           ))}

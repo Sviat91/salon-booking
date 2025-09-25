@@ -1,14 +1,17 @@
 import { NextResponse } from 'next/server'
 
-const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://somique.beauty/'
+const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://somique.beauty'
 
 const staticPaths = ['/', '/privacy', '/terms', '/support']
 
 export const runtime = 'nodejs'
 
 export async function GET() {
+  const lastmod = new Date().toISOString().split('T')[0] // YYYY-MM-DD format
+  
   const urls = staticPaths.map(path => ({
     loc: `${BASE_URL}${path}`,
+    lastmod,
     changefreq: 'monthly',
     priority: path === '/' ? '1.0' : '0.6',
   }))
@@ -19,6 +22,7 @@ export async function GET() {
       .map(url =>
         `  <url>\n`
         + `    <loc>${url.loc}</loc>\n`
+        + `    <lastmod>${url.lastmod}</lastmod>\n`
         + `    <changefreq>${url.changefreq}</changefreq>\n`
         + `    <priority>${url.priority}</priority>\n`
         + `  </url>`

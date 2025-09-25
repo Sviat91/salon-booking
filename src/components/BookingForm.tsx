@@ -6,7 +6,7 @@ import PhoneInput from './ui/PhoneInput'
 
 export type Slot = { startISO: string; endISO: string }
 
-type Procedure = { id: string; name_pl: string }
+type Procedure = { id: string; name_pl: string; price_pln?: number }
 
 type ProceduresResponse = { items: Procedure[] }
 
@@ -42,10 +42,12 @@ export default function BookingForm({
     queryFn: () => fetch('/api/procedures').then(r => r.json() as Promise<ProceduresResponse>),
   })
 
-  const selectedProcedureName = useMemo(() => {
+  const selectedProcedure = useMemo(() => {
     if (!procedureId) return null
-    return proceduresData?.items.find(p => p.id === procedureId)?.name_pl ?? null
+    return proceduresData?.items.find(p => p.id === procedureId) ?? null
   }, [procedureId, proceduresData])
+
+  const selectedProcedureName = selectedProcedure?.name_pl ?? null
 
   useEffect(() => {
     if (!siteKey) return
@@ -227,10 +229,32 @@ export default function BookingForm({
   if (bookingState === 'success' || ok) {
     return (
       <div className="transition-all duration-300 ease-out">
-        <div className="text-lg font-medium mb-2 dark:text-dark-text">Rezerwacja potwierdzona</div>
-        <div className="text-sm text-neutral-600 dark:text-dark-muted">Usługa: {selectedProcedureName ?? 'Brak danych'}</div>
-        <div className="text-sm text-neutral-600 dark:text-dark-muted">Termin: {terminLabel}</div>
-        <div className="mt-3 text-emerald-700 dark:text-emerald-400">Dziękujemy, do zobaczenia!</div>
+        <div className="text-lg font-medium mb-3 dark:text-dark-text">Rezerwacja potwierdzona</div>
+        
+        <div className="space-y-1 mb-4">
+          <div className="text-sm text-neutral-600 dark:text-dark-muted">
+            <strong>Usługa:</strong> {selectedProcedureName ?? 'Brak danych'}
+          </div>
+          <div className="text-sm text-neutral-600 dark:text-dark-muted">
+            <strong>Termin:</strong> {terminLabel}
+          </div>
+          {selectedProcedure?.price_pln && (
+            <div className="text-sm text-neutral-600 dark:text-dark-muted">
+              <strong>Cena:</strong> {selectedProcedure.price_pln} zł
+            </div>
+          )}
+        </div>
+        
+        <div className="mb-4 p-3 bg-neutral-50 dark:bg-dark-border/30 rounded-lg">
+          <div className="text-sm text-neutral-600 dark:text-dark-muted">
+            <strong className="text-text dark:text-dark-text">Adres:</strong><br />
+            Sarmacka 4B/ lokal 106<br />
+            02-972 Warszawa<br />
+            +48 789 894 948
+          </div>
+        </div>
+        
+        <div className="text-emerald-700 dark:text-emerald-400">Dziękujemy, do zobaczenia!</div>
       </div>
     )
   }
