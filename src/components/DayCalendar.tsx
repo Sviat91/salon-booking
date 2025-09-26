@@ -125,74 +125,6 @@ export default function DayCalendar({ procedureId, onChange }: { procedureId?: s
     extendWindowIfNeeded(normalized)
   }
 
-  const CustomCaption = (props: any) => {
-    const month: Date = (props?.calendarMonth ?? props?.displayMonth) as Date
-    const targetMonth = month ?? today
-    const rawLabel = targetMonth.toLocaleDateString('pl-PL', { month: 'long', year: 'numeric' })
-    const label = rawLabel
-      ? `${rawLabel.charAt(0).toLocaleUpperCase('pl-PL')}${rawLabel.slice(1)}`
-      : rawLabel
-    const [stage, setStage] = useState<'enterStart' | 'enterEnd'>('enterEnd')
-    const mountedRef = useRef(false)
-
-    useEffect(() => {
-      if (!mountedRef.current) {
-        mountedRef.current = true
-        return
-      }
-      setStage('enterStart')
-      const id = requestAnimationFrame(() => setStage('enterEnd'))
-      return () => cancelAnimationFrame(id)
-    }, [label])
-
-    const prevMonth = new Date(targetMonth.getFullYear(), targetMonth.getMonth() - 1, 1)
-    const nextMonthValue = new Date(targetMonth.getFullYear(), targetMonth.getMonth() + 1, 1)
-    const minMonth = new Date(today.getFullYear(), today.getMonth(), 1)
-    const isPrevDisabled = prevMonth < minMonth
-
-    const buttonBase = "flex h-8 w-8 items-center justify-center rounded-full border border-neutral-300 dark:border-dark-muted text-sm font-medium text-neutral-700 dark:text-dark-text transition-all duration-200 hover:bg-neutral-100 dark:hover:bg-dark-muted hover:border-neutral-400 dark:hover:border-dark-text hover:scale-110 hover:shadow-lg disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:scale-100 disabled:hover:shadow-none !important"
-    const enterClass = navDirection === 'forward' ? 'opacity-0 translate-x-4' : 'opacity-0 -translate-x-4'
-    const finalClass = 'opacity-100 translate-x-0'
-
-    return (
-      <div className="flex items-center justify-between px-2 pb-3">
-        <button
-          type="button"
-          aria-label="Poprzedni miesiąc"
-          onClick={(event) => {
-            event.stopPropagation()
-            if (!isPrevDisabled) handleMonthChange(prevMonth)
-          }}
-          disabled={isPrevDisabled}
-          className={buttonBase}
-        >
-          ‹
-        </button>
-        <div className="relative flex-1 text-center" onClick={(event) => event.stopPropagation()}>
-          <div className="h-6 overflow-hidden">
-            <span
-              className={`inline-block text-base font-medium text-neutral-800 transition-all duration-300 ease-out ${
-                stage === 'enterStart' ? enterClass : finalClass
-              }`}
-            >
-              {label}
-            </span>
-          </div>
-        </div>
-        <button
-          type="button"
-          aria-label="Następny miesiąc"
-          onClick={(event) => {
-            event.stopPropagation()
-            handleMonthChange(nextMonthValue)
-          }}
-          className={buttonBase}
-        >
-          ›
-        </button>
-      </div>
-    )
-  }
 
   const isLoadingDays = !!procedureId && (isFetching || isLoading)
 
@@ -201,8 +133,48 @@ export default function DayCalendar({ procedureId, onChange }: { procedureId?: s
     onChange?.(undefined)
   }
 
+  // Стили для кнопок навигации
+  const buttonBase = "flex h-8 w-8 items-center justify-center rounded-full border border-neutral-300 dark:border-dark-muted text-sm font-medium text-neutral-700 dark:text-dark-text transition-all duration-200 hover:bg-neutral-100 dark:hover:bg-dark-muted hover:border-neutral-400 dark:hover:border-dark-text hover:scale-110 hover:shadow-lg disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:scale-100 disabled:hover:shadow-none"
+
   return (
     <div className="relative overflow-visible" onClick={handleContainerClick}>
+      {/* Custom Header with Navigation */}
+      <div className="flex items-center justify-between px-2 pb-3">
+        <button
+          type="button"
+          aria-label="Poprzedni miesiąc"
+          onClick={(event) => {
+            event.stopPropagation()
+            const prevMonth = new Date(month.getFullYear(), month.getMonth() - 1, 1)
+            const minMonth = new Date(today.getFullYear(), today.getMonth(), 1)
+            if (prevMonth >= minMonth) handleMonthChange(prevMonth)
+          }}
+          disabled={month <= new Date(today.getFullYear(), today.getMonth(), 1)}
+          className={buttonBase}
+        >
+          ‹
+        </button>
+        <div className="relative flex-1 text-center">
+          <div className="h-6 overflow-hidden">
+            <span className="inline-block text-base font-medium text-neutral-800 dark:text-dark-text">
+              {month.toLocaleDateString('pl-PL', { month: 'long', year: 'numeric' })
+                .replace(/^\w/, c => c.toUpperCase())}
+            </span>
+          </div>
+        </div>
+        <button
+          type="button"
+          aria-label="Następny miesiąc"
+          onClick={(event) => {
+            event.stopPropagation()
+            const nextMonth = new Date(month.getFullYear(), month.getMonth() + 1, 1)
+            handleMonthChange(nextMonth)
+          }}
+          className={buttonBase}
+        >
+          ›
+        </button>
+      </div>
       <div className="p-4 -m-4 overflow-visible">
         <DayPicker
           mode="single"
@@ -220,19 +192,17 @@ export default function DayCalendar({ procedureId, onChange }: { procedureId?: s
           toDate={rangeUntil}
           disabled={isDisabled}
           modifiers={{ available }}
-        modifiersClassNames={{
-          available:
-            'bg-accent/40 rounded-full transition duration-200 hover:scale-103 hover:bg-accent/60 hover:shadow-lg focus-visible:ring-2 focus-visible:ring-accent/60',
-          disabled: 'opacity-30 pointer-events-none',
-        }}
+          modifiersClassNames={{
+            available:
+              'bg-accent/40 rounded-full transition duration-200 hover:scale-103 hover:bg-accent/60 hover:shadow-lg focus-visible:ring-2 focus-visible:ring-accent/60',
+            disabled: 'opacity-30 pointer-events-none',
+          }}
           classNames={{
             day: 'h-10 w-10 rounded-full transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60',
             month: 'space-y-2',
             table: 'w-full border-collapse',
           }}
           onMonthChange={handleMonthChange}
-          // совместимо с v9/v10, глушим несовпадение тайпов:
-          components={{ Caption: CustomCaption } as any}
           className="w-full"
         />
       </div>
