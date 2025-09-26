@@ -20,6 +20,7 @@ export const DEFAULT_COLUMN_INDEX = {
   withdrawalMethod: 9,
   requestErasureDate: 10, // K column
   erasureDate: 11,       // L column
+  erasureMethod: 12,     // M column
 } as const
 
 export type ConsentColumnKey = keyof typeof DEFAULT_COLUMN_INDEX
@@ -38,6 +39,7 @@ const COLUMN_HINTS: Record<ConsentColumnKey, string[]> = {
   withdrawalMethod: ['withdrawalmethod', 'withdrawnmethod'],
   requestErasureDate: ['requesterasuredate', 'erasurerequest', 'erasurereqdate', 'requesterasure', 'requestera'],
   erasureDate: ['erasuredate', 'dateerasure', 'erased', 'erasure', 'erasureda'],
+  erasureMethod: ['erasuremethod', 'methoderasure', 'erasedby'],
 }
 
 const REQUIRED_COLUMNS: ConsentColumnKey[] = [

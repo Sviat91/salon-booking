@@ -330,6 +330,7 @@ interface EraseUserDataOptions {
   phone: string
   name: string
   email?: string
+  erasureMethod: 'support_form' | 'manual' | string
   requestId?: string
 }
 
@@ -340,7 +341,7 @@ type EraseOutcome = {
 }
 
 export async function eraseUserData(options: EraseUserDataOptions): Promise<EraseOutcome> {
-  const { phone, name, email, requestId } = options
+  const { phone, name, email, erasureMethod, requestId } = options
   const normalizedPhone = normalizePhoneForSheet(phone)
   const normalizedName = normalizeName(name)
   const normalizedEmail = email?.trim().toLowerCase() ?? ''
@@ -453,7 +454,10 @@ export async function eraseUserData(options: EraseUserDataOptions): Promise<Eras
 
   // Process all matching records
   const { sheets } = getClients()
-  const now = nowInWarsawISO()
+  const requestTimestamp = new Date()
+  const requestDateISO = nowInWarsawISO(requestTimestamp)
+  // Use a more distinct timestamp for the actual erasure to avoid race conditions or sheets API quirks
+  const erasureDateISO = nowInWarsawISO(new Date(requestTimestamp.getTime() + 2000)) // Add 2 seconds
   let processedCount = 0
 
   // Batch update all records
@@ -489,9 +493,10 @@ export async function eraseUserData(options: EraseUserDataOptions): Promise<Eras
       row.push('')
     }
 
-    // Set erasure timestamps
-    if (columns.requestErasureDate >= 0) row[columns.requestErasureDate] = now
-    if (columns.erasureDate >= 0) row[columns.erasureDate] = now
+    // Set erasure timestamps and method
+    if (columns.requestErasureDate >= 0) row[columns.requestErasureDate] = requestDateISO
+    if (columns.erasureDate >= 0) row[columns.erasureDate] = erasureDateISO
+    if (columns.erasureMethod >= 0) row[columns.erasureMethod] = trimToSheetLimit(erasureMethod)
 
     console.log('[eraseUserData] Updated row', {
       requestId,
@@ -512,6 +517,7 @@ export async function eraseUserData(options: EraseUserDataOptions): Promise<Eras
       columns.notifications,
       columns.requestErasureDate,
       columns.erasureDate,
+      columns.erasureMethod,
     ].filter(idx => idx >= 0)
 
     const maxColIdx = writableIndices.length ? Math.max(...writableIndices) : columns.erasureDate
@@ -540,6 +546,24 @@ export async function eraseUserData(options: EraseUserDataOptions): Promise<Eras
     requestBody: {
       valueInputOption: 'USER_ENTERED',
       data: updateRequests,
+    },
+  })
+
+  // Perform a separate, targeted update for erasure data to ensure it's written
+  const erasureUpdateRequests = matches.map(target => {
+    const rowNumber = target.index + 2
+    const range = `${columnIndexToLetter(columns.requestErasureDate)}${rowNumber}:${columnIndexToLetter(columns.erasureMethod)}${rowNumber}`
+    return {
+      range,
+      values: [[requestDateISO, erasureDateISO, trimToSheetLimit(erasureMethod)]],
+    }
+  })
+
+  await sheets.spreadsheets.values.batchUpdate({
+    spreadsheetId: config.USER_CONSENTS_GOOGLE_SHEET_ID,
+    requestBody: {
+      valueInputOption: 'USER_ENTERED',
+      data: erasureUpdateRequests,
     },
   })
 

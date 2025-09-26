@@ -109,6 +109,7 @@ export async function POST(req: NextRequest) {
       phone: normalizedPhone,
       name: trimmedName,
       email,
+      erasureMethod: 'support_form',
       requestId,
     })
 
