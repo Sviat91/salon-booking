@@ -18,6 +18,9 @@ export const DEFAULT_COLUMN_INDEX = {
   notifications: 7,
   withdrawnDate: 8,
   withdrawalMethod: 9,
+  requestErasureDate: 10, // K column
+  erasureDate: 11,       // L column
+  erasureMethod: 12,     // M column
 } as const
 
 export type ConsentColumnKey = keyof typeof DEFAULT_COLUMN_INDEX
@@ -34,6 +37,9 @@ const COLUMN_HINTS: Record<ConsentColumnKey, string[]> = {
   notifications: ['consentnotifications', 'notifications'],
   withdrawnDate: ['consentwithdrawn', 'withdrawn', 'withdrawaldate'],
   withdrawalMethod: ['withdrawalmethod', 'withdrawnmethod'],
+  requestErasureDate: ['requesterasuredate', 'erasurerequest', 'erasurereqdate', 'requesterasure', 'requestera'],
+  erasureDate: ['erasuredate', 'dateerasure', 'erased', 'erasure', 'erasureda'],
+  erasureMethod: ['erasuremethod', 'methoderasure', 'erasedby'],
 }
 
 const REQUIRED_COLUMNS: ConsentColumnKey[] = [
@@ -119,6 +125,16 @@ export function maskEmailHash(email: string): string {
     .update(PHONE_MASK_SALT)
     .update(':email:')
     .update(email.trim().toLowerCase())
+    .digest('hex')
+    .slice(0, 16)
+}
+
+export function hashPhoneForErasure(phone: string): string {
+  const normalized = normalizePhoneForSheet(phone) || 'unknown'
+  return createHash('sha256')
+    .update('erasure_salt_v1') // dedicated salt for erasure
+    .update(':')
+    .update(normalized)
     .digest('hex')
     .slice(0, 16)
 }

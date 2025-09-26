@@ -2,6 +2,7 @@
 import type { Metadata } from 'next'
 import BackButton from '../../components/BackButton'
 import ConsentWithdrawalModal from '../../components/ConsentWithdrawalModal'
+import DataErasureModal from '../../components/DataErasureModal'
 import { useState } from 'react'
 
 export default function SupportPage() {
@@ -14,6 +15,7 @@ export default function SupportPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [isConsentModalOpen, setConsentModalOpen] = useState(false)
+  const [isErasureModalOpen, setErasureModalOpen] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -29,6 +31,21 @@ export default function SupportPage() {
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }))
+  }
+
+  const handleOpenConsentModal = () => {
+    setErasureModalOpen(false)
+    setConsentModalOpen(true)
+  }
+
+  const handleOpenErasureModal = () => {
+    setConsentModalOpen(false)
+    setErasureModalOpen(true)
+  }
+
+  const handleCloseAllModals = () => {
+    setConsentModalOpen(false)
+    setErasureModalOpen(false)
   }
 
   return (
@@ -196,10 +213,7 @@ export default function SupportPage() {
               </h3>
               <div className="space-y-3">
                 <button 
-                  onClick={() => {
-                    // TODO: Implement data deletion request
-                    alert('Funkcja usuwania danych - wkrótce dostępna')
-                  }}
+                  onClick={handleOpenErasureModal}
                   className="w-full text-left p-3 rounded-lg border border-border dark:border-dark-border hover:bg-primary/5 dark:hover:bg-accent/5 transition-colors"
                 >
                   <div className="font-medium text-text dark:text-dark-text text-sm">Usuń moje dane</div>
@@ -218,7 +232,7 @@ export default function SupportPage() {
                 </button>
                 
                 <button 
-                  onClick={() => setConsentModalOpen(true)}
+                  onClick={handleOpenConsentModal}
                   className="w-full text-left p-3 rounded-lg border border-border dark:border-dark-border hover:bg-primary/5 dark:hover:bg-accent/5 transition-colors"
                 >
                   <div className="font-medium text-text dark:text-dark-text text-sm">Wycofaj zgody</div>
@@ -230,7 +244,8 @@ export default function SupportPage() {
           </div>
         </div>
       </div>
-      <ConsentWithdrawalModal isOpen={isConsentModalOpen} onClose={() => setConsentModalOpen(false)} />
+      <ConsentWithdrawalModal isOpen={isConsentModalOpen} onClose={handleCloseAllModals} />
+      <DataErasureModal isOpen={isErasureModalOpen} onClose={handleCloseAllModals} />
     </main>
   )
 }
