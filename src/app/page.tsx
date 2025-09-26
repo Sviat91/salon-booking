@@ -20,13 +20,16 @@ export default function Page() {
   const calendarRef = useRef<HTMLDivElement>(null)
   const slotsRef = useRef<HTMLDivElement>(null)
   const bookingRef = useRef<HTMLDivElement>(null)
+  const mobileBookingRef = useRef<HTMLDivElement>(null)
 
   // Функция плавного скролла
   const scrollToElement = (ref: React.RefObject<HTMLDivElement>, offset = 0) => {
     if (ref.current && window.innerWidth < 1024 && !userScrolled) { // только на мобильных и если пользователь не скроллил
       const elementPosition = ref.current.offsetTop + offset
+      // Добавляем дополнительный отступ для лучшего позиционирования
+      const finalPosition = Math.max(0, elementPosition - 80) // 80px от верха для удобства
       window.scrollTo({
-        top: elementPosition,
+        top: finalPosition,
         behavior: 'smooth'
       })
     }
@@ -62,14 +65,16 @@ export default function Page() {
   // Автоскролл при выборе даты  
   useEffect(() => {
     if (date) {
-      setTimeout(() => scrollToElement(slotsRef, -20), 300)
+      setTimeout(() => scrollToElement(slotsRef, -20), 400)
     }
   }, [date, userScrolled])
 
   // Автоскролл при выборе времени
   useEffect(() => {
     if (selectedSlot) {
-      setTimeout(() => scrollToElement(bookingRef, -20), 300)
+      // На мобильных используем мобильную форму, на десктопе - обычную
+      const targetRef = window.innerWidth < 1024 ? mobileBookingRef : bookingRef
+      setTimeout(() => scrollToElement(targetRef, -20), 600) // Увеличена задержка для лучшей синхронизации с анимацией
     }
   }, [selectedSlot, userScrolled])
   return (
@@ -101,37 +106,42 @@ export default function Page() {
                   }}
                 />
               </Card>
+              {/* BookingForm только на десктопе */}
               {selectedSlot && (
-                <Card title="Rezerwacja" className="lg:max-w-sm" ref={bookingRef}>
+                <Card title="Rezerwacja" className="lg:max-w-sm hidden lg:block" ref={bookingRef}>
                   <BookingForm slot={selectedSlot} procedureId={procId} />
                 </Card>
               )}
-              {/*
-              <Card title="Contact">
-                <div className="grid grid-cols-2 gap-3">
-                  <input className="rounded-xl border border-border bg-white/80 px-3 py-2" placeholder="Name" />
-                  <input className="rounded-xl border border-border bg-white/80 px-3 py-2" placeholder="Phone" />
-                </div>
-                <button className="btn btn-primary mt-4">Submit</button>
-              </Card>
-              */}
             </div>
           </div>
           
           {/* На мобильных - календарь после услуг, на десктопе - слева */}
-          <Card className="lg:order-1 max-w-md lg:max-w-none" ref={calendarRef}>
-            <DayCalendar
-              key={procId ?? 'none'}
-              procedureId={procId}
-              onChange={(d) => {
-                setDate(d)
-                setSelectedSlot(null)
-              }}
-            />
-            <div ref={slotsRef}>
-              <SlotsList date={date} procedureId={procId} selected={selectedSlot} onPick={setSelectedSlot} />
-            </div>
-          </Card>
+          <div className="lg:order-1 space-y-6">
+            <Card className="max-w-md lg:max-w-none" ref={calendarRef}>
+              <DayCalendar
+                key={procId ?? 'none'}
+                procedureId={procId}
+                onChange={(d) => {
+                  setDate(d)
+                  setSelectedSlot(null)
+                }}
+              />
+              <div ref={slotsRef}>
+                <SlotsList date={date} procedureId={procId} selected={selectedSlot} onPick={setSelectedSlot} />
+              </div>
+            </Card>
+            
+            {/* BookingForm под календарем только на мобильных */}
+            {selectedSlot && (
+              <Card 
+                title="Rezerwacja" 
+                className="lg:hidden max-w-md transform transition-all duration-500 ease-in-out animate-fade-in-up" 
+                ref={mobileBookingRef}
+              >
+                <BookingForm slot={selectedSlot} procedureId={procId} />
+              </Card>
+            )}
+          </div>
         </div>
       </div>
     </main>

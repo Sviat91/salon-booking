@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import BackButton from '../../components/BackButton'
+import ThemeToggle from '../../components/ThemeToggle'
 
 export const metadata: Metadata = {
   title: 'Polityka Prywatności - Somique Beauty',
@@ -9,8 +10,9 @@ export const metadata: Metadata = {
 
 export default function PrivacyPage() {
   return (
-    <main className="min-h-screen bg-gradient-to-br from-[#FFF6E9] to-[#FDE5C3] dark:from-[#9c6849] dark:to-[#7A4F35] transition-all duration-300">
+    <main className="min-h-screen relative">
       <BackButton />
+      <ThemeToggle />
       <div className="container mx-auto max-w-4xl px-6 py-8">
         {/* Header */}
         <div className="mb-6 text-center">

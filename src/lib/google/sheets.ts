@@ -8,6 +8,7 @@ export {
   hasValidConsent,
   withdrawUserConsent,
   eraseUserData,
+  exportUserData,
   normalizePhoneForSheet,
 } from './consents'
 

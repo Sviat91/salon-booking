@@ -40,7 +40,7 @@ vi.mock('../../../../src/lib/env', () => ({
   },
 }))
 
-let postHandler: (req: Request) => Promise<Response>
+let postHandler: any
 
 describe('POST /api/consents/withdraw', () => {
   const payload = {
