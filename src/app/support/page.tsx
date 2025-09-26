@@ -15,6 +15,7 @@ export default function SupportPage() {
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
   const [isConsentModalOpen, setConsentModalOpen] = useState(false)
   const [isErasureModalOpen, setErasureModalOpen] = useState(false)
   const [isExportModalOpen, setExportModalOpen] = useState(false)
@@ -22,13 +23,36 @@ export default function SupportPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSubmitting(true)
+    setSubmitError(null)
     
-    // TODO: Implement actual form submission
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    
-    setSubmitted(true)
-    setIsSubmitting(false)
-    setFormData({ name: '', email: '', subject: '', message: '' })
+    try {
+      const response = await fetch('/api/support/contact', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      })
+
+      const result = await response.json()
+
+      if (response.ok) {
+        setSubmitted(true)
+        setFormData({ name: '', email: '', subject: '', message: '' })
+      } else {
+        // Handle API errors
+        if (result.field) {
+          setSubmitError(`${result.field}: ${result.error}`)
+        } else {
+          setSubmitError(result.error || 'Wystąpił błąd podczas wysyłania wiadomości')
+        }
+      }
+    } catch (error) {
+      console.error('Contact form submission failed:', error)
+      setSubmitError('Wystąpił błąd połączenia. Sprawdź połączenie internetowe i spróbuj ponownie.')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   const handleInputChange = (field: string, value: string) => {
@@ -93,7 +117,10 @@ export default function SupportPage() {
                     Dziękujemy za kontakt. Odpowiemy na Twoją wiadomość w ciągu 72 godzin.
                   </p>
                   <button 
-                    onClick={() => setSubmitted(false)}
+                    onClick={() => {
+                      setSubmitted(false)
+                      setSubmitError(null)
+                    }}
                     className="btn btn-primary"
                   >
                     Wyślij kolejną wiadomość
@@ -163,6 +190,13 @@ export default function SupportPage() {
                       placeholder="Opisz szczegółowo swój problem lub pytanie..."
                     />
                   </div>
+                  
+                  {submitError && (
+                    <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-500/40 dark:bg-red-900/30 dark:text-red-200">
+                      <p className="font-medium">Błąd wysyłania</p>
+                      <p>{submitError}</p>
+                    </div>
+                  )}
                   
                   <button
                     type="submit"
