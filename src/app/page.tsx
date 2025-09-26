@@ -13,7 +13,11 @@ export default function Page() {
   const [procId, setProcId] = useState<string | undefined>(undefined)
   const [date, setDate] = useState<Date | undefined>(undefined)
   const [selectedSlot, setSelectedSlot] = useState<{ startISO: string; endISO: string } | null>(null)
-  const [userScrolled, setUserScrolled] = useState(false)
+  
+  // Флаги для контроля автоскрола - каждый этап скролит только один раз
+  const [hasScrolledToCalendar, setHasScrolledToCalendar] = useState(false)
+  const [hasScrolledToSlots, setHasScrolledToSlots] = useState(false)
+  const [hasScrolledToBooking, setHasScrolledToBooking] = useState(false)
 
   // Refs для автоскролла
   const procedureRef = useRef<HTMLDivElement>(null)
@@ -22,9 +26,9 @@ export default function Page() {
   const bookingRef = useRef<HTMLDivElement>(null)
   const mobileBookingRef = useRef<HTMLDivElement>(null)
 
-  // Функция плавного скролла
+  // Функция плавного скролла - только на мобильных устройствах
   const scrollToElement = (ref: React.RefObject<HTMLDivElement>, offset = 0) => {
-    if (ref.current && window.innerWidth < 1024 && !userScrolled) { // только на мобильных и если пользователь не скроллил
+    if (ref.current && window.innerWidth < 1024) {
       const elementPosition = ref.current.offsetTop + offset
       // Добавляем дополнительный отступ для лучшего позиционирования
       const finalPosition = Math.max(0, elementPosition - 80) // 80px от верха для удобства
@@ -35,48 +39,37 @@ export default function Page() {
     }
   }
 
-  // Отслеживание пользовательского скролла
+  // Автоскролл при выборе услуги - только один раз
   useEffect(() => {
-    let scrollTimeout: NodeJS.Timeout
-    
-    const handleScroll = () => {
-      setUserScrolled(true)
-      clearTimeout(scrollTimeout)
-      // Сбрасываем флаг через 3 секунды бездействия
-      scrollTimeout = setTimeout(() => {
-        setUserScrolled(false)
-      }, 3000)
+    if (procId && !hasScrolledToCalendar) {
+      setTimeout(() => {
+        scrollToElement(calendarRef, -20)
+        setHasScrolledToCalendar(true)
+      }, 300)
     }
+  }, [procId])
 
-    window.addEventListener('scroll', handleScroll, { passive: true })
-    return () => {
-      window.removeEventListener('scroll', handleScroll)
-      clearTimeout(scrollTimeout)
-    }
-  }, [])
-
-  // Автоскролл при выборе услуги
+  // Автоскролл при выборе даты - только один раз
   useEffect(() => {
-    if (procId) {
-      setTimeout(() => scrollToElement(calendarRef, -20), 300)
+    if (date && !hasScrolledToSlots) {
+      setTimeout(() => {
+        scrollToElement(slotsRef, -20)
+        setHasScrolledToSlots(true)
+      }, 400)
     }
-  }, [procId, userScrolled])
+  }, [date])
 
-  // Автоскролл при выборе даты  
+  // Автоскролл при выборе времени - только один раз
   useEffect(() => {
-    if (date) {
-      setTimeout(() => scrollToElement(slotsRef, -20), 400)
+    if (selectedSlot && !hasScrolledToBooking) {
+      setTimeout(() => {
+        // На мобильных используем мобильную форму, на десктопе - обычную
+        const targetRef = window.innerWidth < 1024 ? mobileBookingRef : bookingRef
+        scrollToElement(targetRef, -20)
+        setHasScrolledToBooking(true)
+      }, 600)
     }
-  }, [date, userScrolled])
-
-  // Автоскролл при выборе времени
-  useEffect(() => {
-    if (selectedSlot) {
-      // На мобильных используем мобильную форму, на десктопе - обычную
-      const targetRef = window.innerWidth < 1024 ? mobileBookingRef : bookingRef
-      setTimeout(() => scrollToElement(targetRef, -20), 600) // Увеличена задержка для лучшей синхронизации с анимацией
-    }
-  }, [selectedSlot, userScrolled])
+  }, [selectedSlot])
   return (
     <main className="p-6 relative flex-1 flex flex-col justify-center">
       <ThemeToggle />
@@ -103,6 +96,10 @@ export default function Page() {
                     setProcId(p?.id)
                     setDate(undefined)
                     setSelectedSlot(null)
+                    // Сбрасываем флаги автоскрола для новой услуги
+                    setHasScrolledToCalendar(false)
+                    setHasScrolledToSlots(false)
+                    setHasScrolledToBooking(false)
                   }}
                 />
               </Card>
@@ -124,6 +121,9 @@ export default function Page() {
                 onChange={(d) => {
                   setDate(d)
                   setSelectedSlot(null)
+                  // Сбрасываем флаги для новой даты
+                  setHasScrolledToSlots(false)
+                  setHasScrolledToBooking(false)
                 }}
               />
               <div ref={slotsRef}>
