@@ -11,6 +11,7 @@ import {
 import { useMutation, useQuery } from '@tanstack/react-query'
 import Card from '../ui/Card'
 import PanelRenderer from './PanelRenderer'
+// Removed server-side imports - logic moved to API
 import type {
   BookingManagementRef,
   BookingResult,
@@ -166,6 +167,10 @@ const BookingManagement = forwardRef<BookingManagementRef, BookingManagementProp
       const trimmedName = form.fullName.trim()
       const phoneDigits = form.phone.replace(/\D/g, '')
       const baseValid = trimmedName.length >= 2 && phoneDigits.length >= 9
+      
+      // Validation check for debugging
+      // console.log('Validation check:', { trimmedName, phoneDigits, baseValid })
+      
       if (!siteKey) return baseValid
       return baseValid && !!turnstileToken
     }, [form.fullName, form.phone, siteKey, turnstileToken])
@@ -198,71 +203,83 @@ const BookingManagement = forwardRef<BookingManagementRef, BookingManagementProp
     const searchMutation = useMutation<SearchResponseApi, MutationError, { turnstileToken?: string }>({
       mutationFn: async ({ turnstileToken: providedToken } = {}) => {
         const { firstName, lastName } = splitFullName(form.fullName)
-        const normalizedPhone = form.phone.replace(/\D/g, '')
-        const normalizedName = form.fullName.trim().toLowerCase()
-        const shouldMock =
-          normalizedName.includes('test') ||
-          normalizedPhone.includes('123')
+        
+        console.log('🔍 Searching for:', { firstName, lastName, phone: form.phone })
 
-        if (shouldMock) {
-          const now = new Date()
-          const makeSlot = (
-            id: string,
-            addHours: number,
-            durationMin: number,
-            overrides?: { canModify?: boolean; price?: number; procedureName?: string }
-          ) => {
-            const start = new Date(now.getTime() + addHours * 60 * 60 * 1000)
-            const end = new Date(start.getTime() + durationMin * 60 * 1000)
-            return {
-              eventId: id,
-              firstName,
-              lastName,
-              phone: form.phone,
-              email: form.email || undefined,
-              procedureName: overrides?.procedureName ?? 'Masaż relaksacyjny twarzy',
-              startTime: start.toISOString(),
-              endTime: end.toISOString(),
-              price: overrides?.price ?? 150,
-              canModify: overrides?.canModify ?? true,
-              canCancel: overrides?.canModify ?? true,
-            }
-          }
-
-          return {
-            results: [
-              makeSlot('mock-1', 48, 75),
-              makeSlot('mock-2', 120, 90, { price: 180, procedureName: 'Masaż Kobido' }),
-              makeSlot('mock-3', 12, 60, { canModify: false, procedureName: 'Masaż lifting twarzy' }),
-            ],
-          }
-        }
-
-        const payload = {
-          firstName,
-          lastName,
-          phone: form.phone,
-          email: form.email || undefined,
-          turnstileToken: providedToken ?? undefined,
-        }
-        const response = await fetch('/api/bookings/search', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        })
+        // Fetch ALL calendar events for the period, then filter on client
+        const response = await fetch('/api/bookings/all')
+        
         if (!response.ok) {
-          let detail = 'Nie udało się wyszukać rezerwacji.'
-          try {
-            const body = (await response.json()) as { error?: string }
-            if (body?.error) {
-              detail = body.error
-            }
-          } catch {
-            // swallow
-          }
-          throw { message: detail }
+          throw new Error('Nie udało się pobrać danych z kalendarza')
         }
-        return (await response.json()) as SearchResponseApi
+        
+        const allBookingsData = await response.json()
+        console.log(`📅 Fetched ${allBookingsData.count} bookings (cached: ${allBookingsData.cached})`)
+        
+        const allBookings = allBookingsData.bookings || []
+        
+        // Filter bookings with strict matching rules
+        const matchingBookings = allBookings.filter((booking: any) => {
+          // Normalize search data
+          const searchFirstName = firstName.toLowerCase().trim()
+          const searchLastName = lastName.toLowerCase().trim()  
+          const searchPhone = form.phone.replace(/\D/g, '')
+          const searchEmail = form.email ? form.email.toLowerCase().trim() : ''
+          
+          // Normalize booking data
+          const bookingFirstName = booking.firstName.toLowerCase().trim()
+          const bookingLastName = booking.lastName.toLowerCase().trim()
+          const bookingPhone = booking.phone.replace(/\D/g, '')
+          const bookingEmail = booking.email ? booking.email.toLowerCase().trim() : ''
+          
+          // STRICT MATCHING RULES:
+          
+          // 1. First name must match exactly (not partial)
+          const firstNameMatch = bookingFirstName === searchFirstName
+          if (!firstNameMatch) return false
+          
+          // 2. If search has last name, booking must have it and match exactly
+          if (searchLastName) {
+            if (!bookingLastName || bookingLastName !== searchLastName) {
+              return false
+            }
+          }
+          
+          // 3. Phone number must match (last 9 digits)
+          let phoneMatch = false
+          if (searchPhone.length >= 9 && bookingPhone.length >= 9) {
+            phoneMatch = bookingPhone.slice(-9) === searchPhone.slice(-9)
+          }
+          
+          // 4. Email verification (if provided in search)
+          let emailMatch = true
+          if (searchEmail) {
+            if (!bookingEmail || bookingEmail !== searchEmail) {
+              emailMatch = false
+            }
+          }
+          
+          // 5. Main rule: Name + Phone must match, OR Name + Phone partial + Email exact
+          if (firstNameMatch && phoneMatch) {
+            return true // Perfect match
+          }
+          
+          // 6. Alternative: Name exact + Phone partial + Email exact
+          if (firstNameMatch && searchEmail && emailMatch) {
+            const phonePartialMatch = bookingPhone.includes(searchPhone.slice(-8)) || 
+                                     searchPhone.includes(bookingPhone.slice(-8))
+            return phonePartialMatch
+          }
+          
+          return false
+        })
+        
+        console.log(`✅ Found ${matchingBookings.length} matching bookings`)
+        
+        return {
+          results: matchingBookings,
+          totalFound: matchingBookings.length
+        } as SearchResponseApi
       },
       onMutate: () => {
         setFormError(null)
@@ -275,16 +292,19 @@ const BookingManagement = forwardRef<BookingManagementRef, BookingManagementProp
         const mapped = data.results.map(mapApiResult)
         setResults(mapped)
         if (mapped.length === 0) {
+          console.log('❌ No bookings found matching criteria')
           setState('not-found')
         } else {
+          console.log(`🎯 Showing ${mapped.length} matching bookings`)
           setState('results')
         }
         setIsOpen(true)
       },
       onError: (error) => {
-        console.error('Booking search failed', error)
-        setFormError('Nie udało się wyszukać rezerwacji. Spróbuj ponownie.')
+        console.error('❌ Booking search failed:', error.message)
+        setFormError(`Nie udało się wyszukać rezerwacji: ${error.message}`)
         setState('search')
+        // DO NOT reset form on error - keep user's input
       },
     })
 

@@ -112,24 +112,24 @@ export default function PanelRenderer(props: PanelRendererProps) {
           errorMessage={formError}
           onSearch={onSearch}
           turnstileNode={turnstileNode}
-          turnstileRequired={turnstileRequired}
         />
       )
     case 'loading':
       return <LoadingPanel />
     case 'results':
-      return (
-        <ResultsPanel
-          results={results}
-          selectedBookingId={selectedBooking?.eventId}
-          onSelect={onSelectBooking}
-          onChangeProcedure={onChangeProcedure}
-          onCancelRequest={onCancelRequest}
-          onContactMaster={onContactMaster}
-          onBackToSearch={onBackToSearch}
-          onNewSearch={onStartNewSearch}
-        />
-      )
+        return (
+          <ResultsPanel
+            results={results}
+            selectedBookingId={selectedBooking?.eventId}
+            searchCriteria={form}
+            onSelect={onSelectBooking}
+            onChangeProcedure={onChangeProcedure}
+            onCancelRequest={onCancelRequest}
+            onContactMaster={onContactMaster}
+            onBackToSearch={onBackToSearch}
+            onNewSearch={onStartNewSearch}
+          />
+        )
     case 'not-found':
       return (
         <NoResultsPanel

@@ -137,13 +137,23 @@ export function matchesSearchCriteria(
   const bookingLastName = normalizeString(bookingData.lastName)
   const bookingPhone = normalizePhone(bookingData.phone)
   const bookingEmail = bookingData.email ? bookingData.email.toLowerCase().trim() : ''
-
-  // Name matching (both first and last name must match or be contained)
-  const firstNameMatch = bookingFirstName.includes(searchFirstName) || searchFirstName.includes(bookingFirstName)
-  const lastNameMatch = bookingLastName.includes(searchLastName) || searchLastName.includes(bookingLastName)
   
-  if (!firstNameMatch || !lastNameMatch) {
+  // Debug matching criteria
+  // console.log('Matching criteria:', { searchCriteria: { firstName: searchFirstName, lastName: searchLastName, phone: searchPhone }, bookingData: { firstName: bookingFirstName, lastName: bookingLastName, phone: bookingPhone } })
+
+  // Name matching (first name must match, last name only if provided)
+  const firstNameMatch = bookingFirstName.includes(searchFirstName) || searchFirstName.includes(bookingFirstName)
+  
+  if (!firstNameMatch) {
     return false
+  }
+  
+  // Last name matching: only check if both search and booking have last names
+  if (searchLastName && bookingLastName) {
+    const lastNameMatch = bookingLastName.includes(searchLastName) || searchLastName.includes(bookingLastName)
+    if (!lastNameMatch) {
+      return false
+    }
   }
 
   // Phone matching (must match significant part of phone number)

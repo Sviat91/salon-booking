@@ -15,7 +15,8 @@ export default function NoResultsPanel({ onRetry, onExtendSearch, onContactMaste
           Nie znaleziono rezerwacji
         </div>
         <div className="text-sm text-neutral-600 dark:text-dark-muted">
-          Sprawdź poprawność danych i spróbuj ponownie
+          Sprawdź poprawność danych i spróbuj ponownie.<br/>
+          Upewnij się, że używasz tych samych danych co przy rezerwacji.
         </div>
       </div>
       <div className="space-y-3">
