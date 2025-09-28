@@ -5,6 +5,7 @@ import type {
   ProcedureOption,
   SearchFormData,
   SlotSelection,
+  TimeChangeSession,
 } from '../types'
 
 // State interface
@@ -26,6 +27,9 @@ export interface BookingManagementState {
   selectedProcedure: ProcedureOption | null
   pendingSlot: SlotSelection | null
   
+  // Time Change Session - простой кеш для изменения времени
+  timeChangeSession: TimeChangeSession | null
+  
   // Action State
   actionError: string | null
   
@@ -41,17 +45,20 @@ export type BookingManagementAction =
   | { type: 'SET_WAS_EDITING'; payload: boolean }
   | { type: 'UPDATE_FORM'; payload: Partial<SearchFormData> }
   | { type: 'SET_FORM_ERROR'; payload: string | null }
-  | { type: 'SET_RESULTS'; payload: BookingResult[] }
   | { type: 'SELECT_BOOKING'; payload: BookingResult | null }
   | { type: 'SELECT_PROCEDURE'; payload: ProcedureOption | null }
   | { type: 'SET_PENDING_SLOT'; payload: SlotSelection | null }
   | { type: 'SET_ACTION_ERROR'; payload: string | null }
-  | { type: 'SET_TURNSTILE_TOKEN'; payload: string | null }
+  | { type: 'SET_RESULTS'; payload: BookingResult[] }
   | { type: 'RESET_FORM' }
+  | { type: 'SET_TURNSTILE_TOKEN'; payload: string | null }
   | { type: 'SEARCH_START' }
   | { type: 'SEARCH_SUCCESS'; payload: BookingResult[] }
   | { type: 'SEARCH_ERROR'; payload: string }
   | { type: 'SEARCH_NOT_FOUND' }
+  | { type: 'START_TIME_CHANGE'; payload: TimeChangeSession }
+  | { type: 'SET_TIME_CHANGE_SLOT'; payload: SlotSelection }
+  | { type: 'CLEAR_TIME_CHANGE' }
 
 // Initial state
 const initialState: BookingManagementState = {
@@ -64,6 +71,7 @@ const initialState: BookingManagementState = {
   selectedBooking: null,
   selectedProcedure: null,
   pendingSlot: null,
+  timeChangeSession: null,
   actionError: null,
   turnstileToken: null,
 }
@@ -206,6 +214,32 @@ function bookingManagementReducer(
         isOpen: true,
       }
 
+    case 'START_TIME_CHANGE':
+      return {
+        ...state,
+        timeChangeSession: action.payload,
+        state: 'edit-datetime',
+        actionError: null,
+      }
+
+    case 'SET_TIME_CHANGE_SLOT':
+      return {
+        ...state,
+        timeChangeSession: state.timeChangeSession ? {
+          ...state.timeChangeSession,
+          newSlot: action.payload,
+        } : null,
+        state: 'confirm-time-change',
+      }
+
+    case 'CLEAR_TIME_CHANGE':
+      return {
+        ...state,
+        timeChangeSession: null,
+        selectedProcedure: null,
+        pendingSlot: null,
+      }
+
     default:
       return state
   }
@@ -230,6 +264,9 @@ export interface BookingManagementActions {
   handleSearchSuccess: (results: BookingResult[]) => void
   handleSearchError: (error: string) => void
   handleSearchNotFound: () => void
+  startTimeChange: (session: TimeChangeSession) => void
+  setTimeChangeSlot: (slot: SlotSelection) => void
+  clearTimeChange: () => void
 }
 
 // Main hook
@@ -255,6 +292,9 @@ export function useBookingManagementState() {
     handleSearchSuccess: useCallback((results: BookingResult[]) => dispatch({ type: 'SEARCH_SUCCESS', payload: results }), []),
     handleSearchError: useCallback((error: string) => dispatch({ type: 'SEARCH_ERROR', payload: error }), []),
     handleSearchNotFound: useCallback(() => dispatch({ type: 'SEARCH_NOT_FOUND' }), []),
+    startTimeChange: useCallback((session: TimeChangeSession) => dispatch({ type: 'START_TIME_CHANGE', payload: session }), []),
+    setTimeChangeSlot: useCallback((slot: SlotSelection) => dispatch({ type: 'SET_TIME_CHANGE_SLOT', payload: slot }), []),
+    clearTimeChange: useCallback(() => dispatch({ type: 'CLEAR_TIME_CHANGE' }), []),
   }
 
   return {

@@ -2,11 +2,15 @@ export type ManagementState =
   | 'search'
   | 'loading'
   | 'results'
-  | 'not-found'
   | 'edit-selection'
+  | 'edit-procedure'
   | 'edit-datetime'
+  | 'confirm-change'
   | 'confirm-time-change'
   | 'confirm-cancel'
+  | 'not-found'
+  | 'time-change-success'
+  | 'time-change-error'
 
 export interface BookingResult {
   eventId: string
@@ -28,12 +32,19 @@ export interface ProcedureOption {
   id: string
   name_pl: string
   duration_min: number
-  price_pln?: number
 }
 
 export interface SlotSelection {
   startISO: string
   endISO: string
+  procedureId?: string
+}
+
+// Кеш для изменения времени - простой и чистый
+export interface TimeChangeSession {
+  originalBooking: BookingResult
+  selectedProcedure: ProcedureOption
+  newSlot: SlotSelection | null
 }
 
 export interface SearchFormData {

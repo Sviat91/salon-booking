@@ -220,6 +220,54 @@ export async function updateBooking(
   }
 }
 
+// Простая функция только для изменения времени - чистая архитектура
+export async function updateBookingTime(
+  booking: BookingResult,
+  newSlot: SlotSelection,
+  turnstileToken?: string,
+): Promise<void> {
+  console.log('🔄 Updating booking time:', {
+    eventId: booking.eventId,
+    oldTime: `${booking.startTime.toISOString()} - ${booking.endTime.toISOString()}`,
+    newTime: `${newSlot.startISO} - ${newSlot.endISO}`,
+  })
+
+  // Payload с данными для сохранения (не для валидации)
+  const body = {
+    turnstileToken,
+    eventId: booking.eventId,
+    // Данные для сохранения в записи
+    procedureName: booking.procedureName,
+    firstName: booking.firstName,
+    lastName: booking.lastName,
+    phone: booking.phone,
+    email: booking.email || '',
+    price: booking.price,
+    // Новое время
+    newStartISO: newSlot.startISO,
+    newEndISO: newSlot.endISO,
+  }
+  
+  const response = await fetch('/api/bookings/update-time', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  })
+  
+  if (!response.ok) {
+    let detail = 'Nie udało się zaktualizować terminu rezerwacji.'
+    try {
+      const json = (await response.json()) as { error?: string }
+      if (json?.error) detail = json.error
+    } catch {
+      // ignore
+    }
+    throw new Error(detail)
+  }
+  
+  console.log('✅ Booking time updated successfully')
+}
+
 export async function cancelBooking(booking: BookingResult): Promise<void> {
   // No Turnstile needed for cancellation - user was already verified during search
   const body = {

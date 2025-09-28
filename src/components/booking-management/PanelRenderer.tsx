@@ -8,6 +8,8 @@ import EditDatetimePanel from './EditDatetimePanel'
 import ConfirmTimeChangePanel from './ConfirmTimeChangePanel'
 import ConfirmCancelPanel from './ConfirmCancelPanel'
 import NoResultsPanel from './NoResultsPanel'
+import TimeChangeSuccessPanel from './TimeChangeSuccessPanel'
+import TimeChangeErrorPanel from './TimeChangeErrorPanel'
 import type {
   BookingResult,
   ManagementState,
@@ -43,6 +45,7 @@ interface PanelRendererProps {
   onConfirmSlot: () => void
   fallbackProcedure: ProcedureOption | null
   pendingSlot: SlotSelection | null
+  timeChangeSession: { originalBooking: BookingResult; selectedProcedure: ProcedureOption; newSlot: SlotSelection | null } | null
   confirmTimeChangeSubmitting: boolean
   confirmTimeChangeError: string | null
   onConfirmTimeChange: () => void
@@ -51,6 +54,8 @@ interface PanelRendererProps {
   cancelError: string | null
   onConfirmCancel: () => void
   onCancelBack: () => void
+  onBackToResults: () => void
+  onRetryTimeChange: () => void
 }
 
 export default function PanelRenderer(props: PanelRendererProps) {
@@ -81,6 +86,7 @@ export default function PanelRenderer(props: PanelRendererProps) {
     onConfirmSlot,
     fallbackProcedure,
     pendingSlot,
+    timeChangeSession,
     confirmTimeChangeSubmitting,
     confirmTimeChangeError,
     onConfirmTimeChange,
@@ -89,6 +95,8 @@ export default function PanelRenderer(props: PanelRendererProps) {
     cancelError,
     onConfirmCancel,
     onCancelBack,
+    onBackToResults,
+    onRetryTimeChange,
   } = props
 
   switch (state) {
@@ -159,7 +167,7 @@ export default function PanelRenderer(props: PanelRendererProps) {
       return (
         <EditDatetimePanel
           booking={selectedBooking}
-          selectedProcedure={fallbackProcedure}
+          selectedProcedure={timeChangeSession?.selectedProcedure || fallbackProcedure}
           selectedDate={selectedDate}
           selectedSlot={selectedSlot}
           onBack={onEditDatetimeBack}
@@ -167,7 +175,8 @@ export default function PanelRenderer(props: PanelRendererProps) {
         />
       )
     case 'confirm-time-change':
-      if (!selectedBooking || !pendingSlot) {
+      // Используем timeChangeSession из state для получения данных
+      if (!timeChangeSession?.newSlot) {
         return (
           <NoResultsPanel
             onRetry={onBackToSearch}
@@ -178,8 +187,8 @@ export default function PanelRenderer(props: PanelRendererProps) {
       }
       return (
         <ConfirmTimeChangePanel
-          booking={selectedBooking}
-          newSlot={pendingSlot}
+          booking={timeChangeSession.originalBooking}
+          newSlot={timeChangeSession.newSlot}
           isSubmitting={confirmTimeChangeSubmitting}
           errorMessage={confirmTimeChangeError}
           onConfirm={onConfirmTimeChange}
@@ -205,13 +214,38 @@ export default function PanelRenderer(props: PanelRendererProps) {
           onBack={onCancelBack}
         />
       )
-    default:
+    case 'time-change-success':
+      if (!timeChangeSession?.newSlot) {
+        return (
+          <NoResultsPanel
+            onRetry={onBackToSearch}
+            onExtendSearch={onExtendSearch}
+            onContactMaster={onContactMaster}
+          />
+        )
+      }
       return (
-        <NoResultsPanel
-          onRetry={onBackToSearch}
-          onExtendSearch={onExtendSearch}
-          onContactMaster={onContactMaster}
+        <TimeChangeSuccessPanel
+          timeChangeSession={{
+            originalBooking: timeChangeSession.originalBooking,
+            newSlot: timeChangeSession.newSlot,
+          }}
+          onBackToResults={onBackToResults}
         />
       )
+    case 'time-change-error':
+      return (
+        <TimeChangeErrorPanel
+          timeChangeSession={timeChangeSession?.newSlot ? {
+            originalBooking: timeChangeSession.originalBooking,
+            newSlot: timeChangeSession.newSlot,
+          } : null}
+          errorMessage={confirmTimeChangeError}
+          onBackToResults={onBackToResults}
+          onTryAgain={onRetryTimeChange}
+        />
+      )
+    default:
+      return null
   }
 }
