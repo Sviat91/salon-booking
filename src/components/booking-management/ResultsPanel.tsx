@@ -8,6 +8,9 @@ interface ResultsPanelProps {
   onSelect: (booking: BookingResult | null) => void
   onChangeProcedure: (booking: BookingResult) => void
   onCancelRequest: (booking: BookingResult) => void
+  onContactMaster: () => void
+  onBackToSearch: () => void
+  onNewSearch: () => void
 }
 
 export default function ResultsPanel({
@@ -16,6 +19,9 @@ export default function ResultsPanel({
   onSelect,
   onChangeProcedure,
   onCancelRequest,
+  onContactMaster,
+  onBackToSearch,
+  onNewSearch,
 }: ResultsPanelProps) {
   const timeFormatter = useMemo(
     () =>
@@ -37,7 +43,7 @@ export default function ResultsPanel({
   )
 
   return (
-    <div className="space-y-4">
+    <div className="h-[18rem] overflow-y-auto space-y-4 pr-1 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent">
       <div className="text-sm text-neutral-600 dark:text-dark-muted">
         Znalezione rezerwacje ({results.length}):
       </div>
@@ -102,6 +108,19 @@ export default function ResultsPanel({
               </div>
             )
           })}
+        </div>
+      </div>
+      <div className="space-y-2">
+        <button type="button" onClick={onContactMaster} className="btn btn-outline w-full">
+          Skontaktuj się z mistrzem
+        </button>
+        <div className="flex gap-2">
+          <button type="button" onClick={onBackToSearch} className="btn btn-outline flex-1">
+            Powrót
+          </button>
+          <button type="button" onClick={onNewSearch} className="btn btn-primary flex-1">
+            Nowe wyszukiwanie
+          </button>
         </div>
       </div>
     </div>

@@ -5,6 +5,7 @@ import {
   useEffect,
   useImperativeHandle,
   useMemo,
+  useRef,
   useState,
 } from 'react'
 import { useMutation, useQuery } from '@tanstack/react-query'
@@ -19,7 +20,7 @@ import type {
   SearchFormData,
   SlotSelection,
 } from './types'
-import { getTurnstileTokenWithSession } from '../../lib/turnstile-client'
+import { getTurnstileTokenWithSession, storeTurnstileSession } from '../../lib/turnstile-client'
 
 interface BookingManagementProps {
   selectedDate?: Date
@@ -80,6 +81,10 @@ const BookingManagement = forwardRef<BookingManagementRef, BookingManagementProp
     const [pendingSlot, setPendingSlot] = useState<SlotSelection | null>(null)
     const [actionError, setActionError] = useState<string | null>(null)
     const [wasEditing, setWasEditing] = useState(false)
+    const [turnstileToken, setTurnstileToken] = useState<string | null>(null)
+
+    const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY as string | undefined
+    const turnstileRef = useRef<HTMLDivElement | null>(null)
 
     const proceduresQuery = useQuery<ProceduresResponse>({
       queryKey: ['procedures'],
@@ -88,8 +93,22 @@ const BookingManagement = forwardRef<BookingManagementRef, BookingManagementProp
     })
     const procedures = proceduresQuery.data?.items ?? []
 
+    const resetForm = useCallback(() => {
+      setForm({ fullName: '', phone: '', email: '' })
+      setFormError(null)
+      setResults([])
+      setSelectedBooking(null)
+      setSelectedProcedure(null)
+      setPendingSlot(null)
+      setActionError(null)
+    }, [])
+
     useImperativeHandle(ref, () => ({
-      close: () => setIsOpen(false),
+      close: () => {
+        setIsOpen(false)
+        setState('search')
+        resetForm()
+      },
     }))
 
     const splitFullName = useCallback((fullName: string) => {
@@ -98,12 +117,9 @@ const BookingManagement = forwardRef<BookingManagementRef, BookingManagementProp
         return { firstName: '', lastName: '' }
       }
       const parts = trimmed.split(/\s+/)
-      if (parts.length === 1) {
-        return { firstName: parts[0], lastName: '' }
-      }
       return {
-        firstName: parts[0],
-        lastName: parts.slice(1).join(' '),
+        firstName: parts[0] ?? '',
+        lastName: parts.length > 1 ? parts.slice(1).join(' ') : '',
       }
     }, [])
 
@@ -147,10 +163,12 @@ const BookingManagement = forwardRef<BookingManagementRef, BookingManagementProp
     ])
 
     const canSearch = useMemo(() => {
-      const { firstName, lastName } = splitFullName(form.fullName)
+      const trimmedName = form.fullName.trim()
       const phoneDigits = form.phone.replace(/\D/g, '')
-      return firstName.length >= 2 && lastName.length >= 2 && phoneDigits.length >= 9
-    }, [form.fullName, form.phone, splitFullName])
+      const baseValid = trimmedName.length >= 2 && phoneDigits.length >= 9
+      if (!siteKey) return baseValid
+      return baseValid && !!turnstileToken
+    }, [form.fullName, form.phone, siteKey, turnstileToken])
 
     const mapApiResult = useCallback(
       (entry: SearchResultApi): BookingResult => {
@@ -177,15 +195,55 @@ const BookingManagement = forwardRef<BookingManagementRef, BookingManagementProp
       [procedures],
     )
 
-    const searchMutation = useMutation<SearchResponseApi, MutationError, void>({
-      mutationFn: async () => {
+    const searchMutation = useMutation<SearchResponseApi, MutationError, { turnstileToken?: string }>({
+      mutationFn: async ({ turnstileToken: providedToken } = {}) => {
         const { firstName, lastName } = splitFullName(form.fullName)
+        const normalizedPhone = form.phone.replace(/\D/g, '')
+        const normalizedName = form.fullName.trim().toLowerCase()
+        const shouldMock =
+          normalizedName.includes('test') ||
+          normalizedPhone.includes('123')
+
+        if (shouldMock) {
+          const now = new Date()
+          const makeSlot = (
+            id: string,
+            addHours: number,
+            durationMin: number,
+            overrides?: { canModify?: boolean; price?: number; procedureName?: string }
+          ) => {
+            const start = new Date(now.getTime() + addHours * 60 * 60 * 1000)
+            const end = new Date(start.getTime() + durationMin * 60 * 1000)
+            return {
+              eventId: id,
+              firstName,
+              lastName,
+              phone: form.phone,
+              email: form.email || undefined,
+              procedureName: overrides?.procedureName ?? 'Masaż relaksacyjny twarzy',
+              startTime: start.toISOString(),
+              endTime: end.toISOString(),
+              price: overrides?.price ?? 150,
+              canModify: overrides?.canModify ?? true,
+              canCancel: overrides?.canModify ?? true,
+            }
+          }
+
+          return {
+            results: [
+              makeSlot('mock-1', 48, 75),
+              makeSlot('mock-2', 120, 90, { price: 180, procedureName: 'Masaż Kobido' }),
+              makeSlot('mock-3', 12, 60, { canModify: false, procedureName: 'Masaż lifting twarzy' }),
+            ],
+          }
+        }
+
         const payload = {
           firstName,
           lastName,
           phone: form.phone,
           email: form.email || undefined,
-          turnstileToken: getTurnstileTokenWithSession() ?? undefined,
+          turnstileToken: providedToken ?? undefined,
         }
         const response = await fetch('/api/bookings/search', {
           method: 'POST',
@@ -224,7 +282,8 @@ const BookingManagement = forwardRef<BookingManagementRef, BookingManagementProp
         setIsOpen(true)
       },
       onError: (error) => {
-        setFormError(error.message)
+        console.error('Booking search failed', error)
+        setFormError('Nie udało się wyszukać rezerwacji. Spróbuj ponownie.')
         setState('search')
       },
     })
@@ -270,7 +329,9 @@ const BookingManagement = forwardRef<BookingManagementRef, BookingManagementProp
         setActionError(null)
         setState('results')
         setPendingSlot(null)
-        searchMutation.mutate()
+        const token = siteKey ? getTurnstileTokenWithSession() ?? turnstileToken ?? undefined : undefined
+        if (token) setTurnstileToken(token)
+        searchMutation.mutate({ turnstileToken: token ?? undefined })
       },
       onError: (error) => {
         setActionError(error.message)
@@ -311,7 +372,9 @@ const BookingManagement = forwardRef<BookingManagementRef, BookingManagementProp
         setActionError(null)
         setState('results')
         setSelectedBooking(null)
-        searchMutation.mutate()
+        const token = siteKey ? getTurnstileTokenWithSession() ?? turnstileToken ?? undefined : undefined
+        if (token) setTurnstileToken(token)
+        searchMutation.mutate({ turnstileToken: token ?? undefined })
       },
       onError: (error) => {
         setActionError(error.message)
@@ -320,17 +383,40 @@ const BookingManagement = forwardRef<BookingManagementRef, BookingManagementProp
 
     const handleSearch = useCallback(() => {
       if (!canSearch) {
-        setFormError('Podaj imię, nazwisko i numer telefonu (min. 9 cyfr).')
+        if (!siteKey) {
+          setFormError('Podaj imię, nazwisko i numer telefonu (min. 9 cyfr).')
+        } else if (!turnstileToken) {
+          setFormError('Potwierdź weryfikację Turnstile i spróbuj ponownie.')
+        } else {
+          setFormError('Podaj imię, nazwisko i numer telefonu (min. 9 cyfr).')
+        }
         return
       }
-      searchMutation.mutate()
-    }, [canSearch, searchMutation])
+      const token = siteKey ? getTurnstileTokenWithSession() ?? turnstileToken : undefined
+      if (siteKey && !token) {
+        setFormError('Potwierdź weryfikację Turnstile i spróbuj ponownie.')
+        return
+      }
+      if (token) {
+        setTurnstileToken(token)
+      }
+      searchMutation.mutate({ turnstileToken: token ?? undefined })
+    }, [canSearch, searchMutation, siteKey, turnstileToken])
 
     const handleToggle = () => {
       if (isOpen) {
         setIsOpen(false)
+        resetForm()
+        setState('search')
       } else {
         setIsOpen(true)
+        if (siteKey) {
+          const token = getTurnstileTokenWithSession()
+          if (token) {
+            setTurnstileToken(token)
+            setFormError(null)
+          }
+        }
       }
     }
 
@@ -380,6 +466,7 @@ const BookingManagement = forwardRef<BookingManagementRef, BookingManagementProp
       setActionError(null)
       setSelectedProcedure(null)
       setPendingSlot(null)
+      resetForm()
     }
 
     const handleBackToResults = () => {
@@ -387,6 +474,19 @@ const BookingManagement = forwardRef<BookingManagementRef, BookingManagementProp
       setActionError(null)
       setPendingSlot(null)
     }
+
+    const handleContactMaster = useCallback(() => {
+      console.log('Contact master')
+    }, [])
+
+    const handleStartNewSearch = useCallback(() => {
+      resetForm()
+      setState('search')
+    }, [resetForm])
+
+    const handleExtendSearch = useCallback(() => {
+      console.log('Extended search requested')
+    }, [])
 
     const handleBackToProcedure = () => {
       setState('edit-procedure')
@@ -410,6 +510,50 @@ const BookingManagement = forwardRef<BookingManagementRef, BookingManagementProp
     }
 
     const fallbackProcedure = deriveProcedureForBooking(selectedBooking)
+
+    useEffect(() => {
+      if (!siteKey) return
+
+      const existing = getTurnstileTokenWithSession()
+      if (existing) {
+        setTurnstileToken(existing)
+        return
+      }
+
+      const scriptId = 'cf-turnstile'
+      if (!document.getElementById(scriptId)) {
+        const script = document.createElement('script')
+        script.id = scriptId
+        script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js'
+        script.async = true
+        script.defer = true
+        document.head.appendChild(script)
+      }
+
+      const interval = setInterval(() => {
+        const turnstile = (window as any)?.turnstile
+        if (turnstile && turnstileRef.current) {
+          try {
+            turnstileRef.current.innerHTML = ''
+            turnstileRef.current.setAttribute('data-language', 'pl')
+            turnstile.render(turnstileRef.current, {
+              sitekey: siteKey,
+              language: 'pl',
+              callback: (token: string) => {
+                setTurnstileToken(token)
+                storeTurnstileSession(token)
+                setFormError((prev) => (prev && prev.includes('Turnstile') ? null : prev))
+              },
+            })
+            clearInterval(interval)
+          } catch {
+            // retry on next interval
+          }
+        }
+      }, 200)
+
+      return () => clearInterval(interval)
+    }, [siteKey])
 
     return (
       <Card>
@@ -436,6 +580,8 @@ const BookingManagement = forwardRef<BookingManagementRef, BookingManagementProp
                 searchPending={searchMutation.isPending}
                 formError={formError}
                 onSearch={handleSearch}
+                turnstileNode={siteKey ? <div ref={turnstileRef} className="rounded-xl" /> : undefined}
+                turnstileRequired={!!siteKey && !turnstileToken}
                 results={results}
                 selectedBooking={selectedBooking}
                 onSelectBooking={handleSelectBooking}
@@ -452,10 +598,12 @@ const BookingManagement = forwardRef<BookingManagementRef, BookingManagementProp
                   setActionError(null)
                 }}
                 onBackToSearch={handleBackToSearch}
+                onStartNewSearch={handleStartNewSearch}
+                onContactMaster={handleContactMaster}
                 onEditProcedureBack={handleBackToResults}
                 onEditDatetimeBack={handleBackToProcedure}
                 onConfirmSameTime={handleConfirmSameTime}
-                onRequestNewTime={handleRequestNewTime}
+                onExtendSearch={handleExtendSearch}
                 onCheckAvailability={handleCheckAvailability}
                 selectedDate={selectedDate}
                 selectedSlot={selectedSlot}

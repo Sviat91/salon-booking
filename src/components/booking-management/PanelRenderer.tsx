@@ -1,4 +1,5 @@
 "use client"
+import { type ReactNode } from 'react'
 import SearchPanel from './SearchPanel'
 import LoadingPanel from './LoadingPanel'
 import ResultsPanel from './ResultsPanel'
@@ -23,6 +24,8 @@ interface PanelRendererProps {
   searchPending: boolean
   formError: string | null
   onSearch: () => void
+  turnstileNode?: ReactNode
+  turnstileRequired?: boolean
   results: BookingResult[]
   selectedBooking: BookingResult | null
   onSelectBooking: (booking: BookingResult | null) => void
@@ -32,10 +35,12 @@ interface PanelRendererProps {
   procedures: ProcedureOption[]
   onSelectProcedure: (procedure: ProcedureOption | null) => void
   onBackToSearch: () => void
+  onStartNewSearch: () => void
+  onContactMaster: () => void
   onEditProcedureBack: () => void
   onEditDatetimeBack: () => void
   onConfirmSameTime: () => void
-  onRequestNewTime: () => void
+  onExtendSearch: () => void
   onCheckAvailability: () => void
   selectedDate?: Date
   selectedSlot?: SlotSelection | null
@@ -61,6 +66,8 @@ export default function PanelRenderer(props: PanelRendererProps) {
     searchPending,
     formError,
     onSearch,
+    turnstileNode,
+    turnstileRequired,
     results,
     selectedBooking,
     onSelectBooking,
@@ -70,10 +77,12 @@ export default function PanelRenderer(props: PanelRendererProps) {
     procedures,
     onSelectProcedure,
     onBackToSearch,
+    onStartNewSearch,
+    onContactMaster,
     onEditProcedureBack,
     onEditDatetimeBack,
     onConfirmSameTime,
-    onRequestNewTime,
+    onExtendSearch,
     onCheckAvailability,
     selectedDate,
     selectedSlot,
@@ -100,6 +109,8 @@ export default function PanelRenderer(props: PanelRendererProps) {
           isLoading={searchPending}
           errorMessage={formError}
           onSearch={onSearch}
+          turnstileNode={turnstileNode}
+          turnstileRequired={turnstileRequired}
         />
       )
     case 'loading':
@@ -112,13 +123,28 @@ export default function PanelRenderer(props: PanelRendererProps) {
           onSelect={onSelectBooking}
           onChangeProcedure={onChangeProcedure}
           onCancelRequest={onCancelRequest}
+          onContactMaster={onContactMaster}
+          onBackToSearch={onBackToSearch}
+          onNewSearch={onStartNewSearch}
         />
       )
     case 'not-found':
-      return <NoResultsPanel onBack={onBackToSearch} />
+      return (
+        <NoResultsPanel
+          onRetry={onBackToSearch}
+          onExtendSearch={onExtendSearch}
+          onContactMaster={onContactMaster}
+        />
+      )
     case 'edit-procedure':
       if (!selectedBooking) {
-        return <NoResultsPanel onBack={onBackToSearch} />
+        return (
+          <NoResultsPanel
+            onRetry={onBackToSearch}
+            onExtendSearch={onExtendSearch}
+            onContactMaster={onContactMaster}
+          />
+        )
       }
       return (
         <EditProcedurePanel
@@ -128,13 +154,19 @@ export default function PanelRenderer(props: PanelRendererProps) {
           onSelectProcedure={onSelectProcedure}
           onBack={onEditProcedureBack}
           onConfirmSameTime={onConfirmSameTime}
-          onRequestNewTime={onRequestNewTime}
+          onRequestNewTime={onExtendSearch}
           onCheckAvailability={onCheckAvailability}
         />
       )
     case 'edit-datetime':
       if (!selectedBooking) {
-        return <NoResultsPanel onBack={onBackToSearch} />
+        return (
+          <NoResultsPanel
+            onRetry={onBackToSearch}
+            onExtendSearch={onExtendSearch}
+            onContactMaster={onContactMaster}
+          />
+        )
       }
       return (
         <EditDatetimePanel
@@ -148,7 +180,13 @@ export default function PanelRenderer(props: PanelRendererProps) {
       )
     case 'confirm-change':
       if (!selectedBooking) {
-        return <NoResultsPanel onBack={onBackToSearch} />
+        return (
+          <NoResultsPanel
+            onRetry={onBackToSearch}
+            onExtendSearch={onExtendSearch}
+            onContactMaster={onContactMaster}
+          />
+        )
       }
       return (
         <ConfirmChangePanel
@@ -163,7 +201,13 @@ export default function PanelRenderer(props: PanelRendererProps) {
       )
     case 'confirm-cancel':
       if (!selectedBooking) {
-        return <NoResultsPanel onBack={onBackToSearch} />
+        return (
+          <NoResultsPanel
+            onRetry={onBackToSearch}
+            onExtendSearch={onExtendSearch}
+            onContactMaster={onContactMaster}
+          />
+        )
       }
       return (
         <ConfirmCancelPanel
@@ -183,6 +227,8 @@ export default function PanelRenderer(props: PanelRendererProps) {
           isLoading={searchPending}
           errorMessage={formError}
           onSearch={onSearch}
+          turnstileNode={turnstileNode}
+          turnstileRequired={turnstileRequired}
         />
       )
   }

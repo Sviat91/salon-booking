@@ -1,4 +1,5 @@
 "use client"
+import { type ReactNode } from 'react'
 import PhoneInput from '../ui/PhoneInput'
 import type { SearchFormData } from './types'
 
@@ -10,6 +11,8 @@ interface SearchPanelProps {
   errorMessage?: string | null
   onSearch: () => void
   onExtendedSearch?: () => void
+  turnstileNode?: ReactNode
+  turnstileRequired?: boolean
 }
 
 export default function SearchPanel({
@@ -20,6 +23,8 @@ export default function SearchPanel({
   errorMessage,
   onSearch,
   onExtendedSearch,
+  turnstileNode,
+  turnstileRequired,
 }: SearchPanelProps) {
   return (
     <div className="space-y-4">
@@ -52,6 +57,14 @@ export default function SearchPanel({
           autoComplete="email"
         />
       </div>
+
+      {turnstileNode ? <div className="mt-2">{turnstileNode}</div> : null}
+
+      {turnstileRequired ? (
+        <div className="text-xs text-neutral-500 dark:text-dark-muted">
+          Potwierdź weryfikację Turnstile, aby kontynuować.
+        </div>
+      ) : null}
 
       {errorMessage && !errorMessage.includes('telefon') ? (
         <div className="text-sm text-red-600 dark:text-red-400">{errorMessage}</div>
