@@ -207,7 +207,8 @@ const BookingManagement = forwardRef<BookingManagementRef, BookingManagementProp
         console.log('🔍 Searching for:', { firstName, lastName, phone: form.phone })
 
         // Fetch ALL calendar events for the period, then filter on client
-        const response = await fetch('/api/bookings/all')
+        // Add force=true to bypass cache for new searches
+        const response = await fetch('/api/bookings/all?force=true')
         
         if (!response.ok) {
           throw new Error('Nie udało się pobrać danych z kalendarza')
@@ -218,7 +219,7 @@ const BookingManagement = forwardRef<BookingManagementRef, BookingManagementProp
         
         const allBookings = allBookingsData.bookings || []
         
-        // Filter bookings with strict matching rules
+        // Filter bookings with strict matching rules to prevent showing foreign bookings
         const matchingBookings = allBookings.filter((booking: any) => {
           // Normalize search data
           const searchFirstName = firstName.toLowerCase().trim()
@@ -232,17 +233,28 @@ const BookingManagement = forwardRef<BookingManagementRef, BookingManagementProp
           const bookingPhone = booking.phone.replace(/\D/g, '')
           const bookingEmail = booking.email ? booking.email.toLowerCase().trim() : ''
           
-          // STRICT MATCHING RULES:
+          // SECURITY-FIRST MATCHING RULES:
           
-          // 1. First name must match exactly (not partial)
+          // 1. First name must match exactly
           const firstNameMatch = bookingFirstName === searchFirstName
           if (!firstNameMatch) return false
           
-          // 2. If search has last name, booking must have it and match exactly
-          if (searchLastName) {
-            if (!bookingLastName || bookingLastName !== searchLastName) {
-              return false
-            }
+          // 2. STRICT FULL NAME MATCHING to prevent showing foreign bookings
+          const searchHasLastName = searchLastName.length > 0
+          const bookingHasLastName = bookingLastName.length > 0
+          
+          let fullNameMatch = false
+          
+          if (searchHasLastName && bookingHasLastName) {
+            // Both have last names - must match exactly
+            fullNameMatch = searchLastName === bookingLastName
+          } else if (!searchHasLastName && !bookingHasLastName) {
+            // Both have only first names - already checked above
+            fullNameMatch = true
+          } else {
+            // One has last name, other doesn't - NO MATCH by default
+            // This prevents "Natalia" from seeing "Natalia Kowalska" bookings
+            fullNameMatch = false
           }
           
           // 3. Phone number must match (last 9 digits)
@@ -251,24 +263,28 @@ const BookingManagement = forwardRef<BookingManagementRef, BookingManagementProp
             phoneMatch = bookingPhone.slice(-9) === searchPhone.slice(-9)
           }
           
-          // 4. Email verification (if provided in search)
+          // 4. Email verification (exact match if provided)
           let emailMatch = true
-          if (searchEmail) {
-            if (!bookingEmail || bookingEmail !== searchEmail) {
-              emailMatch = false
+          if (searchEmail && bookingEmail) {
+            emailMatch = bookingEmail === searchEmail
+          } else if (searchEmail && !bookingEmail) {
+            emailMatch = false
+          }
+          
+          // 5. MAIN SECURITY RULE: Full name structure + phone must match
+          if (fullNameMatch && phoneMatch) {
+            return true
+          }
+          
+          // 6. EXCEPTION: Email as additional verification allows name structure mismatch
+          // Only if email is provided and matches exactly + either name or phone matches
+          if (searchEmail && emailMatch) {
+            if (firstNameMatch && phoneMatch) {
+              return true // Name + Phone + Email = OK even if lastName structure differs
             }
-          }
-          
-          // 5. Main rule: Name + Phone must match, OR Name + Phone partial + Email exact
-          if (firstNameMatch && phoneMatch) {
-            return true // Perfect match
-          }
-          
-          // 6. Alternative: Name exact + Phone partial + Email exact
-          if (firstNameMatch && searchEmail && emailMatch) {
-            const phonePartialMatch = bookingPhone.includes(searchPhone.slice(-8)) || 
-                                     searchPhone.includes(bookingPhone.slice(-8))
-            return phonePartialMatch
+            if (fullNameMatch) {
+              return true // Full name + Email = OK even if phone partial
+            }
           }
           
           return false
@@ -363,29 +379,47 @@ const BookingManagement = forwardRef<BookingManagementRef, BookingManagementProp
         if (!selectedBooking) {
           throw { message: 'Brak wybranej rezerwacji.' }
         }
-        const token = getTurnstileTokenWithSession() ?? undefined
+        
+        // No Turnstile needed for cancellation - user was already verified during search
         const body = {
-          turnstileToken: token,
+          eventId: selectedBooking.eventId,
           firstName: selectedBooking.firstName,
-          lastName: selectedBooking.lastName,
           phone: selectedBooking.phone,
           email: selectedBooking.email || '',
         }
-        const response = await fetch(`/api/bookings/${selectedBooking.eventId}`, {
-          method: 'DELETE',
+        
+        console.log('🔓 Cancelling without Turnstile (user already verified during search)')
+        
+        console.log('🗑️ Cancelling booking with eventId:', selectedBooking.eventId)
+        
+        const response = await fetch('/api/bookings/cancel', {
+          method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(body),
         })
+        
         if (!response.ok) {
           let detail = 'Nie udało się anulować rezerwacji.'
           try {
-            const json = (await response.json()) as { error?: string }
-            if (json?.error) detail = json.error
+            const json = (await response.json()) as { error?: string; code?: string }
+            if (json?.error) {
+              detail = json.error
+            }
+            
+            // Improve error messages
+            if (json?.code === 'BOOKING_NOT_FOUND') {
+              detail = 'Rezerwacja nie została znaleziona. Spróbuj wyszukać ponownie.'
+            } else if (json?.code === 'VERIFICATION_FAILED') {
+              detail = 'Weryfikacja nie powiodła się. Sprawdź poprawność danych.'
+            } else if (json?.code === 'TOO_LATE_TO_CANCEL') {
+              detail = 'Nie można anulować rezerwacji mniej niż 24 godziny przed terminem.'
+            }
           } catch {
-            // ignore
+            // ignore parsing errors
           }
           throw { message: detail }
         }
+        
         return response
       },
       onSuccess: () => {

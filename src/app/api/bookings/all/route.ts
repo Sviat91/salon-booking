@@ -30,11 +30,14 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url)
     const startParam = searchParams.get('start')
     const endParam = searchParams.get('end')
+    const forceRefresh = searchParams.get('force') === 'true'
 
     // Default to 90 days from now if no dates provided
+    // Round to current day for stable cache keys
     const now = new Date()
-    const defaultStart = now // Start from current time
-    const defaultEnd = new Date(now.getTime() + (90 * 24 * 60 * 60 * 1000))   // +90 days
+    const currentDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()) // Start of today
+    const defaultStart = currentDay
+    const defaultEnd = new Date(currentDay.getTime() + (90 * 24 * 60 * 60 * 1000))   // +90 days
     
     const startDate = startParam ? new Date(startParam) : defaultStart
     const endDate = endParam ? new Date(endParam) : defaultEnd
@@ -44,20 +47,24 @@ export async function GET(req: NextRequest) {
 
     log.debug({ startISO, endISO }, 'Fetching all calendar events')
 
-    // Create cache key
+    // Create stable cache key (same for all requests on the same day)
     const cacheKey = `calendar:events:${startISO}:${endISO}`
     
-    // Try to get from cache first
-    const cached = await cacheGet<BookingApiResult[]>(cacheKey)
-    if (cached) {
-      log.debug({ count: cached.length }, 'Returning cached calendar events')
-      return NextResponse.json({
-        bookings: cached,
-        startISO,
-        endISO,
-        count: cached.length,
-        cached: true
-      })
+    // Try to get from cache first (unless force refresh requested)
+    if (!forceRefresh) {
+      const cached = await cacheGet<BookingApiResult[]>(cacheKey)
+      if (cached) {
+        log.debug({ count: cached.length }, 'Returning cached calendar events')
+        return NextResponse.json({
+          bookings: cached,
+          startISO,
+          endISO,
+          count: cached.length,
+          cached: true
+        })
+      }
+    } else {
+      log.info('Force refresh requested - bypassing cache')
     }
 
     // Get all events from Google Calendar
