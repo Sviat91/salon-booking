@@ -218,12 +218,27 @@ const BookingManagement = forwardRef<BookingManagementRef, BookingManagementProp
       actions.selectBooking(booking)
     }
 
-    const handleStartEditProcedure = (booking: typeof state.selectedBooking) => {
+    const handleChangeBooking = (booking: typeof state.selectedBooking) => {
       if (!booking) return
       actions.selectBooking(booking)
-      const procedure = deriveProcedureForBooking(booking)
+      actions.setState('edit-selection')
+    }
+
+    const handleSelectChangeProcedure = () => {
+      const procedure = deriveProcedureForBooking(state.selectedBooking)
       actions.selectProcedure(procedure)
       actions.setState('edit-procedure')
+    }
+
+    const handleSelectChangeTime = () => {
+      // Пока заглушка для изменения времени
+      console.log('Change time selected for booking:', state.selectedBooking)
+      alert('Функция изменения времени пока недоступна')
+    }
+
+    const handleEditSelectionBack = () => {
+      actions.setState('results')
+      actions.setActionError(null)
     }
 
     const handleConfirmSameTime = () => {
@@ -313,11 +328,11 @@ const BookingManagement = forwardRef<BookingManagementRef, BookingManagementProp
             {state.isOpen ? 'Zamknij panel' : 'Kliknij, aby zarządzać rezerwacją'}
           </button>
           <div
-            className={`overflow-hidden transition-all duration-200 ease-out ${
-              state.isOpen ? 'max-h-[24rem] opacity-100 mt-2' : 'max-h-0 opacity-0'
+            className={`transition-all duration-200 ease-out ${
+              state.isOpen ? 'max-h-[24rem] opacity-100 mt-2' : 'max-h-0 opacity-0 overflow-hidden'
             }`}
           >
-            <div className="rounded-xl border border-border bg-white/90 p-4 dark:border-dark-border dark:bg-dark-card/90">
+            <div className={`rounded-xl border border-border bg-white/90 p-4 dark:border-dark-border dark:bg-dark-card/90 ${state.isOpen ? 'max-h-[22rem] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent' : ''}`}>
               <PanelRenderer
                 state={state.state}
                 form={state.form}
@@ -331,7 +346,7 @@ const BookingManagement = forwardRef<BookingManagementRef, BookingManagementProp
                 results={state.results}
                 selectedBooking={state.selectedBooking}
                 onSelectBooking={handleSelectBooking}
-                onChangeProcedure={handleStartEditProcedure}
+                onChangeBooking={handleChangeBooking}
                 onCancelRequest={(booking) => {
                   actions.selectBooking(booking)
                   actions.setActionError(null)
@@ -346,6 +361,9 @@ const BookingManagement = forwardRef<BookingManagementRef, BookingManagementProp
                 onBackToSearch={handleBackToSearch}
                 onStartNewSearch={handleStartNewSearch}
                 onContactMaster={handleContactMaster}
+                onEditSelectionBack={handleEditSelectionBack}
+                onSelectChangeProcedure={handleSelectChangeProcedure}
+                onSelectChangeTime={handleSelectChangeTime}
                 onEditProcedureBack={handleBackToResults}
                 onEditDatetimeBack={handleBackToProcedure}
                 onConfirmSameTime={handleConfirmSameTime}

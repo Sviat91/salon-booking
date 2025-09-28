@@ -11,7 +11,7 @@ interface ResultsPanelProps {
     email?: string
   }
   onSelect: (booking: BookingResult | null) => void
-  onChangeProcedure: (booking: BookingResult) => void
+  onChangeBooking: (booking: BookingResult) => void
   onCancelRequest: (booking: BookingResult) => void
   onContactMaster: () => void
   onBackToSearch: () => void
@@ -23,7 +23,7 @@ export default function ResultsPanel({
   selectedBookingId,
   searchCriteria,
   onSelect,
-  onChangeProcedure,
+  onChangeBooking,
   onCancelRequest,
   onContactMaster,
   onBackToSearch,
@@ -99,7 +99,7 @@ export default function ResultsPanel({
                         type="button"
                         onClick={(event) => {
                           event.stopPropagation()
-                          onChangeProcedure(booking)
+                          onChangeBooking(booking)
                         }}
                         className="btn btn-outline text-xs px-3 py-1"
                       >

@@ -3,6 +3,7 @@ import { type ReactNode } from 'react'
 import SearchPanel from './SearchPanel'
 import LoadingPanel from './LoadingPanel'
 import ResultsPanel from './ResultsPanel'
+import EditSelectionPanel from './EditSelectionPanel'
 import EditProcedurePanel from './EditProcedurePanel'
 import EditDatetimePanel from './EditDatetimePanel'
 import ConfirmChangePanel from './ConfirmChangePanel'
@@ -29,7 +30,7 @@ interface PanelRendererProps {
   results: BookingResult[]
   selectedBooking: BookingResult | null
   onSelectBooking: (booking: BookingResult | null) => void
-  onChangeProcedure: (booking: BookingResult) => void
+  onChangeBooking: (booking: BookingResult) => void
   onCancelRequest: (booking: BookingResult) => void
   selectedProcedure: ProcedureOption | null
   procedures: ProcedureOption[]
@@ -37,6 +38,9 @@ interface PanelRendererProps {
   onBackToSearch: () => void
   onStartNewSearch: () => void
   onContactMaster: () => void
+  onEditSelectionBack: () => void
+  onSelectChangeProcedure: () => void
+  onSelectChangeTime: () => void
   onEditProcedureBack: () => void
   onEditDatetimeBack: () => void
   onConfirmSameTime: () => void
@@ -72,7 +76,7 @@ export default function PanelRenderer(props: PanelRendererProps) {
     results,
     selectedBooking,
     onSelectBooking,
-    onChangeProcedure,
+    onChangeBooking,
     onCancelRequest,
     selectedProcedure,
     procedures,
@@ -80,6 +84,9 @@ export default function PanelRenderer(props: PanelRendererProps) {
     onBackToSearch,
     onStartNewSearch,
     onContactMaster,
+    onEditSelectionBack,
+    onSelectChangeProcedure,
+    onSelectChangeTime,
     onEditProcedureBack,
     onEditDatetimeBack,
     onConfirmSameTime,
@@ -123,7 +130,7 @@ export default function PanelRenderer(props: PanelRendererProps) {
             selectedBookingId={selectedBooking?.eventId}
             searchCriteria={form}
             onSelect={onSelectBooking}
-            onChangeProcedure={onChangeProcedure}
+            onChangeBooking={onChangeBooking}
             onCancelRequest={onCancelRequest}
             onContactMaster={onContactMaster}
             onBackToSearch={onBackToSearch}
@@ -136,6 +143,24 @@ export default function PanelRenderer(props: PanelRendererProps) {
           onRetry={onBackToSearch}
           onExtendSearch={onExtendSearch}
           onContactMaster={onContactMaster}
+        />
+      )
+    case 'edit-selection':
+      if (!selectedBooking) {
+        return (
+          <NoResultsPanel
+            onRetry={onBackToSearch}
+            onExtendSearch={onExtendSearch}
+            onContactMaster={onContactMaster}
+          />
+        )
+      }
+      return (
+        <EditSelectionPanel
+          booking={selectedBooking}
+          onChangeTime={onSelectChangeTime}
+          onChangeProcedure={onSelectChangeProcedure}
+          onBack={onEditSelectionBack}
         />
       )
     case 'edit-procedure':

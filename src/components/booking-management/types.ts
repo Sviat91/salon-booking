@@ -3,6 +3,7 @@ export type ManagementState =
   | 'loading'
   | 'results'
   | 'not-found'
+  | 'edit-selection'
   | 'edit-procedure'
   | 'edit-datetime'
   | 'confirm-cancel'
