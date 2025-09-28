@@ -4,14 +4,12 @@ import type { BookingResult } from './types'
 interface EditSelectionPanelProps {
   booking: BookingResult
   onChangeTime: () => void
-  onChangeProcedure: () => void
   onBack: () => void
 }
 
 export default function EditSelectionPanel({
   booking,
   onChangeTime,
-  onChangeProcedure,
   onBack,
 }: EditSelectionPanelProps) {
   const timeFormatter = new Intl.DateTimeFormat('pl-PL', {
@@ -69,8 +67,8 @@ export default function EditSelectionPanel({
 
         <button
           type="button"
-          onClick={onChangeProcedure}
-          className="w-full rounded-lg border border-neutral-300 bg-white p-4 text-left transition-all duration-200 hover:bg-neutral-50 hover:border-neutral-400 hover:shadow-sm dark:border-dark-border dark:bg-dark-card dark:hover:bg-dark-border/50 dark:hover:border-dark-border/80"
+          onClick={() => alert('Funkcja zmiany procedury będzie dostępna wkrótce')}
+          className="w-full rounded-lg border border-neutral-300 bg-white p-4 text-left transition-all duration-200 hover:bg-neutral-50 hover:border-neutral-400 hover:shadow-sm dark:border-dark-border dark:bg-dark-card dark:hover:bg-dark-border/50 dark:hover:border-dark-border/80 opacity-60 cursor-not-allowed"
         >
           <div className="flex items-center space-x-3">
             <div className="text-2xl">💆‍♀️</div>
@@ -79,7 +77,7 @@ export default function EditSelectionPanel({
                 Zmień procedurę
               </div>
               <div className="text-sm text-neutral-600 dark:text-dark-muted">
-                Wybierz inną usługę
+                Funkcja w przygotowaniu
               </div>
             </div>
           </div>

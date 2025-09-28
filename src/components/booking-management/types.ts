@@ -4,10 +4,9 @@ export type ManagementState =
   | 'results'
   | 'not-found'
   | 'edit-selection'
-  | 'edit-procedure'
   | 'edit-datetime'
+  | 'confirm-time-change'
   | 'confirm-cancel'
-  | 'confirm-change'
 
 export interface BookingResult {
   eventId: string

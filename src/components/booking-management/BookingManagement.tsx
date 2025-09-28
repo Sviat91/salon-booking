@@ -155,6 +155,34 @@ const BookingManagement = forwardRef<BookingManagementRef, BookingManagementProp
       },
     })
 
+    // Update time mutation - только для изменения времени
+    const updateTimeMutation = useMutation<void, MutationError, { newSlot: SlotSelection }>({
+      mutationFn: async ({ newSlot }) => {
+        console.log('🚀 updateTimeMutation starting with:', { newSlot, booking: state.selectedBooking?.eventId })
+        if (!state.selectedBooking) {
+          throw new Error('Brak wybranej rezerwacji.')
+        }
+        const token = getTurnstileTokenWithSession()
+        console.log('🔐 Using token:', token ? 'Present' : 'None')
+        await updateBooking(state.selectedBooking, { newSlot }, token || undefined)
+        console.log('✅ updateBooking completed successfully')
+      },
+      onSuccess: () => {
+        console.log('🎉 updateTimeMutation success - refreshing data')
+        actions.setActionError(null)
+        actions.setState('results')
+        actions.setPendingSlot(null)
+        actions.selectProcedure(null)
+        const token = siteKey ? getTurnstileTokenWithSession() ?? turnstileSession.turnstileToken ?? undefined : undefined
+        if (token) turnstileSession.setTurnstileToken(token)
+        searchMutation.mutate({ turnstileToken: token ?? undefined })
+      },
+      onError: (error) => {
+        console.error('❌ updateTimeMutation error:', error.message)
+        actions.setActionError(error.message)
+      },
+    })
+
     // Cancel mutation
     const cancelMutation = useMutation<void, MutationError, void>({
       mutationFn: async () => {
@@ -224,16 +252,19 @@ const BookingManagement = forwardRef<BookingManagementRef, BookingManagementProp
       actions.setState('edit-selection')
     }
 
-    const handleSelectChangeProcedure = () => {
-      const procedure = deriveProcedureForBooking(state.selectedBooking)
-      actions.selectProcedure(procedure)
-      actions.setState('edit-procedure')
-    }
+    // Заглушка для изменения процедуры (будет реализовано позже)
+    // const handleSelectChangeProcedure = () => { ... }
 
     const handleSelectChangeTime = () => {
-      // Пока заглушка для изменения времени
-      console.log('Change time selected for booking:', state.selectedBooking)
-      alert('Функция изменения времени пока недоступна')
+      console.log('⏰ handleSelectChangeTime called for booking:', state.selectedBooking?.eventId)
+      if (!state.selectedBooking) return
+      // Устанавливаем выбранную процедуру на основе текущего бронирования
+      const procedure = deriveProcedureForBooking(state.selectedBooking)
+      console.log('🔧 Setting procedure for calendar:', procedure?.name_pl)
+      actions.selectProcedure(procedure)
+      // Переходим к состоянию выбора времени
+      console.log('📅 Activating calendar in edit-datetime mode')
+      actions.setState('edit-datetime')
     }
 
     const handleEditSelectionBack = () => {
@@ -241,11 +272,8 @@ const BookingManagement = forwardRef<BookingManagementRef, BookingManagementProp
       actions.setActionError(null)
     }
 
-    const handleConfirmSameTime = () => {
-      if (!state.selectedBooking || !state.selectedProcedure) return
-      actions.setPendingSlot(null)
-      actions.setState('confirm-change')
-    }
+    // Заглушка - эта функция больше не используется
+    // const handleConfirmSameTime = () => { ... }
 
     const handleRequestNewTime = () => {
       actions.setState('edit-datetime')
@@ -258,12 +286,19 @@ const BookingManagement = forwardRef<BookingManagementRef, BookingManagementProp
     }
 
     const handleConfirmSlot = () => {
-      if (!selectedSlot) return
+      console.log('🎯 handleConfirmSlot called with selectedSlot:', selectedSlot)
+      if (!selectedSlot) {
+        console.error('❌ No selectedSlot available!')
+        return
+      }
       actions.setPendingSlot(selectedSlot)
       if (onSlotSelected) {
         onSlotSelected(selectedSlot)
       }
-      actions.setState('confirm-change')
+      // Если мы пришли из edit-selection (изменение времени), то переходим к confirm-time-change
+      // Иначе к обычному confirm-change (изменение процедуры)
+      console.log('✅ Setting state to confirm-time-change')
+      actions.setState('confirm-time-change')
     }
 
     const handleBackToSearch = () => {
@@ -293,8 +328,11 @@ const BookingManagement = forwardRef<BookingManagementRef, BookingManagementProp
       console.log('Extended search requested')
     }, [])
 
-    const handleBackToProcedure = () => {
-      actions.setState('edit-procedure')
+    // Заглушка - эта функция больше не используется
+    // const handleBackToProcedure = () => { ... }
+
+    const handleBackToEditSelection = () => {
+      actions.setState('edit-selection')
       actions.setActionError(null)
       actions.setPendingSlot(null)
     }
@@ -308,6 +346,22 @@ const BookingManagement = forwardRef<BookingManagementRef, BookingManagementProp
       } else {
         actions.setActionError('Wybierz procedurę lub termin do zmiany.')
       }
+    }
+
+    const handleConfirmTimeChange = () => {
+      console.log('🔄 handleConfirmTimeChange called with pendingSlot:', state.pendingSlot)
+      if (!state.pendingSlot) {
+        console.error('❌ No pendingSlot available!')
+        return
+      }
+      console.log('📤 Sending update request for booking:', state.selectedBooking?.eventId)
+      updateTimeMutation.mutate({ newSlot: state.pendingSlot })
+    }
+
+    const handleConfirmTimeChangeBack = () => {
+      // Возвращаемся к календарю изменения времени
+      actions.setState('edit-datetime')
+      actions.setActionError(null)
     }
 
     const handleConfirmCancel = () => {
@@ -352,40 +406,22 @@ const BookingManagement = forwardRef<BookingManagementRef, BookingManagementProp
                   actions.setActionError(null)
                   actions.setState('confirm-cancel')
                 }}
-                selectedProcedure={state.selectedProcedure}
-                procedures={procedures}
-                onSelectProcedure={(procedure) => {
-                  actions.selectProcedure(procedure)
-                  actions.setActionError(null)
-                }}
                 onBackToSearch={handleBackToSearch}
                 onStartNewSearch={handleStartNewSearch}
                 onContactMaster={handleContactMaster}
                 onEditSelectionBack={handleEditSelectionBack}
-                onSelectChangeProcedure={handleSelectChangeProcedure}
                 onSelectChangeTime={handleSelectChangeTime}
-                onEditProcedureBack={handleBackToResults}
-                onEditDatetimeBack={handleBackToProcedure}
-                onConfirmSameTime={handleConfirmSameTime}
-                onRequestNewTime={handleRequestNewTime}
+                onEditDatetimeBack={handleBackToEditSelection}
                 onExtendSearch={handleExtendSearch}
-                onCheckAvailability={handleCheckAvailability}
                 selectedDate={selectedDate}
                 selectedSlot={selectedSlot}
                 onConfirmSlot={handleConfirmSlot}
                 fallbackProcedure={fallbackProcedure}
                 pendingSlot={state.pendingSlot}
-                confirmChangeSubmitting={updateMutation.isPending}
-                confirmChangeError={state.actionError}
-                onConfirmChange={handleConfirmChange}
-                onConfirmChangeBack={() => {
-                  actions.setActionError(null)
-                  if (state.pendingSlot) {
-                    actions.setState('edit-datetime')
-                  } else {
-                    handleBackToProcedure()
-                  }
-                }}
+                confirmTimeChangeSubmitting={updateTimeMutation.isPending}
+                confirmTimeChangeError={state.actionError}
+                onConfirmTimeChange={handleConfirmTimeChange}
+                onConfirmTimeChangeBack={handleConfirmTimeChangeBack}
                 cancelSubmitting={cancelMutation.isPending}
                 cancelError={state.actionError}
                 onConfirmCancel={handleConfirmCancel}
