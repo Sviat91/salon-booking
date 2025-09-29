@@ -107,6 +107,13 @@ const BookingManagement = forwardRef<BookingManagementRef, BookingManagementProp
       actions,
     ])
 
+    // Ensure Turnstile widget is rendered whenever the panel opens
+    useEffect(() => {
+      if (state.isOpen && siteKey) {
+        turnstileSession.ensureWidget()
+      }
+    }, [state.isOpen, siteKey, turnstileSession.ensureWidget])
+
     // Form validation
     const canSearch = useMemo(() => {
       const trimmedName = state.form.fullName.trim()
@@ -256,13 +263,17 @@ const BookingManagement = forwardRef<BookingManagementRef, BookingManagementProp
           console.log('🔙 Closing BookingManagement panel - resetting calendar state')
           resetCalendarState()
         }
-        // Сбрасываем Turnstile при закрытии панели
+        // Полностью удаляем Turnstile при закрытии панели, чтобы корректно пересоздать при следующем открытии
         if (siteKey) {
-          turnstileSession.resetWidget()
+          turnstileSession.removeWidget()
         }
         actions.closePanel()
       } else {
         actions.togglePanel()
+        // Гарантируем рендер Turnstile при открытии панели
+        if (siteKey) {
+          turnstileSession.ensureWidget()
+        }
         if (siteKey && turnstileSession.turnstileToken) {
           actions.setFormError(null)
         }
@@ -489,7 +500,7 @@ const BookingManagement = forwardRef<BookingManagementRef, BookingManagementProp
               state.isOpen ? 'opacity-100 mt-2' : 'max-h-0 opacity-0 overflow-hidden'
             }`}
           >
-            <div className={`rounded-xl border border-border bg-white/90 p-4 dark:border-dark-border dark:bg-dark-card/90 ${state.isOpen ? 'max-h-[40rem] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent' : ''}`}>
+            <div className={`rounded-xl border border-border bg-white/90 p-4 dark:border-dark-border dark:bg-dark-card/90 ${state.isOpen ? 'max-h-[35rem] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent' : ''}`}>
               <PanelRenderer
                 state={state.state}
                 form={state.form}
