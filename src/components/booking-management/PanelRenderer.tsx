@@ -8,6 +8,8 @@ import EditDatetimePanel from './EditDatetimePanel'
 import ConfirmTimeChangePanel from './ConfirmTimeChangePanel'
 import ConfirmCancelPanel from './ConfirmCancelPanel'
 import NoResultsPanel from './NoResultsPanel'
+import ErrorFallbackPanel from './ErrorFallbackPanel'
+import DirectTimeChangePanel from './DirectTimeChangePanel'
 import TimeChangeSuccessPanel from './TimeChangeSuccessPanel'
 import TimeChangeErrorPanel from './TimeChangeErrorPanel'
 import type {
@@ -140,9 +142,8 @@ export default function PanelRenderer(props: PanelRendererProps) {
     case 'edit-selection':
       if (!selectedBooking) {
         return (
-          <NoResultsPanel
+          <ErrorFallbackPanel
             onRetry={onBackToSearch}
-            onExtendSearch={onExtendSearch}
             onContactMaster={onContactMaster}
           />
         )
@@ -157,9 +158,8 @@ export default function PanelRenderer(props: PanelRendererProps) {
     case 'edit-datetime':
       if (!selectedBooking) {
         return (
-          <NoResultsPanel
+          <ErrorFallbackPanel
             onRetry={onBackToSearch}
-            onExtendSearch={onExtendSearch}
             onContactMaster={onContactMaster}
           />
         )
@@ -178,9 +178,8 @@ export default function PanelRenderer(props: PanelRendererProps) {
       // Используем timeChangeSession из state для получения данных
       if (!timeChangeSession?.newSlot) {
         return (
-          <NoResultsPanel
+          <ErrorFallbackPanel
             onRetry={onBackToSearch}
-            onExtendSearch={onExtendSearch}
             onContactMaster={onContactMaster}
           />
         )
@@ -195,12 +194,35 @@ export default function PanelRenderer(props: PanelRendererProps) {
           onBack={onConfirmTimeChangeBack}
         />
       )
+    case 'direct-time-change':
+      if (!timeChangeSession) {
+        return (
+          <ErrorFallbackPanel
+            onRetry={onBackToSearch}
+            onContactMaster={onContactMaster}
+          />
+        )
+      }
+      return (
+        <DirectTimeChangePanel
+          booking={timeChangeSession.originalBooking}
+          selectedDate={selectedDate}
+          selectedSlot={selectedSlot}
+          newSlot={timeChangeSession.newSlot}
+          isSubmitting={confirmTimeChangeSubmitting}
+          errorMessage={confirmTimeChangeError}
+          onConfirm={onConfirmTimeChange}
+          onBack={onConfirmTimeChangeBack}
+          canConfirm={!!(selectedSlot || timeChangeSession.newSlot)}
+          turnstileNode={turnstileNode}
+          turnstileRequired={turnstileRequired}
+        />
+      )
     case 'confirm-cancel':
       if (!selectedBooking) {
         return (
-          <NoResultsPanel
+          <ErrorFallbackPanel
             onRetry={onBackToSearch}
-            onExtendSearch={onExtendSearch}
             onContactMaster={onContactMaster}
           />
         )
@@ -217,9 +239,8 @@ export default function PanelRenderer(props: PanelRendererProps) {
     case 'time-change-success':
       if (!timeChangeSession?.newSlot) {
         return (
-          <NoResultsPanel
+          <ErrorFallbackPanel
             onRetry={onBackToSearch}
-            onExtendSearch={onExtendSearch}
             onContactMaster={onContactMaster}
           />
         )

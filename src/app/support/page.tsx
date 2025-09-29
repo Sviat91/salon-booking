@@ -5,7 +5,7 @@ import ThemeToggle from '../../components/ThemeToggle'
 import ConsentWithdrawalModal from '../../components/ConsentWithdrawalModal'
 import DataErasureModal from '../../components/DataErasureModal'
 import DataExportModal from '../../components/DataExportModal'
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 
 export default function SupportPage() {
   const [formData, setFormData] = useState({
@@ -20,6 +20,57 @@ export default function SupportPage() {
   const [isConsentModalOpen, setConsentModalOpen] = useState(false)
   const [isErasureModalOpen, setErasureModalOpen] = useState(false)
   const [isExportModalOpen, setExportModalOpen] = useState(false)
+  
+  // Turnstile
+  const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY as string | undefined
+  const turnstileRef = useRef<HTMLDivElement | null>(null)
+  const widgetIdRef = useRef<string | null>(null)
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null)
+
+  // Load Turnstile
+  useEffect(() => {
+    if (!siteKey) return
+    const scriptId = 'cf-turnstile'
+    if (!document.getElementById(scriptId)) {
+      const script = document.createElement('script')
+      script.id = scriptId
+      script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js'
+      script.async = true
+      script.defer = true
+      document.head.appendChild(script)
+    }
+
+    const interval = setInterval(() => {
+      const turnstile = (window as any)?.turnstile
+      if (turnstile && turnstileRef.current && !widgetIdRef.current) {
+        try {
+          widgetIdRef.current = turnstile.render(turnstileRef.current, {
+            sitekey: siteKey,
+            language: 'pl',
+            callback: (token: string) => setTurnstileToken(token),
+          })
+          clearInterval(interval)
+        } catch (error) {
+          console.warn('Turnstile render failed:', error)
+        }
+      }
+    }, 200)
+
+    return () => {
+      clearInterval(interval)
+      if (turnstileRef.current && widgetIdRef.current) {
+        const turnstile = (window as any)?.turnstile
+        if (turnstile) {
+          try {
+            turnstile.remove(widgetIdRef.current)
+          } catch (error) {
+            console.warn('Turnstile cleanup failed:', error)
+          }
+        }
+      }
+      widgetIdRef.current = null
+    }
+  }, [siteKey])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -32,7 +83,7 @@ export default function SupportPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({...formData, turnstileToken}),
       })
 
       const result = await response.json()
@@ -199,11 +250,24 @@ export default function SupportPage() {
                       <p>{submitError}</p>
                     </div>
                   )}
+
+                  {/* Turnstile */}
+                  {siteKey && (
+                    <div className="flex justify-center">
+                      <div ref={turnstileRef} className="rounded-xl"></div>
+                    </div>
+                  )}
+
+                  {siteKey && !turnstileToken && (
+                    <div className="text-xs text-neutral-500 dark:text-dark-muted text-center">
+                      Potwierdź weryfikację Turnstile, aby kontynuować.
+                    </div>
+                  )}
                   
                   <button
                     type="submit"
-                    disabled={isSubmitting}
-                    className={`btn btn-primary w-full py-3 ${isSubmitting ? 'opacity-70 cursor-not-allowed' : ''}`}
+                    disabled={isSubmitting || !!(siteKey && !turnstileToken)}
+                    className={`btn btn-primary w-full py-3 ${isSubmitting || (siteKey && !turnstileToken) ? 'opacity-70 cursor-not-allowed' : ''}`}
                   >
                     {isSubmitting ? 'Wysyłanie...' : 'Wyślij wiadomość'}
                   </button>

@@ -13,7 +13,6 @@ import {
   cancelBooking,
 } from './api/bookingManagementApi'
 import type { ProceduresResponse } from './api/bookingManagementApi'
-import { getTurnstileTokenWithSession } from '../../lib/turnstile-client'
 import type {
   BookingManagementRef,
   CalendarMode,
@@ -82,7 +81,7 @@ const BookingManagement = forwardRef<BookingManagementRef, BookingManagementProp
 
     // Calendar mode synchronization
     useEffect(() => {
-      if (state.state === 'edit-datetime') {
+      if (state.state === 'edit-datetime' || state.state === 'direct-time-change') {
         actions.setWasEditing(true)
         onCalendarModeChange?.('editing')
         const targetProcedure = state.selectedProcedure ?? deriveProcedureForBooking(state.selectedBooking)
@@ -140,16 +139,16 @@ const BookingManagement = forwardRef<BookingManagementRef, BookingManagementProp
         if (!state.selectedBooking) {
           throw new Error('Brak wybranej rezerwacji.')
         }
-        const token = getTurnstileTokenWithSession()
-        await updateBooking(state.selectedBooking, changes, token || undefined)
+        const token = turnstileSession.turnstileToken ?? undefined
+        await updateBooking(state.selectedBooking, changes, token)
       },
       onSuccess: () => {
         actions.setActionError(null)
         actions.setState('results')
         actions.setPendingSlot(null)
-        const token = siteKey ? getTurnstileTokenWithSession() ?? turnstileSession.turnstileToken ?? undefined : undefined
+        const token = siteKey ? (turnstileSession.turnstileToken ?? undefined) : undefined
         if (token) turnstileSession.setTurnstileToken(token)
-        searchMutation.mutate({ turnstileToken: token ?? undefined })
+        searchMutation.mutate({ turnstileToken: token })
       },
       onError: (error) => {
         actions.setActionError(error.message)
@@ -173,12 +172,12 @@ const BookingManagement = forwardRef<BookingManagementRef, BookingManagementProp
         }
         
         console.log('🚀 Starting simple time update for:', state.timeChangeSession.originalBooking.eventId)
-        const token = getTurnstileTokenWithSession()
+        const token = turnstileSession.turnstileToken ?? undefined
         
         await updateBookingTime(
           state.timeChangeSession.originalBooking,
           state.timeChangeSession.newSlot,
-          token || undefined
+          token
         )
       },
       onSuccess: () => {
@@ -218,9 +217,9 @@ const BookingManagement = forwardRef<BookingManagementRef, BookingManagementProp
         actions.setActionError(null)
         actions.setState('results')
         actions.selectBooking(null)
-        const token = siteKey ? getTurnstileTokenWithSession() ?? turnstileSession.turnstileToken ?? undefined : undefined
+        const token = siteKey ? (turnstileSession.turnstileToken ?? undefined) : undefined
         if (token) turnstileSession.setTurnstileToken(token)
-        searchMutation.mutate({ turnstileToken: token ?? undefined })
+        searchMutation.mutate({ turnstileToken: token })
       },
       onError: (error) => {
         actions.setActionError(error.message)
@@ -239,7 +238,7 @@ const BookingManagement = forwardRef<BookingManagementRef, BookingManagementProp
         }
         return
       }
-      const token = siteKey ? getTurnstileTokenWithSession() ?? turnstileSession.turnstileToken : undefined
+      const token = siteKey ? turnstileSession.turnstileToken ?? undefined : undefined
       if (siteKey && !token) {
         actions.setFormError('Potwierdź weryfikację Turnstile i spróbuj ponownie.')
         return
@@ -247,7 +246,7 @@ const BookingManagement = forwardRef<BookingManagementRef, BookingManagementProp
       if (token) {
         turnstileSession.setTurnstileToken(token)
       }
-      searchMutation.mutate({ turnstileToken: token ?? undefined })
+      searchMutation.mutate({ turnstileToken: token })
     }, [canSearch, searchMutation, siteKey, turnstileSession, actions])
 
     const handleToggle = () => {
@@ -257,15 +256,15 @@ const BookingManagement = forwardRef<BookingManagementRef, BookingManagementProp
           console.log('🔙 Closing BookingManagement panel - resetting calendar state')
           resetCalendarState()
         }
+        // Сбрасываем Turnstile при закрытии панели
+        if (siteKey) {
+          turnstileSession.resetWidget()
+        }
         actions.closePanel()
       } else {
         actions.togglePanel()
-        if (siteKey) {
-          const token = getTurnstileTokenWithSession()
-          if (token) {
-            turnstileSession.setTurnstileToken(token)
-            actions.setFormError(null)
-          }
+        if (siteKey && turnstileSession.turnstileToken) {
+          actions.setFormError(null)
         }
       }
     }
@@ -283,9 +282,9 @@ const BookingManagement = forwardRef<BookingManagementRef, BookingManagementProp
     // Заглушка для изменения процедуры (будет реализовано позже)
     // const handleSelectChangeProcedure = () => { ... }
 
-    // Новая простая логика изменения времени - кешируем и запускаем календарь
+    // Новая простая логика изменения времени - сразу показываем direct-time-change панель
     const handleSelectChangeTime = () => {
-      console.log('⏰ Starting time change for booking:', state.selectedBooking?.eventId)
+      console.log('⏰ Starting direct time change for booking:', state.selectedBooking?.eventId)
       if (!state.selectedBooking) return
       
       // Создаем сессию изменения времени
@@ -300,8 +299,14 @@ const BookingManagement = forwardRef<BookingManagementRef, BookingManagementProp
         newSlot: null,
       }
       
-      console.log('💾 Creating time change session:', session.originalBooking.procedureName)
+      // Активируем Turnstile для изменения времени
+      if (siteKey && turnstileSession.turnstileToken) {
+        actions.setActionError(null)
+      }
+      
+      console.log('💾 Creating time change session and going direct to comparison:', session.originalBooking.procedureName)
       actions.startTimeChange(session)
+      actions.setState('direct-time-change')
     }
 
     const handleEditSelectionBack = () => {
@@ -343,10 +348,15 @@ const BookingManagement = forwardRef<BookingManagementRef, BookingManagementProp
       actions.clearTimeChange() // Очищаем сессию при возврате
       actions.setState('results')
       
+      // Сбрасываем Turnstile для чистого старта
+      if (siteKey) {
+        turnstileSession.resetWidget()
+      }
+      
       // Обновляем поиск при возврате к результатам
-      const token = siteKey ? getTurnstileTokenWithSession() ?? turnstileSession.turnstileToken ?? undefined : undefined
+      const token = siteKey ? (turnstileSession.turnstileToken ?? undefined) : undefined
       if (token) turnstileSession.setTurnstileToken(token)
-      searchMutation.mutate({ turnstileToken: token ?? undefined })
+      searchMutation.mutate({ turnstileToken: token })
     }
 
     const handleRetryTimeChange = () => {
@@ -404,22 +414,39 @@ const BookingManagement = forwardRef<BookingManagementRef, BookingManagementProp
       }
     }
 
-    // Простое подтверждение изменения времени
+    // Простое подтверждение изменения времени - сначала сохраняем selectedSlot если нужно
     const handleConfirmTimeChange = () => {
       console.log('🔄 Confirming time change from session:', state.timeChangeSession?.originalBooking.eventId)
-      if (!state.timeChangeSession?.newSlot) {
-        console.error('❌ No new slot in time change session!')
+      
+      // Если есть selectedSlot, но нет newSlot в сессии - сохраняем
+      if (selectedSlot && !state.timeChangeSession?.newSlot) {
+        console.log('💾 First saving selectedSlot to session:', selectedSlot)
+        actions.setTimeChangeSlot(selectedSlot)
+        if (onSlotSelected) {
+          onSlotSelected(selectedSlot)
+        }
+      }
+      
+      // Проверяем что есть слот для изменения  
+      const slotToUse = state.timeChangeSession?.newSlot || selectedSlot
+      if (!slotToUse) {
+        console.error('❌ No slot available for time change!')
         return
       }
+      
       console.log('📤 Executing time change...')
       updateTimeMutation.mutate()
     }
 
     const handleConfirmTimeChangeBack = () => {
-      // Возвращаемся к календарю изменения времени и сбрасываем календарь
-      console.log('🔙 User canceled time change confirmation - resetting calendar')
+      // Возвращаемся к edit-selection и сбрасываем календарь
+      console.log('🔙 User canceled time change - resetting calendar and going back to selection')
       resetCalendarState()
-      actions.setState('edit-datetime')
+      // Сбрасываем Turnstile для чистого старта
+      if (siteKey) {
+        turnstileSession.resetWidget()
+      }
+      actions.setState('edit-selection')
       actions.setActionError(null)
     }
 
@@ -432,20 +459,37 @@ const BookingManagement = forwardRef<BookingManagementRef, BookingManagementProp
     return (
       <Card>
         <div className="space-y-3">
-          <label className="block text-sm text-muted dark:text-dark-muted">Zarządzanie rezerwacją</label>
-          <button
-            type="button"
-            onClick={handleToggle}
-            className={`btn w-full ${state.isOpen ? 'btn-outline' : 'btn-primary'}`}
-          >
-            {state.isOpen ? 'Zamknij panel' : 'Kliknij, aby zarządzać rezerwacją'}
-          </button>
+          {!state.isOpen ? (
+            // Закрытое состояние - обычная кнопка
+            <>
+              <label className="block text-sm text-muted dark:text-dark-muted">Zarządzanie rezerwacją</label>
+              <button
+                type="button"
+                onClick={handleToggle}
+                className="btn btn-primary w-full"
+              >
+                Kliknij, aby zarządzać rezerwacją
+              </button>
+            </>
+          ) : (
+            // Открытое состояние - заголовок и кнопка закрытия в одной строке
+            <div className="flex items-center justify-between">
+              <label className="text-sm text-muted dark:text-dark-muted">Zarządzanie rezerwacją</label>
+              <button
+                type="button"
+                onClick={handleToggle}
+                className="text-xs text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-colors"
+              >
+                Zamknij panel
+              </button>
+            </div>
+          )}
           <div
             className={`transition-all duration-200 ease-out ${
-              state.isOpen ? 'max-h-[24rem] opacity-100 mt-2' : 'max-h-0 opacity-0 overflow-hidden'
+              state.isOpen ? 'opacity-100 mt-2' : 'max-h-0 opacity-0 overflow-hidden'
             }`}
           >
-            <div className={`rounded-xl border border-border bg-white/90 p-4 dark:border-dark-border dark:bg-dark-card/90 ${state.isOpen ? 'max-h-[22rem] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent' : ''}`}>
+            <div className={`rounded-xl border border-border bg-white/90 p-4 dark:border-dark-border dark:bg-dark-card/90 ${state.isOpen ? 'max-h-[70vh] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent' : ''}`}>
               <PanelRenderer
                 state={state.state}
                 form={state.form}
@@ -454,7 +498,7 @@ const BookingManagement = forwardRef<BookingManagementRef, BookingManagementProp
                 searchPending={searchMutation.isPending}
                 formError={state.formError}
                 onSearch={handleSearch}
-                turnstileNode={turnstileSession.turnstileNode ? <div {...turnstileSession.turnstileNode} /> : undefined}
+                turnstileNode={turnstileSession.turnstileRef ? <div ref={turnstileSession.turnstileRef} className="rounded-xl"></div> : undefined}
                 turnstileRequired={turnstileSession.turnstileRequired}
                 results={state.results}
                 selectedBooking={state.selectedBooking}

@@ -7,6 +7,7 @@ export type ManagementState =
   | 'edit-datetime'
   | 'confirm-change'
   | 'confirm-time-change'
+  | 'direct-time-change'
   | 'confirm-cancel'
   | 'not-found'
   | 'time-change-success'
