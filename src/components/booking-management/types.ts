@@ -49,6 +49,8 @@ export interface ExtensionCheckResult {
   // For shift_back scenario
   suggestedStartISO?: string
   suggestedEndISO?: string
+  shiftMinutes?: number
+  reason?: string
   alternativeSlots?: Array<{ startISO: string; endISO: string }>
 }
 

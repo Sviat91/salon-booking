@@ -1,5 +1,5 @@
 import { getClients } from './google/auth'
-import { parseBookingData, freeBusy } from './google/calendar'
+import { parseBookingData, freeBusy, getBusyTimesWithIds, type BusyInterval } from './google/calendar'
 import { readProcedures } from './google/sheets'
 import { verifyBookingAccess, canModifyBooking, BookingErrors, type UserAccessCriteria } from './booking-helpers'
 import { config } from './env'
@@ -164,19 +164,38 @@ export async function validateTimeSlotAvailability(
   eventId: string
 ) {
   try {
-    // Check availability for new time slot (excluding current booking)
-    const busy = await freeBusy(newStartISO, newEndISO)
+    // Use getBusyTimesWithIds to get event IDs for proper filtering
+    const busy = await getBusyTimesWithIds(newStartISO, newEndISO)
     
-    // Filter out the current booking from busy times
-    const conflictingBusy = busy.filter(busySlot => {
+    // Filter out the current booking by eventId (not by time!)
+    // This is crucial for shift-back scenarios where time changes
+    const conflictingBusy = busy.filter((busySlot: BusyInterval) => {
+      // If we have eventId from API, use it for exact match
+      if (busySlot.id && busySlot.id === eventId) {
+        log.info({ 
+          excludedByEventId: busySlot.id,
+          message: '✅ Excluded current booking from conflict check'
+        })
+        return false
+      }
+      
+      // Fallback: exclude by time match (for old bookings without ID)
       const busyStart = new Date(busySlot.start)
       const busyEnd = new Date(busySlot.end)
       const existingStart = existingBooking.startTime
       const existingEnd = existingBooking.endTime
       
-      // Check if this busy slot is NOT the current booking
-      return !(busyStart.getTime() === existingStart.getTime() && 
-               busyEnd.getTime() === existingEnd.getTime())
+      const isSameTime = busyStart.getTime() === existingStart.getTime() && 
+                         busyEnd.getTime() === existingEnd.getTime()
+      if (isSameTime) {
+        log.info({ 
+          excludedByTime: { start: busySlot.start, end: busySlot.end },
+          message: '✅ Excluded current booking by time match'
+        })
+        return false
+      }
+      
+      return true // This is a different booking - check for conflict
     })
 
     if (conflictingBusy.length > 0) {
@@ -185,7 +204,8 @@ export async function validateTimeSlotAvailability(
         eventId, 
         newStartISO, 
         newEndISO, 
-        conflicts: conflictingBusy.length 
+        conflicts: conflictingBusy.length,
+        conflictDetails: conflictingBusy.map((b: BusyInterval) => ({ id: b.id, start: b.start, end: b.end }))
       }, 'New time slot conflicts with existing bookings')
       return {
         success: false,
@@ -194,6 +214,13 @@ export async function validateTimeSlotAvailability(
       }
     }
 
+    log.info({ 
+      eventId,
+      newStartISO,
+      newEndISO,
+      message: '✅ Time slot validated - no conflicts'
+    })
+    
     return { success: true }
 
   } catch (error) {

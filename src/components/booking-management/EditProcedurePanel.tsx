@@ -177,11 +177,26 @@ export default function EditProcedurePanel({
               {/* Сценарий B: Можно сдвинуть раньше (can_shift_back) */}
               {canShiftBack && extensionCheckResult && (
                 <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 dark:border-amber-400/50 dark:bg-amber-400/10">
-                  <div className="text-sm text-amber-700 dark:text-amber-400">
-                    ⚠ Na obecny termin brak miejsca, ale możemy przesunąć rezerwację wcześniej:
+                  <div className="text-sm text-amber-700 dark:text-amber-400 font-medium mb-2">
+                    ⚠ Nie możemy wydłużyć czasu procedury
                   </div>
-                  <div className="text-xs text-amber-600 dark:text-amber-300 mt-1">
-                    Sugerowany termin: <span className="font-semibold">{extensionCheckResult.suggestedStartISO && formatTime(extensionCheckResult.suggestedStartISO)}</span>
+                  <div className="text-xs text-amber-600 dark:text-amber-300 mb-3">
+                    {extensionCheckResult.reason === 'konflikt z kolejną rezerwacją' 
+                      ? '→ Kolejna rezerwacja uniemożliwia rozszerzenie'
+                      : '→ Nowy czas wykraczałby poza godziny pracy'
+                    }
+                  </div>
+                  <div className="border-t border-amber-300/30 dark:border-amber-500/30 pt-2 mt-2">
+                    <div className="text-sm text-amber-700 dark:text-amber-400 font-medium mb-1">
+                      💡 Możemy przesunąć Twoją rezerwację o {extensionCheckResult.shiftMinutes} min wcześniej:
+                    </div>
+                    <div className="text-xs text-amber-600 dark:text-amber-300">
+                      <span className="font-semibold">
+                        {extensionCheckResult.suggestedStartISO && formatTime(extensionCheckResult.suggestedStartISO)}
+                        {' - '}
+                        {extensionCheckResult.suggestedEndISO && formatTime(extensionCheckResult.suggestedEndISO)}
+                      </span>
+                    </div>
                   </div>
                   
                   {/* Раскрывающийся список альтернативных слотов */}

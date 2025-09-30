@@ -22,8 +22,8 @@ const CheckExtensionSchema = z.object({
 // Response types
 type ExtensionCheckResult = 
   | { status: 'can_extend'; message: string }
-  | { status: 'can_shift_back'; suggestedStartISO: string; suggestedEndISO: string; message: string; alternativeSlots: Array<{ startISO: string; endISO: string }> }
-  | { status: 'no_availability'; message: string }
+  | { status: 'can_shift_back'; suggestedStartISO: string; suggestedEndISO: string; shiftMinutes: number; message: string; reason: string; alternativeSlots: Array<{ startISO: string; endISO: string }> }
+  | { status: 'no_availability'; message: string; reason?: string }
 
 interface CheckExtensionResponse {
   result: ExtensionCheckResult
@@ -292,7 +292,95 @@ export async function POST(
       })
     }
 
-    // Cannot extend - either conflict or outside working hours
+    // STEP 9: Try shift-back if cannot extend (conflict or outside schedule)
+    if ((hasConflict || !withinSchedule) && extensionNeeded > 0) {
+      log.info({ message: '🔄 STEP 9: Cannot extend forward, trying shift-back logic...' })
+      
+      // Determine the reason why we can't extend
+      const extensionBlockReason = hasConflict 
+        ? 'konflikt z kolejną rezerwacją' 
+        : 'przekroczenie godzin pracy'
+      
+      // WORK IN WARSAW TIMEZONE for DST safety
+      // Convert current booking to local time
+      const currentStartLocal = toZonedTime(currentStart, TZ)
+      
+      // Calculate proposed shift-back time in local timezone
+      // Shift start back by extensionNeeded minutes
+      const proposedStartLocal = new Date(currentStartLocal)
+      proposedStartLocal.setMinutes(proposedStartLocal.getMinutes() - extensionNeeded)
+      
+      // Calculate proposed end time (start + new duration)
+      const proposedEndLocal = new Date(proposedStartLocal)
+      proposedEndLocal.setMinutes(proposedEndLocal.getMinutes() + newDuration)
+      
+      // Format local times properly for fromZonedTime (WITHOUT timezone offset!)
+      const proposedStartStr = format(proposedStartLocal, 'yyyy-MM-dd HH:mm:ss')
+      const proposedEndStr = format(proposedEndLocal, 'yyyy-MM-dd HH:mm:ss')
+      
+      // Convert back to UTC for API responses and comparisons
+      const proposedStart = fromZonedTime(proposedStartStr, TZ)
+      const proposedEnd = fromZonedTime(proposedEndStr, TZ)
+      
+      // Check if proposed start is within working hours
+      const [, startHourStr, startMinStr] = scheduleMatch
+      const scheduleStartMinutes = parseInt(startHourStr) * 60 + parseInt(startMinStr)
+      const proposedStartMinutes = proposedStartLocal.getHours() * 60 + proposedStartLocal.getMinutes()
+      const afterScheduleStart = proposedStartMinutes >= scheduleStartMinutes
+      
+      // Check if proposed time conflicts with any other booking
+      const hasConflictAfterShift = otherBookings.some((busy: { start: string; end: string }) => {
+        const busyStart = new Date(busy.start).getTime()
+        const busyEnd = new Date(busy.end).getTime()
+        // Check overlap: proposedStart < busyEnd AND proposedEnd > busyStart
+        return (proposedStart.getTime() < busyEnd && proposedEnd.getTime() > busyStart)
+      })
+      
+      log.info({
+        extensionNeeded,
+        extensionBlockReason,
+        currentStartWarsawTime: format(currentStartLocal, 'yyyy-MM-dd HH:mm:ss'),
+        proposedStartWarsawTime: proposedStartStr,
+        proposedEndWarsawTime: proposedEndStr,
+        proposedStartUTC: proposedStart.toISOString(),
+        proposedEndUTC: proposedEnd.toISOString(),
+        scheduleStartMinutes: `${Math.floor(scheduleStartMinutes / 60)}:${(scheduleStartMinutes % 60).toString().padStart(2, '0')} (${scheduleStartMinutes} min)`,
+        proposedStartMinutes: `${Math.floor(proposedStartMinutes / 60)}:${(proposedStartMinutes % 60).toString().padStart(2, '0')} (${proposedStartMinutes} min)`,
+        afterScheduleStart,
+        hasConflictAfterShift,
+        message: '🔄 STEP 9: Shift-back analysis (Warsaw TZ)'
+      })
+      
+      if (afterScheduleStart && !hasConflictAfterShift) {
+        log.info({ message: '✅ STEP 9: Can shift back!' })
+        const formatTime = (d: Date) => {
+          return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`
+        }
+        
+        return NextResponse.json<CheckExtensionResponse>({
+          result: {
+            status: 'can_shift_back',
+            suggestedStartISO: proposedStart.toISOString(),
+            suggestedEndISO: proposedEnd.toISOString(),
+            shiftMinutes: extensionNeeded,
+            reason: extensionBlockReason,
+            message: `Nie możemy wydłużyć czasu na obecnym terminie (${extensionBlockReason}), ale możemy przesunąć Twoją rezerwację ${extensionNeeded} min wcześniej: ${formatTime(proposedStartLocal)}-${formatTime(proposedEndLocal)}.`,
+            alternativeSlots: []
+          },
+          currentBooking: {
+            startISO: body.currentStartISO,
+            endISO: body.currentEndISO,
+          },
+          newProcedure: {
+            id: newProcedure.id,
+            name: newProcedure.name_pl,
+            duration: newProcedure.duration_min,
+          }
+        })
+      }
+    }
+
+    // STEP 10: Cannot extend and cannot shift back
     const reason = hasConflict 
       ? 'konflikt z innym terminem' 
       : 'nowa procedura wykracza poza godziny pracy'
@@ -301,13 +389,14 @@ export async function POST(
       hasConflict, 
       withinSchedule, 
       reason,
-      message: '❌ STEP 9: Cannot extend at same time' 
+      message: '❌ STEP 10: Cannot extend and cannot shift back' 
     })
     
     return NextResponse.json<CheckExtensionResponse>({
       result: {
         status: 'no_availability',
-        message: `Nie można wydłużyć wizyty na aktualny czas (${reason}). Wybierz nowy termin z kalendarza.`
+        message: `Nie można wydłużyć wizyty na obecny dzień (${reason} i brak możliwości przesunięcia). Wybierz nowy termin z kalendarza.`,
+        reason
       },
       currentBooking: {
         startISO: body.currentStartISO,

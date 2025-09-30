@@ -170,18 +170,35 @@ const BookingManagement = forwardRef<BookingManagementRef, BookingManagementProp
     })
 
     // Update mutation (для комбинированных изменений - процедура + время)
-    const updateMutation = useMutation<void, MutationError, { newProcedureId?: string; newSlot?: SlotSelection }>({
+    const updateMutation = useMutation<
+      { startTime?: string; endTime?: string; procedure?: string }, 
+      MutationError, 
+      { newProcedureId?: string; newSlot?: SlotSelection }
+    >({
       mutationFn: async (changes) => {
         if (!state.selectedBooking) {
           throw new Error('Brak wybranej rezerwacji.')
         }
         const token = turnstileSession.turnstileToken ?? undefined
-        await updateBooking(state.selectedBooking, changes, token)
+        return await updateBooking(state.selectedBooking, changes, token)
       },
-      onSuccess: () => {
-        console.log('✅ Combined procedure+time update successful')
+      onSuccess: (data) => {
+        console.log('✅ Combined procedure+time update successful', data)
         actions.setActionError(null)
-        actions.clearExtensionCheck() // Очищаем проверку после успешного комбинированного изменения
+        actions.clearExtensionCheck()
+        
+        // Update booking time in state if it changed
+        if (data.startTime && data.endTime && state.selectedBooking) {
+          console.log('🔄 Updating booking time in state:', {
+            old: { start: state.selectedBooking.startTime, end: state.selectedBooking.endTime },
+            new: { start: data.startTime, end: data.endTime }
+          })
+          actions.updateBookingTime({
+            startTime: new Date(data.startTime),
+            endTime: new Date(data.endTime)
+          })
+        }
+        
         // Показываем панель успеха изменения процедуры (не просто results)
         actions.setState('procedure-change-success')
       },

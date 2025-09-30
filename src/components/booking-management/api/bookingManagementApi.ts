@@ -183,15 +183,11 @@ export async function updateBooking(
     newProcedureId?: string
     newSlot?: SlotSelection
   },
-  turnstileToken?: string,
-): Promise<void> {
-  const body: Record<string, unknown> = {
-    turnstileToken,
-    firstName: booking.firstName,
-    lastName: booking.lastName,
-    phone: booking.phone,
-    email: booking.email || '',
-  }
+  turnstileToken?: string, // Not used anymore - kept for compatibility
+): Promise<{ startTime?: string; endTime?: string; procedure?: string }> {
+  // NO USER DATA - user already validated during search
+  // We trust the eventId and only send changes
+  const body: Record<string, unknown> = {}
   
   if (changes.newProcedureId) {
     body.newProcedureId = changes.newProcedureId
@@ -218,6 +214,10 @@ export async function updateBooking(
     }
     throw new Error(detail)
   }
+  
+  // Return new booking data from API response
+  const result = await response.json()
+  return result.changes || {}
 }
 
 // Проверка возможности увеличения длительности процедуры

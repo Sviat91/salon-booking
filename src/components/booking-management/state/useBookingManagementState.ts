@@ -70,6 +70,7 @@ export type BookingManagementAction =
   | { type: 'SET_EXTENSION_CHECK_RESULT'; payload: ExtensionCheckResult | null }
   | { type: 'SELECT_ALTERNATIVE_SLOT'; payload: SlotSelection | null }
   | { type: 'CLEAR_EXTENSION_CHECK' }
+  | { type: 'UPDATE_BOOKING_TIME'; payload: { startTime: Date; endTime: Date } }
 
 // Initial state
 const initialState: BookingManagementState = {
@@ -280,6 +281,17 @@ function bookingManagementReducer(
         selectedAlternativeSlot: null,
       }
 
+    case 'UPDATE_BOOKING_TIME':
+      if (!state.selectedBooking) return state
+      return {
+        ...state,
+        selectedBooking: {
+          ...state.selectedBooking,
+          startTime: action.payload.startTime,
+          endTime: action.payload.endTime,
+        },
+      }
+
     default:
       return state
   }
@@ -311,6 +323,7 @@ export interface BookingManagementActions {
   setExtensionCheckResult: (result: ExtensionCheckResult | null) => void
   selectAlternativeSlot: (slot: SlotSelection | null) => void
   clearExtensionCheck: () => void
+  updateBookingTime: (time: { startTime: Date; endTime: Date }) => void
 }
 
 // Main hook
@@ -343,6 +356,7 @@ export function useBookingManagementState() {
     setExtensionCheckResult: useCallback((result: ExtensionCheckResult | null) => dispatch({ type: 'SET_EXTENSION_CHECK_RESULT', payload: result }), []),
     selectAlternativeSlot: useCallback((slot: SlotSelection | null) => dispatch({ type: 'SELECT_ALTERNATIVE_SLOT', payload: slot }), []),
     clearExtensionCheck: useCallback(() => dispatch({ type: 'CLEAR_EXTENSION_CHECK' }), []),
+    updateBookingTime: useCallback((time: { startTime: Date; endTime: Date }) => dispatch({ type: 'UPDATE_BOOKING_TIME', payload: time }), []),
   }
 
   return {
