@@ -179,16 +179,16 @@ const BookingManagement = forwardRef<BookingManagementRef, BookingManagementProp
         await updateBooking(state.selectedBooking, changes, token)
       },
       onSuccess: () => {
+        console.log('✅ Combined procedure+time update successful')
         actions.setActionError(null)
         actions.clearExtensionCheck() // Очищаем проверку после успешного комбинированного изменения
-        actions.setState('results')
-        actions.setPendingSlot(null)
-        const token = siteKey ? (turnstileSession.turnstileToken ?? undefined) : undefined
-        if (token) turnstileSession.setTurnstileToken(token)
-        searchMutation.mutate({ turnstileToken: token })
+        // Показываем панель успеха изменения процедуры (не просто results)
+        actions.setState('procedure-change-success')
       },
       onError: (error) => {
+        console.error('❌ Combined update failed:', error.message)
         actions.setActionError(error.message)
+        actions.setState('procedure-change-error')
       },
     })
 
@@ -689,7 +689,7 @@ const BookingManagement = forwardRef<BookingManagementRef, BookingManagementProp
                 onRequestNewTime={handleRequestNewTime}
                 onCheckAvailability={handleCheckAvailability}
                 procedureChangeError={state.actionError}
-                procedureChangeSubmitting={updateProcedureMutation.isPending}
+                procedureChangeSubmitting={updateProcedureMutation.isPending || updateMutation.isPending}
                 extensionCheckStatus={state.extensionCheckStatus}
                 extensionCheckResult={state.extensionCheckResult}
                 selectedAlternativeSlot={state.selectedAlternativeSlot}

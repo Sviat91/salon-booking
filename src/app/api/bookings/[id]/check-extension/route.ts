@@ -4,7 +4,7 @@ import { validateTurnstileForAPI } from '../../../../../lib/turnstile'
 import { getClients } from '../../../../../lib/google/auth'
 import { getBusyTimesWithIds } from '../../../../../lib/google/calendar'
 import { getDaySlots } from '../../../../../lib/availability'
-import { readProcedures, readWeekly } from '../../../../../lib/google/sheets'
+import { readProcedures, readWeekly, readExceptions } from '../../../../../lib/google/sheets'
 import { config } from '../../../../../lib/env'
 import { getLogger } from '../../../../../lib/logger'
 import { reportError } from '../../../../../lib/sentry'
@@ -189,12 +189,33 @@ export async function POST(
       message: '🔍 Checking if can extend at same time'
     })
 
-    // Check if within master's working hours
+    // Check working hours with exceptions support (same logic as getDaySlots)
     const weekly = await readWeekly()
+    const exceptions = await readExceptions()
     const weekday = currentStartLocal.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase()
-    const schedule = weekly[weekday]
     
-    if (!schedule || schedule.isDayOff || !schedule.hours) {
+    // Start with weekly schedule, then override with exceptions if present
+    let hours = weekly[weekday]?.hours || ''
+    let isDayOff = weekly[weekday]?.isDayOff || false
+    if (exceptions[dateISO]) {
+      const ex = exceptions[dateISO]
+      if (ex.hours) hours = ex.hours
+      isDayOff = ex.isDayOff
+    }
+    
+    log.info({
+      dateISO,
+      weekday,
+      weeklyHours: weekly[weekday]?.hours,
+      weeklyDayOff: weekly[weekday]?.isDayOff,
+      exceptionHours: exceptions[dateISO]?.hours,
+      exceptionDayOff: exceptions[dateISO]?.isDayOff,
+      finalHours: hours,
+      finalDayOff: isDayOff,
+      message: '📅 Working hours determined (with exceptions)'
+    })
+    
+    if (isDayOff || !hours) {
       return NextResponse.json<CheckExtensionResponse>({
         result: {
           status: 'no_availability',
@@ -212,8 +233,8 @@ export async function POST(
       })
     }
 
-    // Parse schedule hours (format: "HH:MM-HH:MM")
-    const scheduleMatch = schedule.hours.match(/(\d{1,2}):(\d{2})[–-](\d{1,2}):(\d{2})/)
+    // Parse working hours (format: "HH:MM-HH:MM")
+    const scheduleMatch = hours.match(/(\d{1,2}):(\d{2})[–-](\d{1,2}):(\d{2})/)
     if (!scheduleMatch) {
       return NextResponse.json<CheckExtensionResponse>({
         result: {
@@ -240,11 +261,11 @@ export async function POST(
     const withinSchedule = newEndLocal.getTime() <= scheduleEnd.getTime()
 
     log.info({
-      scheduleHours: schedule.hours,
+      workingHours: hours,
       scheduleEnd: scheduleEnd.toISOString(),
       newEndLocal: newEndLocal.toISOString(),
       withinSchedule,
-      message: '📅 Working hours check'
+      message: '📅 Working hours boundary check'
     })
 
     if (canExtendAtSameTime && withinSchedule) {
