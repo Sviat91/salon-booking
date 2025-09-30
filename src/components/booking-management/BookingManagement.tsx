@@ -329,9 +329,9 @@ const BookingManagement = forwardRef<BookingManagementRef, BookingManagementProp
       actions.selectProcedure(proc)
     }
 
-    // M1 Step 2: Подтверждение изменения процедуры на тот же час
+    // M1 Step 2: Подтверждение изменения процедуры на тот же час - сразу выполняем
     const handleConfirmSameTime = () => {
-      console.log('✅ Confirming procedure change on same time')
+      console.log('✅ Confirming procedure change on same time - executing immediately')
       console.log('📋 Selected procedure:', state.selectedProcedure)
       console.log('📋 Selected booking:', state.selectedBooking)
       if (!state.selectedProcedure) {
@@ -339,9 +339,14 @@ const BookingManagement = forwardRef<BookingManagementRef, BookingManagementProp
         actions.setActionError('Wybierz procedurę')
         return
       }
+      if (!state.selectedBooking) {
+        console.error('❌ No selected booking!')
+        return
+      }
       actions.setActionError(null)
-      console.log('🚀 Transitioning to confirm-change state')
-      actions.setState('confirm-change')
+      console.log('🚀 Executing procedure change immediately')
+      // Сразу вызываем мутацию без промежуточного состояния
+      updateProcedureMutation.mutate()
     }
 
     // Новая простая логика изменения времени - сразу показываем direct-time-change панель
@@ -473,32 +478,8 @@ const BookingManagement = forwardRef<BookingManagementRef, BookingManagementProp
       actions.setActionError(null)
     }
 
-    // M1 Step 2: Подтверждение изменения процедуры
-    const handleConfirmChange = () => {
-      console.log('💾 Confirming procedure change...')
-      console.log('📋 Booking:', state.selectedBooking?.eventId)
-      console.log('📋 New procedure:', state.selectedProcedure?.name_pl, state.selectedProcedure?.id)
-      
-      if (!state.selectedBooking) {
-        console.error('❌ No selected booking!')
-        return
-      }
-      if (!state.selectedProcedure) {
-        console.error('❌ No selected procedure!')
-        actions.setActionError('Wybierz procedurę.')
-        return
-      }
-      // Вызываем мутацию для изменения процедуры (без смены времени)
-      console.log('🚀 Calling updateProcedureMutation...')
-      updateProcedureMutation.mutate()
-    }
-
-    // M1 Step 2: Возврат из confirm-change
-    const handleConfirmChangeBack = () => {
-      console.log('🔙 Going back from confirm-change to edit-procedure')
-      actions.setActionError(null)
-      actions.setState('edit-procedure')
-    }
+    // Удалены handleConfirmChange и handleConfirmChangeBack - больше не нужны
+    // Изменение процедуры теперь выполняется сразу из handleConfirmSameTime
 
     // Простое подтверждение изменения времени - сначала сохраняем selectedSlot если нужно
     const handleConfirmTimeChange = () => {
@@ -629,10 +610,8 @@ const BookingManagement = forwardRef<BookingManagementRef, BookingManagementProp
                 onConfirmSameTime={handleConfirmSameTime}
                 onRequestNewTime={handleRequestNewTime}
                 onCheckAvailability={handleCheckAvailability}
-                confirmChangeSubmitting={updateProcedureMutation.isPending}
-                confirmChangeError={state.actionError}
-                onConfirmChange={handleConfirmChange}
-                onConfirmChangeBack={handleConfirmChangeBack}
+                procedureChangeError={state.actionError}
+                procedureChangeSubmitting={updateProcedureMutation.isPending}
               />
             </div>
           </div>

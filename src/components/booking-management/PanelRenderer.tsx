@@ -72,10 +72,8 @@ interface PanelRendererProps {
   onConfirmSameTime: () => void
   onRequestNewTime: () => void
   onCheckAvailability: () => void
-  confirmChangeSubmitting: boolean
-  confirmChangeError: string | null
-  onConfirmChange: () => void
-  onConfirmChangeBack: () => void
+  procedureChangeError: string | null
+  procedureChangeSubmitting: boolean
 }
 
 export default function PanelRenderer(props: PanelRendererProps) {
@@ -125,10 +123,8 @@ export default function PanelRenderer(props: PanelRendererProps) {
     onConfirmSameTime,
     onRequestNewTime,
     onCheckAvailability,
-    confirmChangeSubmitting,
-    confirmChangeError,
-    onConfirmChange,
-    onConfirmChangeBack,
+    procedureChangeError,
+    procedureChangeSubmitting,
   } = props
 
   switch (state) {
@@ -205,26 +201,7 @@ export default function PanelRenderer(props: PanelRendererProps) {
           onConfirmSameTime={onConfirmSameTime}
           onRequestNewTime={onRequestNewTime}
           onCheckAvailability={onCheckAvailability}
-        />
-      )
-    case 'confirm-change':
-      if (!selectedBooking) {
-        return (
-          <ErrorFallbackPanel
-            onRetry={onBackToSearch}
-            onContactMaster={onContactMaster}
-          />
-        )
-      }
-      return (
-        <ConfirmChangePanel
-          booking={selectedBooking}
-          newProcedure={selectedProcedure}
-          newSlot={null}
-          isSubmitting={confirmChangeSubmitting}
-          errorMessage={confirmChangeError}
-          onConfirm={onConfirmChange}
-          onBack={onConfirmChangeBack}
+          isSubmitting={procedureChangeSubmitting}
         />
       )
     case 'edit-datetime':
@@ -392,12 +369,10 @@ export default function PanelRenderer(props: PanelRendererProps) {
         <ProcedureChangeErrorPanel
           booking={selectedBooking}
           newProcedure={selectedProcedure}
-          errorMessage={confirmChangeError ?? 'Wystąpił nieznany błąd.'}
+          errorMessage={procedureChangeError ?? 'Wystąpił nieznany błąd.'}
           onRetry={() => {
-            // Вернуться к confirm-change для повторной попытки
-            if (selectedProcedure) {
-              onConfirmChangeBack()
-            }
+            // Вернуться к edit-procedure для повторной попытки
+            onEditSelectionBack()
           }}
           onBackToResults={onBackToResults}
           onContactMaster={onContactMaster}
