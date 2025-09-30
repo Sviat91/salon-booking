@@ -289,8 +289,24 @@ const BookingManagement = forwardRef<BookingManagementRef, BookingManagementProp
       actions.setState('edit-selection')
     }
 
-    // Заглушка для изменения процедуры (будет реализовано позже)
-    // const handleSelectChangeProcedure = () => { ... }
+    // M1: Изменение процедуры - базовые хендлеры (навигация и выбор)
+    const handleSelectChangeProcedure = () => {
+      console.log('💆‍♀️ Starting procedure change flow')
+      actions.setActionError(null)
+      actions.selectProcedure(null)
+      actions.setState('edit-procedure')
+    }
+
+    const handleSelectProcedure = (proc: ProcedureOption | null) => {
+      console.log('🧭 Procedure selected:', proc?.name_pl)
+      actions.selectProcedure(proc)
+    }
+
+    // Stubs for next steps (wired for UI, logic added in later stages)
+    const handleConfirmSameTime = () => {
+      console.log('✅ Confirm same time with new procedure (stub, to be implemented in next step)')
+      // Next step: go to 'confirm-change' panel and confirm via updateMutation
+    }
 
     // Новая простая логика изменения времени - сразу показываем direct-time-change панель
     const handleSelectChangeTime = () => {
@@ -530,6 +546,7 @@ const BookingManagement = forwardRef<BookingManagementRef, BookingManagementProp
                 onContactMaster={handleContactMaster}
                 onEditSelectionBack={handleEditSelectionBack}
                 onSelectChangeTime={handleSelectChangeTime}
+                onChangeProcedure={handleSelectChangeProcedure}
                 onEditDatetimeBack={handleBackToEditSelection}
                 onExtendSearch={handleExtendSearch}
                 selectedDate={selectedDate}
@@ -552,6 +569,12 @@ const BookingManagement = forwardRef<BookingManagementRef, BookingManagementProp
                 onBackToResults={handleBackToResults}
                 onRetryTimeChange={handleRetryTimeChange}
                 onRetryCancel={handleRetryCancel}
+                procedures={procedures}
+                selectedProcedure={state.selectedProcedure}
+                onSelectProcedure={handleSelectProcedure}
+                onConfirmSameTime={handleConfirmSameTime}
+                onRequestNewTime={handleRequestNewTime}
+                onCheckAvailability={handleCheckAvailability}
               />
             </div>
           </div>

@@ -14,6 +14,8 @@ export type ManagementState =
   | 'time-change-error'
   | 'cancel-success'
   | 'cancel-error'
+  | 'procedure-change-success'
+  | 'procedure-change-error'
 
 export interface BookingResult {
   eventId: string

@@ -14,6 +14,7 @@ import TimeChangeSuccessPanel from './TimeChangeSuccessPanel'
 import TimeChangeErrorPanel from './TimeChangeErrorPanel'
 import CancelSuccessPanel from './CancelSuccessPanel'
 import CancelErrorPanel from './CancelErrorPanel'
+import EditProcedurePanel from './EditProcedurePanel'
 import type {
   BookingResult,
   ManagementState,
@@ -42,6 +43,7 @@ interface PanelRendererProps {
   onContactMaster: () => void
   onEditSelectionBack: () => void
   onSelectChangeTime: () => void
+  onChangeProcedure: () => void
   onEditDatetimeBack: () => void
   onExtendSearch: () => void
   selectedDate?: Date
@@ -61,6 +63,12 @@ interface PanelRendererProps {
   onBackToResults: () => void
   onRetryTimeChange: () => void
   onRetryCancel?: () => void
+  procedures: ProcedureOption[]
+  selectedProcedure: ProcedureOption | null
+  onSelectProcedure: (procedure: ProcedureOption | null) => void
+  onConfirmSameTime: () => void
+  onRequestNewTime: () => void
+  onCheckAvailability: () => void
 }
 
 export default function PanelRenderer(props: PanelRendererProps) {
@@ -84,6 +92,7 @@ export default function PanelRenderer(props: PanelRendererProps) {
     onContactMaster,
     onEditSelectionBack,
     onSelectChangeTime,
+    onChangeProcedure,
     onEditDatetimeBack,
     onExtendSearch,
     selectedDate,
@@ -103,6 +112,12 @@ export default function PanelRenderer(props: PanelRendererProps) {
     onBackToResults,
     onRetryTimeChange,
     onRetryCancel,
+    procedures,
+    selectedProcedure,
+    onSelectProcedure,
+    onConfirmSameTime,
+    onRequestNewTime,
+    onCheckAvailability,
   } = props
 
   switch (state) {
@@ -156,7 +171,29 @@ export default function PanelRenderer(props: PanelRendererProps) {
         <EditSelectionPanel
           booking={selectedBooking}
           onChangeTime={onSelectChangeTime}
+          onChangeProcedure={onChangeProcedure}
           onBack={onEditSelectionBack}
+        />
+      )
+    case 'edit-procedure':
+      if (!selectedBooking) {
+        return (
+          <ErrorFallbackPanel
+            onRetry={onBackToSearch}
+            onContactMaster={onContactMaster}
+          />
+        )
+      }
+      return (
+        <EditProcedurePanel
+          booking={selectedBooking}
+          selectedProcedure={selectedProcedure}
+          procedures={procedures}
+          onSelectProcedure={onSelectProcedure}
+          onBack={onEditSelectionBack}
+          onConfirmSameTime={onConfirmSameTime}
+          onRequestNewTime={onRequestNewTime}
+          onCheckAvailability={onCheckAvailability}
         />
       )
     case 'edit-datetime':
