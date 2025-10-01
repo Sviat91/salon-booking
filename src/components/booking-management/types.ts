@@ -11,6 +11,8 @@ export type ManagementState =
   | 'confirm-cancel'
   | 'not-found'
   | 'extended-search'
+  | 'contact-master'
+  | 'contact-master-success'
   | 'time-change-success'
   | 'time-change-error'
   | 'cancel-success'

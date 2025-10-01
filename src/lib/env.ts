@@ -29,6 +29,7 @@ const EnvSchema = z.object({
   TURNSTILE_SECRET_KEY: z.string().optional(),
   SENTRY_DSN: z.string().optional(),
   N8N_WEBHOOK_URL: z.string().url().optional(),
+  N8N_WEBHOOK_MASTER_CALL: z.string().url().optional(),
   N8N_SECRET_TOKEN: z.string().optional(),
   N8N_SECRET_HEADER: z.string().default('x-secret-token'),
 })

@@ -581,8 +581,25 @@ const BookingManagement = forwardRef<BookingManagementRef, BookingManagementProp
     }
 
     const handleContactMaster = useCallback(() => {
-      console.log('Contact master')
-    }, [])
+      console.log('Opening contact master panel')
+      actions.setState('contact-master')
+    }, [actions])
+    
+    const handleContactMasterSuccess = useCallback(() => {
+      console.log('Contact master success')
+      actions.setState('contact-master-success')
+    }, [actions])
+    
+    const handleContactMasterBack = useCallback(() => {
+      console.log('Going back from contact master')
+      actions.setState('not-found')
+    }, [actions])
+    
+    const handleContactMasterClose = useCallback(() => {
+      console.log('Closing contact master success')
+      actions.setState('search')
+      actions.resetForm()
+    }, [actions])
 
     const handleStartNewSearch = useCallback(() => {
       actions.resetForm()
@@ -774,6 +791,9 @@ const BookingManagement = forwardRef<BookingManagementRef, BookingManagementProp
                 onExtendSearch={handleExtendSearch}
                 onExtendedSearchSubmit={handleExtendedSearchSubmit}
                 onExtendedSearchBack={handleExtendedSearchBack}
+                onContactMasterSuccess={handleContactMasterSuccess}
+                onContactMasterBack={handleContactMasterBack}
+                onContactMasterClose={handleContactMasterClose}
                 selectedDate={selectedDate}
                 selectedSlot={selectedSlot}
                 onConfirmSlot={handleConfirmSlot}

@@ -8,6 +8,7 @@ import ProcedureSelect from '../components/ProcedureSelect'
 import DayCalendar from '../components/DayCalendar'
 import SlotsList from '../components/SlotsList'
 import BookingForm from '../components/BookingForm'
+import BookingSuccessPanel from '../components/BookingSuccessPanel'
 import BookingManagement, { BookingManagementRef } from '../components/booking-management'
 import ThemeToggle from '../components/ThemeToggle'
 
@@ -18,6 +19,10 @@ export default function Page() {
   const [selectedSlot, setSelectedSlot] = useState<{ startISO: string; endISO: string } | null>(null)
   const [userScrolled, setUserScrolled] = useState(false)
   const [calendarMode, setCalendarMode] = useState<'booking' | 'editing'>('booking')
+  
+  // Флаг для показа success сообщения
+  const [showBookingSuccess, setShowBookingSuccess] = useState(false)
+  const [successBookingData, setSuccessBookingData] = useState<{ slot: { startISO: string; endISO: string }; procedureId?: string } | null>(null)
 
   // Флаги для контроля автоскрола - каждый этап скролит только один раз
   const [hasScrolledToCalendar, setHasScrolledToCalendar] = useState(false)
@@ -102,14 +107,22 @@ export default function Page() {
     setHasScrolledToCalendar(false)
     setHasScrolledToSlots(false)
     setHasScrolledToBooking(false)
-    setCalendarMode('booking')
-    queryClient.invalidateQueries({ queryKey: ['day-slots'] })
+    queryClient.invalidateQueries({ queryKey: ['bookings'] })
+  }
+  
+  // Обработчик успешного бронирования
+  const handleBookingSuccess = () => {
+    // Сохраняем данные для success сообщения
+    setSuccessBookingData({ slot: selectedSlot!, procedureId: procId })
+    setShowBookingSuccess(true)
+    // Сбрасываем календарь и процедуру
+    resetToInitialState()
   }
 
   return (
     <main className="p-6 relative flex-1 flex flex-col justify-center">
       <ThemeToggle />
-      {/* фиксированный логотип в левом верхнем углу - скрыт на мобильных */}
+
       <div className="absolute left-4 top-4 z-10 hidden lg:block" onClick={closeBookingManagement}>
         {/* Светлая тема */}
         <Image
@@ -173,12 +186,26 @@ export default function Page() {
                 onSlotSelected={(slot) => setSelectedSlot(slot)}
               />
               {/* BookingForm только на десктопе */}
-              {calendarMode === 'booking' && selectedSlot && (
+              {calendarMode === 'booking' && selectedSlot && !showBookingSuccess && (
                 <Card title="Rezerwacja" className="lg:max-w-sm hidden lg:block" ref={bookingRef}>
                   <BookingForm 
                     slot={selectedSlot} 
                     procedureId={procId}
-                    onSuccess={resetToInitialState}
+                    onSuccess={handleBookingSuccess}
+                  />
+                </Card>
+              )}
+              
+              {/* Success панель только на десктопе */}
+              {showBookingSuccess && successBookingData && (
+                <Card title="Rezerwacja" className="lg:max-w-sm hidden lg:block" ref={bookingRef}>
+                  <BookingSuccessPanel
+                    slot={successBookingData.slot}
+                    procedureId={successBookingData.procedureId}
+                    onClose={() => {
+                      setShowBookingSuccess(false)
+                      setSuccessBookingData(null)
+                    }}
                   />
                 </Card>
               )}
@@ -213,7 +240,7 @@ export default function Page() {
             </Card>
             
             {/* BookingForm под календарем только на мобильных */}
-            {calendarMode === 'booking' && selectedSlot && (
+            {calendarMode === 'booking' && selectedSlot && !showBookingSuccess && (
               <Card 
                 title="Rezerwacja" 
                 className="lg:hidden max-w-md transform transition-all duration-500 ease-in-out animate-fade-in-up" 
@@ -222,7 +249,25 @@ export default function Page() {
                 <BookingForm 
                   slot={selectedSlot} 
                   procedureId={procId}
-                  onSuccess={resetToInitialState}
+                  onSuccess={handleBookingSuccess}
+                />
+              </Card>
+            )}
+            
+            {/* Success панель только на мобильных */}
+            {showBookingSuccess && successBookingData && (
+              <Card 
+                title="Rezerwacja" 
+                className="lg:hidden max-w-md transform transition-all duration-500 ease-in-out animate-fade-in-up" 
+                ref={mobileBookingRef}
+              >
+                <BookingSuccessPanel
+                  slot={successBookingData.slot}
+                  procedureId={successBookingData.procedureId}
+                  onClose={() => {
+                    setShowBookingSuccess(false)
+                    setSuccessBookingData(null)
+                  }}
                 />
               </Card>
             )}

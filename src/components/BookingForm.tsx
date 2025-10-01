@@ -165,6 +165,7 @@ export default function BookingForm({
       }
       setEventId(body.eventId || null)
       setBookingState('success')
+      // Вызываем onSuccess - он покажет success панель и сбросит календарь
       onSuccess?.()
     } catch (e: any) {
       const msg = String(e?.message || '')
@@ -212,6 +213,7 @@ export default function BookingForm({
       }
       setEventId(body.eventId || null)
       setBookingState('success')
+      // Вызываем onSuccess - он покажет success панель и сбросит календарь
       onSuccess?.()
     } catch (e: any) {
       const msg = String(e?.message || '')
@@ -254,7 +256,25 @@ export default function BookingForm({
           </div>
         </div>
         
-        <div className="text-emerald-700 dark:text-emerald-400">Dziękujemy, do zobaczenia!</div>
+        <div className="text-emerald-700 dark:text-emerald-400 mb-4">Dziękujemy, do zobaczenia!</div>
+        
+        {/* Кнопка закрытия - просто скрывает success панель */}
+        <button
+          type="button"
+          onClick={() => {
+            // Просто сбрасываем состояние формы
+            setBookingState('form')
+            setName('')
+            setPhone('')
+            setEmail('')
+            setDataProcessingConsent(false)
+            setTermsConsent(false)
+            setNotificationsConsent(false)
+          }}
+          className="w-full rounded-lg bg-neutral-800 px-4 py-3 text-sm font-medium text-white transition-all duration-200 hover:bg-neutral-900 hover:shadow-md dark:bg-neutral-700 dark:hover:bg-neutral-600"
+        >
+          Zamknij
+        </button>
       </div>
     )
   }

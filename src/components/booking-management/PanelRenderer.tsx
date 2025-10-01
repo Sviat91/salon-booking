@@ -19,6 +19,8 @@ import ConfirmChangePanel from './ConfirmChangePanel'
 import ProcedureChangeSuccessPanel from './ProcedureChangeSuccessPanel'
 import ProcedureChangeErrorPanel from './ProcedureChangeErrorPanel'
 import ExtendedSearchPanel from './ExtendedSearchPanel'
+import ContactMasterPanel from './ContactMasterPanel'
+import ContactMasterSuccessPanel from './ContactMasterSuccessPanel'
 import type {
   BookingResult,
   ManagementState,
@@ -54,6 +56,9 @@ interface PanelRendererProps {
   onExtendSearch: () => void
   onExtendedSearchSubmit: (fullName: string, phone: string, email: string, startDate: string, endDate: string) => void
   onExtendedSearchBack: () => void
+  onContactMasterSuccess: () => void
+  onContactMasterBack: () => void
+  onContactMasterClose: () => void
   selectedDate?: Date
   selectedSlot?: SlotSelection | null
   onConfirmSlot: () => void
@@ -113,6 +118,9 @@ export default function PanelRenderer(props: PanelRendererProps) {
     onExtendSearch,
     onExtendedSearchSubmit,
     onExtendedSearchBack,
+    onContactMasterSuccess,
+    onContactMasterBack,
+    onContactMasterClose,
     selectedDate,
     selectedSlot,
     onConfirmSlot,
@@ -192,6 +200,19 @@ export default function PanelRenderer(props: PanelRendererProps) {
           onSearch={onExtendedSearchSubmit}
           onBack={onExtendedSearchBack}
           isSearching={searchPending}
+        />
+      )
+    case 'contact-master':
+      return (
+        <ContactMasterPanel
+          onBack={onContactMasterBack}
+          onSuccess={onContactMasterSuccess}
+        />
+      )
+    case 'contact-master-success':
+      return (
+        <ContactMasterSuccessPanel
+          onClose={onContactMasterClose}
         />
       )
     case 'edit-selection':
