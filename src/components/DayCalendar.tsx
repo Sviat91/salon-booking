@@ -175,7 +175,7 @@ export default function DayCalendar({ procedureId, onChange }: { procedureId?: s
           ›
         </button>
       </div>
-      <div className="p-4 -m-4 overflow-visible">
+      <div className="overflow-visible lg:-m-4 lg:p-4">
         <DayPicker
           mode="single"
           month={month}

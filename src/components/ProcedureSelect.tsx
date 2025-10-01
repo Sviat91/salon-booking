@@ -38,7 +38,7 @@ export default function ProcedureSelect({ valueId, onChange }: { valueId?: strin
   }
 
   return (
-    <div className="relative -m-4 p-4" onClick={handleCardClick}>
+    <div className="relative lg:-m-4 lg:p-4" onClick={handleCardClick}>
       <label className="block text-sm text-muted dark:text-dark-muted">Usługa</label>
       <button
         type="button"
