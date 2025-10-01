@@ -1,0 +1,129 @@
+﻿
+> facemassage.net@0.1.0 build
+> next build
+
+  [1m[38;2;173;127;168mÔľ▓ Next.js 14.2.32[39m[22m
+  - Environments: .env
+
+ [37m[1m [22m[39m Creating an optimized production build ...
+node.exe :  [33m[1mÔÜá[22m
+[39m Compiled with warnings
+At line:1 char:1
++ & "C:\Program Files\nodejs/n
+ode.exe" "C:\Program Files\nod
+ejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~
+    + CategoryInfo          : 
+    NotSpecified: ( [33m[1  
+  mÔÜá[...d with warnings:   
+ String) [], RemoteExcepti    
+on
+    + FullyQualifiedErrorId : 
+    NativeCommandError
+ 
+
+./node_modules/@opentelemetry/
+instrumentation/build/esm/plat
+form/node/instrumentation.js
+Critical dependency: the reque
+st of a dependency is an expre
+ssion
+
+Import trace for requested mod
+ule:
+./node_modules/@opentelemetry/
+instrumentation/build/esm/plat
+form/node/instrumentation.js
+./node_modules/@opentelemetry/
+instrumentation/build/esm/plat
+form/node/index.js
+./node_modules/@opentelemetry/
+instrumentation/build/esm/plat
+form/index.js
+./node_modules/@opentelemetry/
+instrumentation/build/esm/inde
+x.js
+./node_modules/@sentry/opentel
+emetry/build/cjs/index.js
+./node_modules/@sentry/nextjs/
+build/cjs/server/index.js
+./node_modules/@sentry/nextjs/
+build/cjs/index.server.js
+./src/lib/sentry.ts
+./src/app/api/availability/rou
+te.ts
+
+./node_modules/require-in-the-
+middle/index.js
+Critical dependency: require f
+unction is used in a way in wh
+ich dependencies cannot be sta
+tically extracted
+
+Import trace for requested mod
+ule:
+./node_modules/require-in-the-
+middle/index.js
+./node_modules/@opentelemetry/
+instrumentation/build/esm/plat
+form/node/instrumentation.js
+./node_modules/@opentelemetry/
+instrumentation/build/esm/plat
+form/node/index.js
+./node_modules/@opentelemetry/
+instrumentation/build/esm/plat
+form/index.js
+./node_modules/@opentelemetry/
+instrumentation/build/esm/inde
+x.js
+./node_modules/@sentry/opentel
+emetry/build/cjs/index.js
+./node_modules/@sentry/nextjs/
+build/cjs/server/index.js
+./node_modules/@sentry/nextjs/
+build/cjs/index.server.js
+./src/lib/sentry.ts
+./src/app/api/availability/rou
+te.ts
+
+ [32m[1mÔťô[22m[39m Compiled successfully
+ [37m[1m [22m[39m Linting and checking validity of types ...
+[31mFailed to compile.
+[39m
+[36m./src/app/api/bookings/up
+date-time/route.ts[39m:[33m3
+9[39m:[33m34[39m
+[31m[1mType error[22m[39m:
+ Argument of type '{ eventId: 
+any; procedureName: any; }' is
+ not assignable to parameter o
+f type 'undefined'.
+
+[0m [90m 37 |[39m     [0m
+[0m [90m 38 |[39m     [36m
+const[39m body [33m=[39m [
+36mawait[39m req[33m.[39mjs
+on()[0m
+[0m[31m[1m>[22m[39m[90m 
+39 |[39m     log[33m.[39min
+fo([32m'­čôŁ Request body:'[
+39m[33m,[39m { eventId[33m:
+[39m body[33m.[39meventId[
+33m,[39m procedureName[33m:
+[39m body[33m.[39mprocedureN
+ame })[0m
+[0m [90m    |[39m          
+                        [31m
+[1m^[22m[39m[0m
+[0m [90m 40 |[39m[0m
+[0m [90m 41 |[39m     [90m
+// Validate request body[39m
+[0m
+[0m [90m 42 |[39m     [36m
+const[39m validatedData [33m
+=[39m [33mUpdateTimeSchema[
+39m[33m.[39mparse(body)[0m
+Next.js build worker exited wi
+th code: 1 and signal: null

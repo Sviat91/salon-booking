@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
     log.info('🕒 Simple time update request received (no Turnstile)')
     
     const body = await req.json()
-    log.info('📝 Request body:', { eventId: body.eventId, procedureName: body.procedureName })
+    log.info({ eventId: body.eventId, procedureName: body.procedureName }, '📝 Request body')
 
     // Validate request body
     const validatedData = UpdateTimeSchema.parse(body)
