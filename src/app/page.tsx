@@ -18,6 +18,7 @@ export default function Page() {
   const [date, setDate] = useState<Date | undefined>(undefined)
   const [selectedSlot, setSelectedSlot] = useState<{ startISO: string; endISO: string } | null>(null)
   const [userScrolled, setUserScrolled] = useState(false)
+  const [isAutoScrolling, setIsAutoScrolling] = useState(false)
   const [calendarMode, setCalendarMode] = useState<'booking' | 'editing'>('booking')
   
   // Флаг для показа success сообщения
@@ -45,36 +46,47 @@ export default function Page() {
   // Функция плавного скролла - только на мобильных устройствах
   const scrollToElement = (ref: React.RefObject<HTMLDivElement>, offset = 0) => {
     if (ref.current && window.innerWidth < 1024 && !userScrolled) {
-      const elementPosition = ref.current.offsetTop + offset
-      const finalPosition = Math.max(0, elementPosition - 80)
+      setIsAutoScrolling(true)
+      // Получаем позицию элемента относительно документа
+      const rect = ref.current.getBoundingClientRect()
+      const scrollTop = window.pageYOffset || document.documentElement.scrollTop
+      const elementTop = rect.top + scrollTop
+      // Скроллим так чтобы элемент был в верхней части экрана с отступом
+      const finalPosition = Math.max(0, elementTop + offset - 100)
+      
       window.scrollTo({
         top: finalPosition,
         behavior: 'smooth'
       })
+      // Сбрасываем флаг автоскролла через 1 секунду (время на завершение анимации)
+      setTimeout(() => setIsAutoScrolling(false), 1000)
     }
   }
 
   useEffect(() => {
     let timer: NodeJS.Timeout | null = null
     const handleScroll = () => {
+      // Игнорируем скролл если это автоскролл
+      if (isAutoScrolling) return
+      
       if (!userScrolled) setUserScrolled(true)
       if (timer) clearTimeout(timer)
       timer = setTimeout(() => {
         setUserScrolled(false)
-      }, 3000)
+      }, 2000)
     }
     window.addEventListener('scroll', handleScroll, { passive: true })
     return () => {
       window.removeEventListener('scroll', handleScroll)
       if (timer) clearTimeout(timer)
     }
-  }, [userScrolled])
+  }, [userScrolled, isAutoScrolling])
 
   // Автоскролл при выборе услуги - только один раз
   useEffect(() => {
     if (procId && !hasScrolledToCalendar) {
       setTimeout(() => {
-        scrollToElement(calendarRef, -20)
+        scrollToElement(calendarRef, 0)
         setHasScrolledToCalendar(true)
       }, 300)
     }
@@ -84,9 +96,9 @@ export default function Page() {
   useEffect(() => {
     if (date && !hasScrolledToSlots) {
       setTimeout(() => {
-        scrollToElement(slotsRef, -20)
+        scrollToElement(slotsRef, 20)
         setHasScrolledToSlots(true)
-      }, 400)
+      }, 500)
     }
   }, [date])
 
@@ -95,9 +107,9 @@ export default function Page() {
     if (calendarMode === 'booking' && selectedSlot && !hasScrolledToBooking) {
       setTimeout(() => {
         const targetRef = window.innerWidth < 1024 ? mobileBookingRef : bookingRef
-        scrollToElement(targetRef, -20)
+        scrollToElement(targetRef, 20)
         setHasScrolledToBooking(true)
-      }, 600)
+      }, 700)
     }
   }, [selectedSlot, calendarMode, hasScrolledToBooking])
   
@@ -105,9 +117,9 @@ export default function Page() {
   useEffect(() => {
     if (isManagementOpen && !hasScrolledToManagement) {
       setTimeout(() => {
-        scrollToElement(bookingManagementCardRef, -20)
+        scrollToElement(bookingManagementCardRef, 0)
         setHasScrolledToManagement(true)
-      }, 300)
+      }, 400)
     } else if (!isManagementOpen) {
       // Сбрасываем флаг когда панель закрывается
       setHasScrolledToManagement(false)
