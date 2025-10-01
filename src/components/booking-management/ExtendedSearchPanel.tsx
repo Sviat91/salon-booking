@@ -117,7 +117,8 @@ export default function ExtendedSearchPanel({
                 onChange={(e) => setStartDate(e.target.value)}
                 min={minDateStr}
                 max={maxDateStr}
-                className="w-full max-w-full box-border px-3 py-2 rounded-lg border border-amber-300 bg-white text-sm dark:border-amber-600 dark:bg-dark-card dark:text-dark-text focus:outline-none focus:ring-2 focus:ring-amber-500"
+                style={{ WebkitAppearance: 'none', MozAppearance: 'textfield' }}
+                className="w-full max-w-full box-border px-3 py-2 rounded-lg border border-amber-300 bg-white text-sm dark:border-amber-600 dark:bg-dark-card dark:text-dark-text focus:outline-none focus:ring-2 focus:ring-amber-500 overflow-hidden"
               />
             </div>
             
@@ -131,7 +132,8 @@ export default function ExtendedSearchPanel({
                 onChange={(e) => setEndDate(e.target.value)}
                 min={startDate || minDateStr}
                 max={maxDateStr}
-                className="w-full max-w-full box-border px-3 py-2 rounded-lg border border-amber-300 bg-white text-sm dark:border-amber-600 dark:bg-dark-card dark:text-dark-text focus:outline-none focus:ring-2 focus:ring-amber-500"
+                style={{ WebkitAppearance: 'none', MozAppearance: 'textfield' }}
+                className="w-full max-w-full box-border px-3 py-2 rounded-lg border border-amber-300 bg-white text-sm dark:border-amber-600 dark:bg-dark-card dark:text-dark-text focus:outline-none focus:ring-2 focus:ring-amber-500 overflow-hidden"
               />
             </div>
           </div>

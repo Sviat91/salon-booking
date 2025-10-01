@@ -138,7 +138,7 @@ export default function Page() {
   }
 
   return (
-    <main className="p-6 relative flex-1 flex flex-col justify-center">
+    <main className="p-6 relative flex-1 flex flex-col justify-center w-full max-w-full box-border overflow-x-hidden">
       <ThemeToggle />
 
       <div className="absolute left-4 top-4 z-10 hidden lg:block" onClick={closeBookingManagement}>

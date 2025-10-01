@@ -137,7 +137,7 @@ export default function DayCalendar({ procedureId, onChange }: { procedureId?: s
   const buttonBase = "flex h-8 w-8 items-center justify-center rounded-full border border-neutral-300 dark:border-dark-muted text-sm font-medium text-neutral-700 dark:text-dark-text transition-all duration-200 hover:bg-neutral-100 dark:hover:bg-dark-muted hover:border-neutral-400 dark:hover:border-dark-text hover:scale-110 hover:shadow-lg disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:scale-100 disabled:hover:shadow-none"
 
   return (
-    <div className="relative overflow-visible" onClick={handleContainerClick}>
+    <div className="relative overflow-visible w-full max-w-full box-border" onClick={handleContainerClick}>
       {/* Custom Header with Navigation */}
       <div className="flex items-center justify-between px-2 pb-3">
         <button
@@ -175,7 +175,7 @@ export default function DayCalendar({ procedureId, onChange }: { procedureId?: s
           ›
         </button>
       </div>
-      <div className="overflow-visible lg:-m-4 lg:p-4">
+      <div className="overflow-x-hidden w-full max-w-full box-border lg:-m-4 lg:p-4">
         <DayPicker
           mode="single"
           month={month}
@@ -200,10 +200,10 @@ export default function DayCalendar({ procedureId, onChange }: { procedureId?: s
           classNames={{
             day: 'h-10 w-10 rounded-full transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60',
             month: 'space-y-2',
-            table: 'w-full border-collapse',
+            table: 'w-full max-w-full border-collapse mx-auto',
           }}
           onMonthChange={handleMonthChange}
-          className="w-full"
+          className="w-full max-w-full"
         />
       </div>
       {isLoadingDays && (

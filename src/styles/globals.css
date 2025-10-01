@@ -15,6 +15,8 @@
 html {
   min-height: 100%;
   background-color: var(--bg-end);
+  overflow-x: hidden;
+  max-width: 100%;
 }
 
 body {
@@ -24,6 +26,8 @@ body {
   color: theme('colors.text');
   background-color: var(--bg-end);
   transition: background-color 0.3s ease;
+  overflow-x: hidden;
+  max-width: 100%;
 }
 
 body::before {
@@ -117,6 +121,19 @@ body::before {
   margin: 0 !important;
 }
 
+/* Адаптация для мобильных устройств */
+@media (max-width: 640px) {
+  .rdp {
+    --rdp-cell-size: 36px;
+  }
+}
+
+@media (max-width: 400px) {
+  .rdp {
+    --rdp-cell-size: 32px;
+  }
+}
+
 .rdp-months {
   display: grid !important;
 }
@@ -127,8 +144,9 @@ body::before {
 
 .rdp-table {
   width: 100% !important;
+  max-width: 100% !important;
   border-collapse: collapse !important;
-  margin: 0 !important;
+  margin: 0 auto !important;
 }
 
 .rdp-head_cell,
@@ -137,6 +155,21 @@ body::before {
   height: var(--rdp-cell-size) !important;
   text-align: center !important;
   font-size: 14px !important;
+  padding: 0 !important;
+}
+
+@media (max-width: 640px) {
+  .rdp-head_cell,
+  .rdp-cell {
+    font-size: 13px !important;
+  }
+}
+
+@media (max-width: 400px) {
+  .rdp-head_cell,
+  .rdp-cell {
+    font-size: 12px !important;
+  }
 }
 
 .rdp-head_cell {
@@ -153,6 +186,19 @@ body::before {
   transition: all 0.2s ease !important;
   background: none !important;
   border: none !important;
+  margin: 0 auto !important;
+}
+
+@media (max-width: 640px) {
+  .rdp-day {
+    font-size: 13px !important;
+  }
+}
+
+@media (max-width: 400px) {
+  .rdp-day {
+    font-size: 12px !important;
+  }
 }
 
 .rdp-day:hover {
@@ -197,5 +243,36 @@ body::before {
 
 .rdp-caption {
   display: none !important;
+}
+
+/* Date input fixes for mobile */
+input[type="date"] {
+  max-width: 100%;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: textfield;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+  background: transparent;
+  bottom: 0;
+  color: transparent;
+  cursor: pointer;
+  height: auto;
+  left: 0;
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: auto;
+}
+
+/* Ensure all inputs don't overflow on mobile */
+@media (max-width: 640px) {
+  input,
+  textarea,
+  select {
+    max-width: 100% !important;
+    min-width: 0 !important;
+  }
 }
 
