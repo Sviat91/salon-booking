@@ -158,10 +158,16 @@ function bookingManagementReducer(
       }
 
     case 'SELECT_PROCEDURE':
+      // Сбрасываем результаты проверки доступности при смене процедуры
+      // Это важно! Иначе при повторном выборе другой процедуры
+      // будет показываться старый результат для предыдущей процедуры
       return {
         ...state,
         selectedProcedure: action.payload,
         actionError: null,
+        extensionCheckStatus: null,
+        extensionCheckResult: null,
+        selectedAlternativeSlot: null,
       }
 
     case 'SET_PENDING_SLOT':

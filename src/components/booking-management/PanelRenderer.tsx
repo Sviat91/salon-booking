@@ -281,8 +281,6 @@ export default function PanelRenderer(props: PanelRendererProps) {
           onConfirm={onConfirmTimeChange}
           onBack={onConfirmTimeChangeBack}
           canConfirm={!!(selectedSlot || timeChangeSession.newSlot)}
-          turnstileNode={turnstileNode}
-          turnstileRequired={turnstileRequired}
         />
       )
     case 'confirm-cancel':

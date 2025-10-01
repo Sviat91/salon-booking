@@ -321,12 +321,12 @@ export async function updateBookingProcedure(
 }
 
 // Простая функция только для изменения времени - чистая архитектура
+// NO TURNSTILE - user already verified during search
 export async function updateBookingTime(
   booking: BookingResult,
   newSlot: SlotSelection,
-  turnstileToken?: string,
 ): Promise<void> {
-  console.log('🔄 Updating booking time:', {
+  console.log('🔄 Updating booking time (no Turnstile):', {
     eventId: booking.eventId,
     oldTime: `${booking.startTime.toISOString()} - ${booking.endTime.toISOString()}`,
     newTime: `${newSlot.startISO} - ${newSlot.endISO}`,
@@ -334,7 +334,6 @@ export async function updateBookingTime(
 
   // Payload с данными для сохранения (не для валидации)
   const body = {
-    turnstileToken,
     eventId: booking.eventId,
     // Данные для сохранения в записи
     procedureName: booking.procedureName,

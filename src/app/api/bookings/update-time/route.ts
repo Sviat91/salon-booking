@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
-import { validateTurnstileForAPI } from '../../../../lib/turnstile'
 import { getLogger } from '../../../../lib/logger'
 import { updateBookingInCalendar } from '../../../../lib/booking-modification-helpers'
 import { reportError } from '../../../../lib/sentry'
@@ -10,10 +9,8 @@ export const runtime = 'nodejs'
 const log = getLogger({ module: 'api.bookings.update-time' })
 
 // Схема с данными для сохранения (не для валидации)
+// NO TURNSTILE - user already verified during search
 const UpdateTimeSchema = z.object({
-  // Authentication
-  turnstileToken: z.string().optional(),
-  
   // Event ID
   eventId: z.string().min(1, 'Event ID is required'),
   
@@ -36,28 +33,18 @@ const UpdateTimeSchema = z.object({
  */
 export async function POST(req: NextRequest) {
   try {
-    log.info('🕒 Simple time update request received')
+    log.info('🕒 Simple time update request received (no Turnstile)')
     
     const body = await req.json()
-    log.info('📝 Request body:', { ...body, turnstileToken: body.turnstileToken ? '[PRESENT]' : '[MISSING]' })
+    log.info('📝 Request body:', { eventId: body.eventId, procedureName: body.procedureName })
 
     // Validate request body
     const validatedData = UpdateTimeSchema.parse(body)
     
-    const { eventId, procedureName, firstName, lastName, phone, email, price, newStartISO, newEndISO, turnstileToken } = validatedData
+    const { eventId, procedureName, firstName, lastName, phone, email, price, newStartISO, newEndISO } = validatedData
 
-    // Validate Turnstile if token provided
-    if (turnstileToken) {
-      const turnstileValid = await validateTurnstileForAPI(turnstileToken)
-      if (!turnstileValid) {
-        log.warn('❌ Turnstile validation failed')
-        return NextResponse.json(
-          { error: 'Nieprawidłowy token bezpieczeństwa.' },
-          { status: 400 }
-        )
-      }
-      log.info('✅ Turnstile validation passed')
-    }
+    // NO TURNSTILE VALIDATION - user already verified during search
+    log.info('✅ Skipping Turnstile (user already verified during search)')
 
     // Обновление с сохранением всех данных
     log.info(`🔄 Updating calendar event ${eventId} to new time: ${newStartISO} - ${newEndISO}`)

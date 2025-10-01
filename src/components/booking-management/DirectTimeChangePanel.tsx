@@ -11,8 +11,7 @@ interface DirectTimeChangePanelProps {
   onConfirm: () => void
   onBack: () => void
   canConfirm: boolean
-  turnstileNode?: React.ReactNode
-  turnstileRequired?: boolean
+  // NO TURNSTILE - user already verified during search
 }
 
 export default function DirectTimeChangePanel({
@@ -25,8 +24,6 @@ export default function DirectTimeChangePanel({
   onConfirm,
   onBack,
   canConfirm,
-  turnstileNode,
-  turnstileRequired,
 }: DirectTimeChangePanelProps) {
   const timeFormatter = new Intl.DateTimeFormat('pl-PL', {
     hour: '2-digit',
@@ -131,19 +128,7 @@ export default function DirectTimeChangePanel({
         </div>
       )}
 
-      {/* Turnstile */}
-      {turnstileNode && (
-        <div className="flex justify-center">
-          {turnstileNode}
-        </div>
-      )}
-
-      {/* Turnstile required message */}
-      {turnstileRequired && (
-        <div className="text-xs text-neutral-500 dark:text-dark-muted text-center">
-          Potwierdź weryfikację Turnstile, aby kontynuować.
-        </div>
-      )}
+      {/* NO TURNSTILE - user already verified during search */}
 
       {/* Action buttons */}
       <div className="flex gap-3 pt-2">
@@ -158,7 +143,7 @@ export default function DirectTimeChangePanel({
         <button
           type="button"
           onClick={onConfirm}
-          disabled={isSubmitting || !canConfirm || turnstileRequired}
+          disabled={isSubmitting || !canConfirm}
           className="flex-1 rounded-lg bg-primary px-4 py-3 text-sm font-medium text-white transition-all duration-200 hover:bg-primary/90 hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed dark:bg-accent dark:hover:bg-accent/90"
         >
           {isSubmitting ? (

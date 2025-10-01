@@ -219,19 +219,18 @@ const BookingManagement = forwardRef<BookingManagementRef, BookingManagementProp
     }, [onDateReset, onCalendarModeChange, onProcedureChange, actions])
 
     // Простая мутация для изменения времени - чистая архитектура
+    // NO TURNSTILE - user already verified during search
     const updateTimeMutation = useMutation<void, MutationError, void>({
       mutationFn: async () => {
         if (!state.timeChangeSession?.newSlot) {
           throw new Error('Brak wybranego nowego terminu.')
         }
         
-        console.log('🚀 Starting simple time update for:', state.timeChangeSession.originalBooking.eventId)
-        const token = turnstileSession.turnstileToken ?? undefined
+        console.log('🚀 Starting simple time update (no Turnstile):', state.timeChangeSession.originalBooking.eventId)
         
         await updateBookingTime(
           state.timeChangeSession.originalBooking,
-          state.timeChangeSession.newSlot,
-          token
+          state.timeChangeSession.newSlot
         )
       },
       onSuccess: () => {
