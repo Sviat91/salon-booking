@@ -1,11 +1,12 @@
 "use client"
-import type { BookingResult, SlotSelection, ProcedureOption } from '../types'
+import type { BookingResult, SlotSelection, ProcedureOption } from './types'
 import { timeFormatter, dateFormatter } from '@/lib/utils/date-formatters'
 
 interface DirectTimeChangePanelProps {
   booking: BookingResult
   selectedDate?: Date
   selectedSlot?: SlotSelection | null
+  newSlot: SlotSelection | null
   isSubmitting: boolean
   errorMessage: string | null
   onConfirm: () => void

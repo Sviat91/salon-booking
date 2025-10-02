@@ -1,5 +1,5 @@
 "use client"
-import type { TimeChangeSession, BookingResult, SlotSelection } from '../types'
+import type { TimeChangeSession, BookingResult, SlotSelection } from './types'
 import { timeFormatter, dateFormatter } from '@/lib/utils/date-formatters'
 
 interface TimeChangeSuccessPanelProps {
@@ -12,6 +12,11 @@ export default function TimeChangeSuccessPanel({
   onBackToResults,
 }: TimeChangeSuccessPanelProps) {
   const { originalBooking: booking, newSlot } = timeChangeSession
+  
+  // Safety check - should not happen in success state
+  if (!newSlot) {
+    return null
+  }
   
   // Using centralized formatters
 

@@ -1,11 +1,12 @@
 "use client"
-import type { BookingResult, SlotSelection } from '../types'
+import type { BookingResult, SlotSelection } from './types'
 import { timeFormatter, dateFormatter } from '@/lib/utils/date-formatters'
 
 interface ConfirmTimeChangePanelProps {
   booking: BookingResult
   newSlot: SlotSelection
   isSubmitting: boolean
+  errorMessage?: string | null
   onCancel: () => void
   onConfirm: () => void
   onBack: () => void

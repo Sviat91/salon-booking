@@ -1,6 +1,6 @@
 "use client"
 import { useMemo } from 'react'
-import type { BookingResult } from '../types'
+import type { BookingResult } from './types'
 import { timeFormatter, dateFormatter } from '@/lib/utils/date-formatters'
 
 interface ResultsPanelProps {
@@ -8,7 +8,6 @@ interface ResultsPanelProps {
   selectedBookingId?: string
   searchCriteria?: {
     fullName?: string
-    phone?: string
     phone: string
     email?: string
   }

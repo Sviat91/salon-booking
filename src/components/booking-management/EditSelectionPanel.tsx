@@ -1,5 +1,5 @@
 "use client"
-import type { BookingResult } from '../types'
+import type { BookingResult } from './types'
 import { timeFormatter, dateFormatter } from '@/lib/utils/date-formatters'
 
 interface EditSelectionPanelProps {
