@@ -153,10 +153,9 @@ const BookingManagement = forwardRef<BookingManagementRef, BookingManagementProp
         if (!state.selectedProcedure) {
           throw new Error('Wybierz procedurę.')
         }
-        const token = turnstileSession.turnstileToken ?? undefined
         console.log('🔄 Updating procedure:', state.selectedProcedure.name_pl)
-        // Используем простой эндпоинт без валидации (как updateBookingTime)
-        await updateBookingProcedure(state.selectedBooking, state.selectedProcedure.id, token)
+        // NO TURNSTILE - user already verified during search (like updateBookingTime)
+        await updateBookingProcedure(state.selectedBooking, state.selectedProcedure.id)
       },
       onSuccess: () => {
         console.log('✅ Procedure updated successfully')

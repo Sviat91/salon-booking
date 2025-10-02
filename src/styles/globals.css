@@ -143,7 +143,7 @@ body::before {
 }
 
 .rdp-table {
-  width: 100% !important;
+  width: calc(var(--rdp-cell-size) * 7) !important;
   max-width: 100% !important;
   border-collapse: collapse !important;
   margin: 0 auto !important;
@@ -152,10 +152,6 @@ body::before {
 
 /* Центрирование таблицы на мобильных устройствах */
 @media (max-width: 640px) {
-  .rdp-table {
-    width: calc(var(--rdp-cell-size) * 7) !important;
-  }
-  
   .rdp-month {
     display: flex !important;
     flex-direction: column !important;
@@ -170,6 +166,7 @@ body::before {
   text-align: center !important;
   font-size: 14px !important;
   padding: 0 !important;
+  vertical-align: middle !important;
 }
 
 @media (max-width: 640px) {
@@ -193,14 +190,17 @@ body::before {
 
 /* Override day styles with high specificity */
 .rdp-day {
-  width: var(--rdp-cell-size) !important;
-  height: var(--rdp-cell-size) !important;
+  width: calc(var(--rdp-cell-size) - 4px) !important;
+  height: calc(var(--rdp-cell-size) - 4px) !important;
   border-radius: 50% !important;
   font-size: 14px !important;
   transition: all 0.2s ease !important;
   background: none !important;
   border: none !important;
   margin: 0 auto !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
 }
 
 @media (max-width: 640px) {

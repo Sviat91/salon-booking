@@ -11,7 +11,8 @@ const log = getLogger({ module: 'api.bookings.update-procedure' })
 
 // Схема с данными для обновления процедуры
 const UpdateProcedureSchema = z.object({
-  // Authentication
+  // NO TURNSTILE REQUIRED - user already verified during search
+  // Token kept optional for backward compatibility only
   turnstileToken: z.string().optional(),
   
   // Event ID

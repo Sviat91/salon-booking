@@ -282,13 +282,12 @@ export async function checkProcedureExtension(
   return await response.json()
 }
 
-// Простая функция для изменения процедуры - без валидации
+// Простая функция для изменения процедуры - NO TURNSTILE (user already verified during search)
 export async function updateBookingProcedure(
   booking: BookingResult,
   newProcedureId: string,
-  turnstileToken?: string,
 ): Promise<void> {
-  console.log('🔄 Updating booking procedure:', {
+  console.log('🔄 Updating booking procedure (no Turnstile):', {
     eventId: booking.eventId,
     oldProcedure: booking.procedureName,
     newProcedureId,
@@ -296,7 +295,6 @@ export async function updateBookingProcedure(
 
   // Payload с данными для сохранения (не для валидации)
   const body = {
-    turnstileToken,
     eventId: booking.eventId,
     // Данные клиента для сохранения в записи
     firstName: booking.firstName,
