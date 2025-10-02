@@ -31,6 +31,10 @@ export default function Page() {
   const [hasScrolledToBooking, setHasScrolledToBooking] = useState(false)
   const [hasScrolledToManagement, setHasScrolledToManagement] = useState(false)
   
+  // Флаги для автоскролла в режиме редактирования (BookingManagement)
+  const [hasScrolledToCalendarInEditMode, setHasScrolledToCalendarInEditMode] = useState(false)
+  const [hasScrolledBackToPanel, setHasScrolledBackToPanel] = useState(false)
+  
   // Флаг для отслеживания открытия панели управления
   const [isManagementOpen, setIsManagementOpen] = useState(false)
 
@@ -59,6 +63,23 @@ export default function Page() {
         behavior: 'smooth'
       })
       // Сбрасываем флаг автоскролла через 1 секунду (время на завершение анимации)
+      setTimeout(() => setIsAutoScrolling(false), 1000)
+    }
+  }
+
+  // Функция автоскролла для режима редактирования (ВСЕГДА срабатывает на мобильных)
+  const scrollToElementForced = (ref: React.RefObject<HTMLDivElement>, offset = 0) => {
+    if (ref.current && window.innerWidth < 1024) {
+      setIsAutoScrolling(true)
+      const rect = ref.current.getBoundingClientRect()
+      const scrollTop = window.pageYOffset || document.documentElement.scrollTop
+      const elementTop = rect.top + scrollTop
+      const finalPosition = Math.max(0, elementTop + offset - 100)
+      
+      window.scrollTo({
+        top: finalPosition,
+        behavior: 'smooth'
+      })
       setTimeout(() => setIsAutoScrolling(false), 1000)
     }
   }
@@ -125,6 +146,31 @@ export default function Page() {
       setHasScrolledToManagement(false)
     }
   }, [isManagementOpen, hasScrolledToManagement])
+
+  // Автоскролл к календарю при переходе в режим редактирования
+  useEffect(() => {
+    if (calendarMode === 'editing' && !hasScrolledToCalendarInEditMode) {
+      setTimeout(() => {
+        scrollToElementForced(calendarRef, 0)
+        setHasScrolledToCalendarInEditMode(true)
+        setHasScrolledBackToPanel(false) // Сбрасываем флаг возврата
+      }, 300)
+    } else if (calendarMode === 'booking') {
+      // Сбрасываем флаги при выходе из режима редактирования
+      setHasScrolledToCalendarInEditMode(false)
+      setHasScrolledBackToPanel(false)
+    }
+  }, [calendarMode, hasScrolledToCalendarInEditMode])
+
+  // Автоскролл обратно к панели управления при выборе слота в режиме редактирования
+  useEffect(() => {
+    if (calendarMode === 'editing' && selectedSlot && hasScrolledToCalendarInEditMode && !hasScrolledBackToPanel) {
+      setTimeout(() => {
+        scrollToElementForced(bookingManagementCardRef, 0)
+        setHasScrolledBackToPanel(true)
+      }, 500)
+    }
+  }, [calendarMode, selectedSlot, hasScrolledToCalendarInEditMode, hasScrolledBackToPanel])
   const closeBookingManagement = () => {
     bookingManagementRef.current?.close()
   }
