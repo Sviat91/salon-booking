@@ -101,6 +101,42 @@ npm run build
 npm start
 ```
 
+### Administrative Scripts
+
+The `/scripts` folder contains GDPR maintenance utilities:
+
+#### Consent Management CLI
+```bash
+# Show consent sheet header and first rows
+npx tsx scripts/consent-cli.ts header
+
+# Find user consent by phone and name
+npx tsx scripts/consent-cli.ts show <phone> <name> [email]
+
+# Withdraw user consent
+npx tsx scripts/consent-cli.ts withdraw <phone> <name> [email]
+
+# Append test consent (debug only)
+npx tsx scripts/consent-cli.ts append <phone> <name> [email] [ip]
+```
+
+#### Debug Scripts
+```bash
+# Inspect consent sheet with data masking
+npx tsx scripts/inspect-consent.ts
+
+# Find specific user consent
+node scripts/debug-find-consent.js
+
+# Test date parsing from Google Sheets
+node scripts/debug-dates.js
+
+# Test consent withdrawal API
+node scripts/test-withdraw.js
+```
+
+**Note**: These scripts require `.env` file with Google Sheets credentials.
+
 ## GDPR Features
 
 ### Data Export

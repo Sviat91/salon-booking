@@ -2,6 +2,8 @@
 // These utilities intentionally avoid importing server-side env configuration
 // so that they can be safely bundled into the browser.
 
+import { clientLog } from './client-logger'
+
 // Session storage keys
 const TURNSTILE_TOKEN_KEY = 'turnstile_token'
 const TURNSTILE_TIMESTAMP_KEY = 'turnstile_timestamp'
@@ -24,7 +26,7 @@ export function getTurnstileToken(): string | null {
 
     return turnstile.getResponse(widgetId) || null
   } catch (error) {
-    console.warn('Failed to get Turnstile token:', error)
+    clientLog.warn('Failed to get Turnstile token:', error)
     return null
   }
 }
@@ -58,7 +60,7 @@ export function validateTurnstileSession(): TurnstileValidation {
 
     return { isValid: true, token, reason: 'valid' }
   } catch (error) {
-    console.warn('Failed to validate Turnstile session:', error)
+    clientLog.warn('Failed to validate Turnstile session:', error)
     clearTurnstileSession()
     return { isValid: false, reason: 'no_session' }
   }
@@ -71,7 +73,7 @@ export function clearTurnstileSession(): void {
     sessionStorage.removeItem(TURNSTILE_TOKEN_KEY)
     sessionStorage.removeItem(TURNSTILE_TIMESTAMP_KEY)
   } catch (error) {
-    console.warn('Failed to clear Turnstile session:', error)
+    clientLog.warn('Failed to clear Turnstile session:', error)
   }
 }
 
@@ -82,7 +84,7 @@ export function storeTurnstileSession(token: string): void {
     sessionStorage.setItem(TURNSTILE_TOKEN_KEY, token)
     sessionStorage.setItem(TURNSTILE_TIMESTAMP_KEY, Date.now().toString())
   } catch (error) {
-    console.warn('Failed to store Turnstile session:', error)
+    clientLog.warn('Failed to store Turnstile session:', error)
   }
 }
 

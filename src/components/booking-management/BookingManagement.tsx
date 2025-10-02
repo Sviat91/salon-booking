@@ -21,6 +21,7 @@ import type {
   SlotSelection,
   ProcedureOption,
 } from './types'
+import { clientLog } from '@/lib/client-logger'
 
 interface BookingManagementProps {
   selectedDate?: Date
@@ -153,12 +154,12 @@ const BookingManagement = forwardRef<BookingManagementRef, BookingManagementProp
         if (!state.selectedProcedure) {
           throw new Error('Wybierz procedurę.')
         }
-        console.log('🔄 Updating procedure:', state.selectedProcedure.name_pl)
+        clientLog.info('🔄 Updating procedure:', state.selectedProcedure.name_pl)
         // NO TURNSTILE - user already verified during search (like updateBookingTime)
         await updateBookingProcedure(state.selectedBooking, state.selectedProcedure.id)
       },
       onSuccess: () => {
-        console.log('✅ Procedure updated successfully')
+        clientLog.info('✅ Procedure updated successfully')
         actions.setActionError(null)
         actions.clearExtensionCheck() // Очищаем проверку после успешного сохранения
         
@@ -168,7 +169,7 @@ const BookingManagement = forwardRef<BookingManagementRef, BookingManagementProp
         actions.setState('procedure-change-success')
       },
       onError: (error) => {
-        console.error('❌ Procedure update failed:', error.message)
+        clientLog.error('❌ Procedure update failed:', error.message)
         actions.setActionError(error.message)
         
         // Сбрасываем календарь при ошибке тоже
@@ -192,13 +193,13 @@ const BookingManagement = forwardRef<BookingManagementRef, BookingManagementProp
         return await updateBooking(state.selectedBooking, changes, token)
       },
       onSuccess: (data) => {
-        console.log('✅ Combined procedure+time update successful', data)
+        clientLog.info('✅ Combined procedure+time update successful', data)
         actions.setActionError(null)
         actions.clearExtensionCheck()
         
         // Update booking time in state if it changed
         if (data.startTime && data.endTime && state.selectedBooking) {
-          console.log('🔄 Updating booking time in state:', {
+          clientLog.info('🔄 Updating booking time in state:', {
             old: { start: state.selectedBooking.startTime, end: state.selectedBooking.endTime },
             new: { start: data.startTime, end: data.endTime }
           })
@@ -215,7 +216,7 @@ const BookingManagement = forwardRef<BookingManagementRef, BookingManagementProp
         actions.setState('procedure-change-success')
       },
       onError: (error) => {
-        console.error('❌ Combined update failed:', error.message)
+        clientLog.error('❌ Combined update failed:', error.message)
         actions.setActionError(error.message)
         
         // Сбрасываем календарь при ошибке тоже
@@ -227,7 +228,7 @@ const BookingManagement = forwardRef<BookingManagementRef, BookingManagementProp
 
     // Универсальная функция для сброса состояния календаря
     const resetCalendarState = useCallback(() => {
-      console.log('🔄 Resetting calendar state to initial (no procedure, no date, no slot)')
+      clientLog.info('🔄 Resetting calendar state to initial (no procedure, no date, no slot)')
       actions.setPendingSlot(null)
       onDateReset?.() // Сбрасываем выбранную дату
       onCalendarModeChange?.('booking') // Возвращаем в режим бронирования
@@ -242,7 +243,7 @@ const BookingManagement = forwardRef<BookingManagementRef, BookingManagementProp
           throw new Error('Brak wybranego nowego terminu.')
         }
         
-        console.log('🚀 Starting simple time update (no Turnstile):', state.timeChangeSession.originalBooking.eventId)
+        clientLog.info('🚀 Starting simple time update (no Turnstile):', state.timeChangeSession.originalBooking.eventId)
         
         await updateBookingTime(
           state.timeChangeSession.originalBooking,
@@ -250,27 +251,27 @@ const BookingManagement = forwardRef<BookingManagementRef, BookingManagementProp
         )
       },
       onSuccess: () => {
-        console.log('🎉 Time change successful - showing success state')
+        clientLog.info('🎉 Time change successful - showing success state')
         actions.setActionError(null)
         
         // Сбрасываем состояние календаря и показываем панель успеха
         resetCalendarState()
         actions.setState('time-change-success')
         
-        console.log('✅ State changed to time-change-success')
+        clientLog.info('✅ State changed to time-change-success')
         
         // НЕ обновляем поиск сразу - пусть пользователь увидит success панель
         // Обновим когда он нажмет "Powrót do wyników"
       },
       onError: (error) => {
-        console.error('❌ Time change failed:', error.message)
+        clientLog.error('❌ Time change failed:', error.message)
         actions.setActionError(error.message)
         
         // Сбрасываем состояние календаря при ошибке тоже
         resetCalendarState()
         actions.setState('time-change-error')
         
-        console.log('❌ State changed to time-change-error')
+        clientLog.info('❌ State changed to time-change-error')
       },
     })
 
@@ -321,7 +322,7 @@ const BookingManagement = forwardRef<BookingManagementRef, BookingManagementProp
       if (state.isOpen) {
         // При закрытии панели - сбрасываем календарь если была активна сессия изменения времени
         if (state.timeChangeSession || state.wasEditing) {
-          console.log('🔙 Closing BookingManagement panel - resetting calendar state')
+          clientLog.info('🔙 Closing BookingManagement panel - resetting calendar state')
           resetCalendarState()
         }
         // Полностью удаляем Turnstile при закрытии панели, чтобы корректно пересоздать при следующем открытии
@@ -355,7 +356,7 @@ const BookingManagement = forwardRef<BookingManagementRef, BookingManagementProp
 
     // M1: Изменение процедуры - базовые хендлеры (навигация и выбор)
     const handleSelectChangeProcedure = () => {
-      console.log('💆‍♀️ Starting procedure change flow')
+      clientLog.info('💆‍♀️ Starting procedure change flow')
       actions.setActionError(null)
       actions.selectProcedure(null)
       actions.clearExtensionCheck() // Очищаем предыдущую проверку
@@ -363,39 +364,39 @@ const BookingManagement = forwardRef<BookingManagementRef, BookingManagementProp
     }
 
     const handleSelectProcedure = (proc: ProcedureOption | null) => {
-      console.log('🧭 Procedure selected:', proc?.name_pl)
+      clientLog.info('🧭 Procedure selected:', proc?.name_pl)
       actions.selectProcedure(proc)
     }
 
     // M1 Step 2: Подтверждение изменения процедуры на тот же час - сразу выполняем
     const handleConfirmSameTime = () => {
-      console.log('✅ Confirming procedure change on same time - executing immediately')
-      console.log('📋 Selected procedure:', state.selectedProcedure)
-      console.log('📋 Selected booking:', state.selectedBooking)
+      clientLog.info('✅ Confirming procedure change on same time - executing immediately')
+      clientLog.info('📋 Selected procedure:', state.selectedProcedure)
+      clientLog.info('📋 Selected booking:', state.selectedBooking)
       if (!state.selectedProcedure) {
-        console.warn('⚠️ No procedure selected!')
+        clientLog.warn('⚠️ No procedure selected!')
         actions.setActionError('Wybierz procedurę')
         return
       }
       if (!state.selectedBooking) {
-        console.error('❌ No selected booking!')
+        clientLog.error('❌ No selected booking!')
         return
       }
       actions.setActionError(null)
-      console.log('🚀 Executing procedure change immediately')
+      clientLog.info('🚀 Executing procedure change immediately')
       // Сразу вызываем мутацию без промежуточного состояния
       updateProcedureMutation.mutate()
     }
 
     // Новая простая логика изменения времени - сразу показываем direct-time-change панель
     const handleSelectChangeTime = () => {
-      console.log('⏰ Starting direct time change for booking:', state.selectedBooking?.eventId)
+      clientLog.info('⏰ Starting direct time change for booking:', state.selectedBooking?.eventId)
       if (!state.selectedBooking) return
       
       // Создаем сессию изменения времени
       const procedure = deriveProcedureForBooking(state.selectedBooking)
       if (!procedure) {
-        console.error('❌ Cannot derive procedure for booking')
+        clientLog.error('❌ Cannot derive procedure for booking')
         return
       }
       const session = {
@@ -409,7 +410,7 @@ const BookingManagement = forwardRef<BookingManagementRef, BookingManagementProp
         actions.setActionError(null)
       }
       
-      console.log('💾 Creating time change session and going direct to comparison:', session.originalBooking.procedureName)
+      clientLog.info('💾 Creating time change session and going direct to comparison:', session.originalBooking.procedureName)
       actions.startTimeChange(session)
       actions.setState('direct-time-change')
     }
@@ -424,9 +425,9 @@ const BookingManagement = forwardRef<BookingManagementRef, BookingManagementProp
     // const handleConfirmSameTime = () => { ... }
 
     const handleRequestNewTime = () => {
-      console.log('📅 Requesting new time for procedure change:', state.selectedProcedure?.name_pl)
+      clientLog.info('📅 Requesting new time for procedure change:', state.selectedProcedure?.name_pl)
       if (!state.selectedBooking || !state.selectedProcedure) {
-        console.error('❌ No booking or procedure selected!')
+        clientLog.error('❌ No booking or procedure selected!')
         return
       }
       
@@ -441,7 +442,7 @@ const BookingManagement = forwardRef<BookingManagementRef, BookingManagementProp
         newSlot: null,
       }
       
-      console.log('💾 Creating time change session for procedure change:', {
+      clientLog.info('💾 Creating time change session for procedure change:', {
         oldProcedure: state.selectedBooking.procedureName,
         newProcedure: state.selectedProcedure.name_pl,
       })
@@ -453,18 +454,18 @@ const BookingManagement = forwardRef<BookingManagementRef, BookingManagementProp
     // Обновленная логика проверки доступности для длинных процедур
     const handleCheckAvailability = async () => {
       if (!state.selectedBooking || !state.selectedProcedure) {
-        console.error('❌ No booking or procedure selected!')
+        clientLog.error('❌ No booking or procedure selected!')
         return
       }
       
-      console.log('🔍 Checking extension availability for:', state.selectedProcedure.name_pl)
+      clientLog.info('🔍 Checking extension availability for:', state.selectedProcedure.name_pl)
       
       // Устанавливаем статус проверки
       actions.setExtensionCheckStatus('checking')
       actions.setActionError(null)
       
       try {
-        console.log('🔍 Calling checkProcedureExtension (no Turnstile):', {
+        clientLog.info('🔍 Calling checkProcedureExtension (no Turnstile):', {
           eventId: state.selectedBooking.eventId,
           procedureId: state.selectedProcedure.id,
           currentStart: state.selectedBooking.startTime.toISOString(),
@@ -476,13 +477,13 @@ const BookingManagement = forwardRef<BookingManagementRef, BookingManagementProp
           state.selectedProcedure.id
         )
         
-        console.log('✅ Extension check result:', response.result.status, response.result)
+        clientLog.info('✅ Extension check result:', response.result.status, response.result)
         
         // Сохраняем результат проверки
         actions.setExtensionCheckResult(response.result)
         
       } catch (error) {
-        console.error('❌ Extension check failed:', error)
+        clientLog.error('❌ Extension check failed:', error)
         actions.setActionError(error instanceof Error ? error.message : 'Nie udało się sprawdzić dostępności')
         actions.setExtensionCheckStatus(null)
       }
@@ -490,14 +491,14 @@ const BookingManagement = forwardRef<BookingManagementRef, BookingManagementProp
     
     // Выбор альтернативного слота из списка
     const handleSelectAlternativeSlot = (slot: SlotSelection) => {
-      console.log('📍 Selected alternative slot:', slot)
+      clientLog.info('📍 Selected alternative slot:', slot)
       actions.selectAlternativeSlot(slot)
     }
     
     // Подтверждение альтернативного слота (сдвиг назад или выбранный из списка)
     const handleConfirmAlternativeSlot = () => {
       if (!state.selectedBooking || !state.selectedProcedure) {
-        console.error('❌ No booking or procedure selected!')
+        clientLog.error('❌ No booking or procedure selected!')
         return
       }
       
@@ -511,11 +512,11 @@ const BookingManagement = forwardRef<BookingManagementRef, BookingManagementProp
           : null)
       
       if (!slotToUse) {
-        console.error('❌ No alternative slot available!')
+        clientLog.error('❌ No alternative slot available!')
         return
       }
       
-      console.log('✅ Confirming alternative slot:', slotToUse)
+      clientLog.info('✅ Confirming alternative slot:', slotToUse)
       
       // Используем updateMutation для комбинированного изменения (процедура + время)
       updateMutation.mutate({
@@ -526,14 +527,14 @@ const BookingManagement = forwardRef<BookingManagementRef, BookingManagementProp
 
     // Новая простая логика подтверждения слота
     const handleConfirmSlot = () => {
-      console.log('🎯 Confirming slot for time change:', selectedSlot)
+      clientLog.info('🎯 Confirming slot for time change:', selectedSlot)
       if (!selectedSlot || !state.timeChangeSession) {
-        console.error('❌ No selectedSlot or timeChangeSession available!')
+        clientLog.error('❌ No selectedSlot or timeChangeSession available!')
         return
       }
       
       // Сохраняем выбранный слот в сессию
-      console.log('💾 Saving slot to time change session')
+      clientLog.info('💾 Saving slot to time change session')
       actions.setTimeChangeSlot(selectedSlot)
       
       if (onSlotSelected) {
@@ -552,7 +553,7 @@ const BookingManagement = forwardRef<BookingManagementRef, BookingManagementProp
       }
       
       // Обновляем поиск при возврате к результатам
-      console.log('🔄 Refreshing search after successful change')
+      clientLog.info('🔄 Refreshing search after successful change')
       const token = siteKey ? (turnstileSession.turnstileToken ?? undefined) : undefined
       if (token) turnstileSession.setTurnstileToken(token)
       searchMutation.mutate({ turnstileToken: token })
@@ -560,7 +561,7 @@ const BookingManagement = forwardRef<BookingManagementRef, BookingManagementProp
 
     const handleRetryTimeChange = () => {
       // Возвращаемся к выбору времени для повторной попытки и сбрасываем календарь
-      console.log('🔄 User retrying time change after error - resetting calendar')
+      clientLog.info('🔄 User retrying time change after error - resetting calendar')
       resetCalendarState()
       if (state.timeChangeSession) {
         actions.setState('edit-datetime')
@@ -584,22 +585,22 @@ const BookingManagement = forwardRef<BookingManagementRef, BookingManagementProp
     }
 
     const handleContactMaster = useCallback(() => {
-      console.log('Opening contact master panel')
+      clientLog.info('Opening contact master panel')
       actions.setState('contact-master')
     }, [actions])
     
     const handleContactMasterSuccess = useCallback(() => {
-      console.log('Contact master success')
+      clientLog.info('Contact master success')
       actions.setState('contact-master-success')
     }, [actions])
     
     const handleContactMasterBack = useCallback(() => {
-      console.log('Going back from contact master')
+      clientLog.info('Going back from contact master')
       actions.setState('not-found')
     }, [actions])
     
     const handleContactMasterClose = useCallback(() => {
-      console.log('Closing contact master success')
+      clientLog.info('Closing contact master success')
       actions.setState('search')
       actions.resetForm()
     }, [actions])
@@ -610,7 +611,7 @@ const BookingManagement = forwardRef<BookingManagementRef, BookingManagementProp
     }, [actions])
 
     const handleExtendSearch = useCallback(() => {
-      console.log('Opening extended search panel')
+      clientLog.info('Opening extended search panel')
       actions.setState('extended-search')
     }, [actions])
     
@@ -621,7 +622,7 @@ const BookingManagement = forwardRef<BookingManagementRef, BookingManagementProp
       startDate: string, 
       endDate: string
     ) => {
-      console.log('Extended search submitted:', { fullName, phone, email, startDate, endDate })
+      clientLog.info('Extended search submitted:', { fullName, phone, email, startDate, endDate })
       
       // Обновляем форму с новыми данными
       actions.updateForm({ fullName, phone, email })
@@ -637,7 +638,7 @@ const BookingManagement = forwardRef<BookingManagementRef, BookingManagementProp
     }, [actions, searchMutation, turnstileSession])
     
     const handleExtendedSearchBack = useCallback(() => {
-      console.log('Going back from extended search')
+      clientLog.info('Going back from extended search')
       actions.setState('not-found')
     }, [actions])
 
@@ -646,7 +647,7 @@ const BookingManagement = forwardRef<BookingManagementRef, BookingManagementProp
 
     // Возврат к выбору типа изменения - очищаем сессию времени и сбрасываем календарь
     const handleBackToEditSelection = () => {
-      console.log('🔙 Going back to edit selection - clearing time change session and resetting calendar')
+      clientLog.info('🔙 Going back to edit selection - clearing time change session and resetting calendar')
       resetCalendarState()
       actions.clearTimeChange()
       actions.setState('edit-selection')
@@ -658,16 +659,16 @@ const BookingManagement = forwardRef<BookingManagementRef, BookingManagementProp
 
     // Подтверждение изменения времени (возможно с изменением процедуры)
     const handleConfirmTimeChange = () => {
-      console.log('🔄 Confirming time change from session:', state.timeChangeSession?.originalBooking.eventId)
+      clientLog.info('🔄 Confirming time change from session:', state.timeChangeSession?.originalBooking.eventId)
       
       if (!state.timeChangeSession) {
-        console.error('❌ No time change session!')
+        clientLog.error('❌ No time change session!')
         return
       }
       
       // Если есть selectedSlot, но нет newSlot в сессии - сохраняем
       if (selectedSlot && !state.timeChangeSession.newSlot) {
-        console.log('💾 First saving selectedSlot to session:', selectedSlot)
+        clientLog.info('💾 First saving selectedSlot to session:', selectedSlot)
         actions.setTimeChangeSlot(selectedSlot)
         if (onSlotSelected) {
           onSlotSelected(selectedSlot)
@@ -677,7 +678,7 @@ const BookingManagement = forwardRef<BookingManagementRef, BookingManagementProp
       // Проверяем что есть слот для изменения  
       const slotToUse = state.timeChangeSession.newSlot || selectedSlot
       if (!slotToUse) {
-        console.error('❌ No slot available for time change!')
+        clientLog.error('❌ No slot available for time change!')
         return
       }
       
@@ -686,14 +687,14 @@ const BookingManagement = forwardRef<BookingManagementRef, BookingManagementProp
       
       if (isProcedureChange) {
         // Комбинированное изменение: процедура + время
-        console.log('📤 Executing combined procedure+time change...')
+        clientLog.info('📤 Executing combined procedure+time change...')
         updateMutation.mutate({
           newProcedureId: state.timeChangeSession.selectedProcedure.id,
           newSlot: slotToUse,
         })
       } else {
         // Только изменение времени
-        console.log('📤 Executing time change only...')
+        clientLog.info('📤 Executing time change only...')
         updateTimeMutation.mutate()
       }
     }
@@ -703,7 +704,7 @@ const BookingManagement = forwardRef<BookingManagementRef, BookingManagementProp
       const isProcedureChange = state.timeChangeSession && 
         state.timeChangeSession.selectedProcedure.name_pl !== state.timeChangeSession.originalBooking.procedureName
       
-      console.log('🔙 User canceled time change - resetting calendar', {
+      clientLog.info('🔙 User canceled time change - resetting calendar', {
         isProcedureChange,
         goingTo: isProcedureChange ? 'edit-procedure' : 'edit-selection'
       })

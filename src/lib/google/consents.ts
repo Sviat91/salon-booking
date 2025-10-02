@@ -1,4 +1,5 @@
 import { config } from '../env'
+import { getLogger } from '../logger'
 import { getClients } from './auth'
 import {
   columnIndexToLetter,
@@ -15,6 +16,8 @@ import {
   sortMatchesByRecency,
   trimToSheetLimit,
 } from './consent-utils'
+
+const logger = getLogger({ module: 'google.consents' })
 
 export interface UserConsent {
   phone: string
@@ -143,13 +146,13 @@ export async function findUserConsent(phone: string, name: string, email?: strin
     matches.sort(sortMatchesByRecency)
     return matches[0].consent
   } catch (err) {
-    console.error('[findUserConsent] Failed to read consent', err)
+    logger.error({ err }, '[findUserConsent] Failed to read consent')
     return null
   }
 }
 
 export async function findUserConsentByPhone(phone: string): Promise<UserConsent | null> {
-  console.warn('⚠️ findUserConsentByPhone is deprecated, use findUserConsent(phone, name) for better security')
+  logger.warn('⚠️ findUserConsentByPhone is deprecated, use findUserConsent(phone, name) for better security')
   return null
 }
 
@@ -182,13 +185,13 @@ export async function withdrawUserConsent(options: UpdateConsentWithdrawalOption
 
   const { header, rows } = await getConsentValues()
   if (!rows.length) {
-    console.warn('[withdrawUserConsent] No consent rows found', { requestId })
+    logger.warn({ requestId }, '[withdrawUserConsent] No consent rows found')
     return { updated: false, reason: 'NOT_FOUND' }
   }
 
   const columns = resolveConsentColumns(header)
   if (!columns) {
-    console.error('[withdrawUserConsent] Cannot resolve columns', { requestId })
+    logger.error({ requestId }, '[withdrawUserConsent] Cannot resolve columns')
     return { updated: false, reason: 'NOT_FOUND' }
   }
 
@@ -236,12 +239,12 @@ export async function withdrawUserConsent(options: UpdateConsentWithdrawalOption
   })
 
   if (!matches.length) {
-    console.warn('[withdrawUserConsent] Consent not found', {
+    logger.warn({
       requestId,
       phone: maskPhoneHash(normalizedPhone),
       email: normalizedEmail ? maskEmailHash(normalizedEmail) : undefined,
       name: normalizedName,
-    })
+    }, '[withdrawUserConsent] Consent not found')
     return { updated: false, reason: 'NOT_FOUND' }
   }
 
@@ -252,7 +255,7 @@ export async function withdrawUserConsent(options: UpdateConsentWithdrawalOption
     return hasActivePrivacy && hasActiveTerms && notWithdrawn
   })
 
-  console.log('[withdrawUserConsent] Found consents:', {
+  logger.info({
     requestId,
     phone: maskPhoneHash(normalizedPhone),
     totalMatches: matches.length,
@@ -263,23 +266,23 @@ export async function withdrawUserConsent(options: UpdateConsentWithdrawalOption
       terms: m.consent.consentTermsV10,
       withdrawnDate: m.consent.consentWithdrawnDate || 'НЕТ',
     })),
-  })
+  }, '[withdrawUserConsent] Found consents')
 
   if (activeConsents.length === 0) {
-    console.warn('[withdrawUserConsent] No active consents found - already withdrawn or invalid data', {
+    logger.warn({
       requestId,
       phone: maskPhoneHash(normalizedPhone),
       totalRecords: matches.length,
-    })
+    }, '[withdrawUserConsent] No active consents found - already withdrawn or invalid data')
     return { updated: false, reason: 'NOT_FOUND' }
   }
 
   if (activeConsents.length > 1) {
-    console.error('[withdrawUserConsent] Multiple active consents found - data integrity issue', {
+    logger.error({
       requestId,
       phone: maskPhoneHash(normalizedPhone),
       activeConsents: activeConsents.length,
-    })
+    }, '[withdrawUserConsent] Multiple active consents found - data integrity issue')
     return { updated: false, reason: 'MULTIPLE_MATCHES' }
   }
 
@@ -317,11 +320,11 @@ export async function withdrawUserConsent(options: UpdateConsentWithdrawalOption
     },
   })
 
-  console.log('[withdrawUserConsent] Google Sheets updated successfully', {
+  logger.info({
     requestId,
     phone: maskPhoneHash(normalizedPhone),
     rowIndex: rowNumber,
-  })
+  }, '[withdrawUserConsent] Google Sheets updated successfully')
 
   return { updated: true }
 }
@@ -348,18 +351,18 @@ export async function eraseUserData(options: EraseUserDataOptions): Promise<Eras
 
   const { header, rows } = await getConsentValues()
   if (!rows.length) {
-    console.warn('[eraseUserData] No consent rows found', { requestId })
+    logger.warn({ requestId }, '[eraseUserData] No consent rows found')
     return { erased: false, reason: 'NOT_FOUND' }
   }
 
   const columns = resolveConsentColumns(header)
   if (!columns) {
-    console.error('[eraseUserData] Cannot resolve columns', { requestId })
+    logger.error({ requestId }, '[eraseUserData] Cannot resolve columns')
     return { erased: false, reason: 'NOT_FOUND' }
   }
 
   // Debug: log the column mappings to understand the issue
-  console.log('[eraseUserData] Column mappings', {
+  logger.debug({
     requestId,
     header,
     columnMappings: {
@@ -369,15 +372,15 @@ export async function eraseUserData(options: EraseUserDataOptions): Promise<Eras
       requestErasureDate: columns.requestErasureDate,
       erasureDate: columns.erasureDate,
     }
-  })
+  }, '[eraseUserData] Column mappings')
 
   // Force correct indices for erasure columns if not found
   if (columns.requestErasureDate < 0) {
-    console.warn('[eraseUserData] requestErasureDate column not found, using fallback index 10')
+    logger.warn('[eraseUserData] requestErasureDate column not found, using fallback index 10')
     columns.requestErasureDate = 10 // K column
   }
   if (columns.erasureDate < 0) {
-    console.warn('[eraseUserData] erasureDate column not found, using fallback index 11')
+    logger.warn('[eraseUserData] erasureDate column not found, using fallback index 11')
     columns.erasureDate = 11 // L column
   }
 
@@ -432,16 +435,16 @@ export async function eraseUserData(options: EraseUserDataOptions): Promise<Eras
   })
 
   if (!matches.length) {
-    console.warn('[eraseUserData] User data not found', {
+    logger.warn({
       requestId,
       phone: maskPhoneHash(normalizedPhone),
       email: normalizedEmail ? maskEmailHash(normalizedEmail) : undefined,
       name: normalizedName,
-    })
+    }, '[eraseUserData] User data not found')
     return { erased: false, reason: 'NOT_FOUND' }
   }
 
-  console.log('[eraseUserData] Found user records to process', {
+  logger.info({
     requestId,
     phone: maskPhoneHash(normalizedPhone),
     totalRecords: matches.length,
@@ -450,7 +453,7 @@ export async function eraseUserData(options: EraseUserDataOptions): Promise<Eras
       isWithdrawn: m.isWithdrawn,
       consentDate: m.consent.consentDate,
     })),
-  })
+  }, '[eraseUserData] Found user records to process')
 
   // Process all matching records
   const { sheets } = getClients()
@@ -465,7 +468,7 @@ export async function eraseUserData(options: EraseUserDataOptions): Promise<Eras
     const rowIndex = target.index
     const row = [...target.row]
 
-    console.log('[eraseUserData] Processing row', {
+    logger.debug({
       requestId,
       rowIndex,
       originalRow: row,
@@ -498,7 +501,7 @@ export async function eraseUserData(options: EraseUserDataOptions): Promise<Eras
     if (columns.erasureDate >= 0) row[columns.erasureDate] = erasureDateISO
     if (columns.erasureMethod >= 0) row[columns.erasureMethod] = trimToSheetLimit(erasureMethod)
 
-    console.log('[eraseUserData] Updated row', {
+    logger.debug({
       requestId,
       rowIndex,
       updatedRow: row,
@@ -506,7 +509,7 @@ export async function eraseUserData(options: EraseUserDataOptions): Promise<Eras
       updatedPhone: row[columns.phone],
       requestErasureDate: row[columns.requestErasureDate],
       erasureDate: row[columns.erasureDate],
-    })
+    }, '[eraseUserData] Updated row')
 
     const writableIndices = [
       columns.phone,
@@ -525,14 +528,14 @@ export async function eraseUserData(options: EraseUserDataOptions): Promise<Eras
     const endColumn = columnIndexToLetter(maxColIdx >= 0 ? maxColIdx : columns.erasureDate)
     const updateRange = `A${rowNumber}:${endColumn}${rowNumber}`
 
-    console.log('[eraseUserData] Update range', {
+    logger.debug({
       requestId,
       rowNumber,
       updateRange,
       maxColIdx,
       endColumn,
       writableIndices,
-    })
+    }, '[eraseUserData] Update range')
 
     return {
       range: updateRange,
@@ -569,12 +572,12 @@ export async function eraseUserData(options: EraseUserDataOptions): Promise<Eras
 
   processedCount = matches.length
 
-  console.log('[eraseUserData] All user records erased successfully', {
+  logger.info({
     requestId,
     phone: maskPhoneHash(normalizedPhone),
     processedRecords: processedCount,
     updatedRows: matches.map(m => m.index + 2),
-  })
+  }, '[eraseUserData] All user records erased successfully')
 
   return { erased: true }
 }

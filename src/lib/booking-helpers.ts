@@ -1,6 +1,9 @@
 import { parseBookingData } from './google/calendar'
 import { getDaySlots } from './availability'
 import { readProcedures } from './google/sheets'
+import { getLogger } from './logger'
+
+const logger = getLogger({ module: 'booking-helpers' })
 
 /**
  * Helper functions for booking management operations
@@ -137,9 +140,6 @@ export function matchesSearchCriteria(
   const bookingLastName = normalizeString(bookingData.lastName)
   const bookingPhone = normalizePhone(bookingData.phone)
   const bookingEmail = bookingData.email ? bookingData.email.toLowerCase().trim() : ''
-  
-  // Debug matching criteria
-  // console.log('Matching criteria:', { searchCriteria: { firstName: searchFirstName, lastName: searchLastName, phone: searchPhone }, bookingData: { firstName: bookingFirstName, lastName: bookingLastName, phone: bookingPhone } })
 
   // Name matching (first name must match, last name only if provided)
   const firstNameMatch = bookingFirstName.includes(searchFirstName) || searchFirstName.includes(bookingFirstName)
@@ -251,7 +251,7 @@ export async function getAvailableSlotsForRebooking(options: {
       }
     } catch (error) {
       // Skip days that fail (holidays, etc.)
-      console.warn(`Failed to get slots for ${dateISO}:`, error)
+      logger.warn({ dateISO, error }, `Failed to get slots for ${dateISO}`)
     }
     
     // Move to next day
@@ -281,7 +281,7 @@ export async function getProcedureDuration(procedureId?: string): Promise<number
     
     return 60 // Fallback default
   } catch (error) {
-    console.warn('Failed to get procedure duration:', error)
+    logger.warn({ error }, 'Failed to get procedure duration')
     return 60 // Fallback default
   }
 }

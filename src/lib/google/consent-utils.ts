@@ -3,6 +3,9 @@ import { formatInTimeZone } from 'date-fns-tz'
 
 import { config } from '../env'
 import { getClients } from './auth'
+import { getLogger } from '../logger'
+
+const logger = getLogger({ module: 'google.consent-utils' })
 
 export const PHONE_MASK_SALT = 'gdpr_withdraw_salt_v1'
 const WARSAW_TZ = 'Europe/Warsaw'
@@ -57,7 +60,7 @@ function normalizeHeader(value: string): string {
 
 export function resolveConsentColumns(headerRow: string[] | undefined): ConsentColumnMap | null {
   if (!headerRow || !headerRow.length) {
-    console.error('[resolveConsentColumns] Missing header row for consent sheet')
+    logger.error('[resolveConsentColumns] Missing header row for consent sheet')
     return null
   }
 
@@ -87,10 +90,10 @@ export function resolveConsentColumns(headerRow: string[] | undefined): ConsentC
 
   const missingRequired = REQUIRED_COLUMNS.filter(col => columnMap[col] < 0 || columnMap[col] >= headerRow.length)
   if (missingRequired.length) {
-    console.error('[resolveConsentColumns] Missing required consent columns', {
+    logger.error({
       missing: missingRequired,
       header: headerRow,
-    })
+    }, '[resolveConsentColumns] Missing required consent columns')
     return null
   }
 

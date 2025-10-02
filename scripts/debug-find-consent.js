@@ -1,5 +1,5 @@
 // Проверим что находит findUserConsent для ваших данных
-import { findUserConsent, withdrawUserConsent } from './src/lib/google/sheets.js';
+import { findUserConsent, withdrawUserConsent } from '../src/lib/google/sheets.js';
 
 const testData = {
   phone: "48501748708", // Без + как в таблице
