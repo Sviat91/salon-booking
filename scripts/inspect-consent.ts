@@ -45,8 +45,8 @@ function maskName(value: string | undefined) {
 
 async function run() {
   const [{ getClients }, { config }] = await Promise.all([
-    import('./src/lib/google/auth'),
-    import('./src/lib/env'),
+    import('../src/lib/google/auth'),
+    import('../src/lib/env'),
   ])
 
   const { sheets } = getClients()

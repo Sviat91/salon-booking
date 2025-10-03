@@ -1,6 +1,11 @@
 import { parseBookingData } from './google/calendar'
 import { getDaySlots } from './availability'
 import { readProcedures } from './google/sheets'
+import { getLogger } from './logger'
+import { normalizePhoneDigitsOnly } from './utils/phone-normalization'
+import { normalizeTextWithCyrillicConversion } from './utils/string-normalization'
+
+const logger = getLogger({ module: 'booking-helpers' })
 
 /**
  * Helper functions for booking management operations
@@ -9,21 +14,18 @@ import { readProcedures } from './google/sheets'
 
 /**
  * Normalize strings for comparison - handles cyrillic/latin conversion
+ * @deprecated Use normalizeTextWithCyrillicConversion from utils/string-normalization instead
  */
 export function normalizeString(str: string): string {
-  return str.toLowerCase().trim()
-    // Convert common cyrillic to latin equivalents
-    .replace(/а/g, 'a').replace(/е/g, 'e').replace(/о/g, 'o')
-    .replace(/р/g, 'p').replace(/с/g, 'c').replace(/у/g, 'y')
-    .replace(/х/g, 'x').replace(/к/g, 'k').replace(/м/g, 'm')
-    .replace(/н/g, 'h').replace(/в/g, 'b').replace(/т/g, 't')
+  return normalizeTextWithCyrillicConversion(str)
 }
 
 /**
  * Normalize phone number for matching (remove all non-digits)
+ * @deprecated Use normalizePhoneDigitsOnly from utils/phone-normalization instead
  */
 export function normalizePhone(phone: string): string {
-  return phone.replace(/\D/g, '')
+  return normalizePhoneDigitsOnly(phone)
 }
 
 /**
@@ -137,9 +139,6 @@ export function matchesSearchCriteria(
   const bookingLastName = normalizeString(bookingData.lastName)
   const bookingPhone = normalizePhone(bookingData.phone)
   const bookingEmail = bookingData.email ? bookingData.email.toLowerCase().trim() : ''
-  
-  // Debug matching criteria
-  // console.log('Matching criteria:', { searchCriteria: { firstName: searchFirstName, lastName: searchLastName, phone: searchPhone }, bookingData: { firstName: bookingFirstName, lastName: bookingLastName, phone: bookingPhone } })
 
   // Name matching (first name must match, last name only if provided)
   const firstNameMatch = bookingFirstName.includes(searchFirstName) || searchFirstName.includes(bookingFirstName)
@@ -251,7 +250,7 @@ export async function getAvailableSlotsForRebooking(options: {
       }
     } catch (error) {
       // Skip days that fail (holidays, etc.)
-      console.warn(`Failed to get slots for ${dateISO}:`, error)
+      logger.warn({ dateISO, error }, `Failed to get slots for ${dateISO}`)
     }
     
     // Move to next day
@@ -281,7 +280,7 @@ export async function getProcedureDuration(procedureId?: string): Promise<number
     
     return 60 // Fallback default
   } catch (error) {
-    console.warn('Failed to get procedure duration:', error)
+    logger.warn({ error }, 'Failed to get procedure duration')
     return 60 // Fallback default
   }
 }

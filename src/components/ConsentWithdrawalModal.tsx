@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import PhoneInput from "./ui/PhoneInput";
+import { clientLog } from "@/lib/client-logger";
 
 type ModalState =
   | "idle"
@@ -59,7 +60,7 @@ export default function ConsentWithdrawalModal({
       try {
         turnstile.reset(widgetIdRef.current);
       } catch (err) {
-        console.warn("Turnstile reset failed", err);
+        clientLog.warn("Turnstile reset failed", err);
       }
     }
   }, [siteKey]);
@@ -145,7 +146,7 @@ export default function ConsentWithdrawalModal({
           });
           clearInterval(interval);
         } catch (err) {
-          console.warn("Turnstile render failed", err);
+          clientLog.warn("Turnstile render failed", err);
         }
       }
     }, 200);
@@ -161,7 +162,7 @@ export default function ConsentWithdrawalModal({
         try {
           turnstile.remove(widgetIdRef.current);
         } catch (err) {
-          console.warn("Turnstile cleanup failed", err);
+          clientLog.warn("Turnstile cleanup failed", err);
         }
       }
       widgetIdRef.current = null;
@@ -227,7 +228,7 @@ export default function ConsentWithdrawalModal({
 
       setState("success");
     } catch (err) {
-      console.error("Consent withdraw failed", err);
+      clientLog.error("Consent withdraw failed", err);
       setError({
         error: "Wystąpił błąd połączenia. Spróbuj ponownie później.",
         code: "NETWORK_ERROR",

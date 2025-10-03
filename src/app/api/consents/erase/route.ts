@@ -6,6 +6,7 @@ import { validateTurnstileForAPI } from '../../../../lib/turnstile'
 import { eraseUserData } from '../../../../lib/google/sheets'
 import { reportError } from '../../../../lib/sentry'
 import { config } from '../../../../lib/env'
+import { normalizePhoneToE164 } from '../../../../lib/utils/phone-normalization'
 
 export const runtime = 'nodejs'
 
@@ -19,21 +20,6 @@ const BodySchema = z.object({
   turnstileToken: z.string().min(10),
   requestId: z.string().max(64).optional(),
 })
-
-function normalizePhoneToE164(input: string): string {
-  const raw = input.trim()
-  if (!raw) return raw
-  let cleaned = raw.replace(/\s+/g, '').replace(/^-+/, '')
-  if (cleaned.startsWith('00')) cleaned = `+${cleaned.slice(2)}`
-  if (!cleaned.startsWith('+')) {
-    cleaned = cleaned.startsWith('0') ? `+48${cleaned.slice(1)}` : `+48${cleaned}`
-  }
-  const digits = cleaned.replace(/[^+\d]/g, '')
-  if (!/^\+[1-9]\d{6,14}$/.test(digits)) {
-    throw new Error('INVALID_PHONE')
-  }
-  return digits
-}
 
 function normalizeNameForKey(name: string): string {
   return name.trim().toLowerCase().replace(/\s+/g, ' ')

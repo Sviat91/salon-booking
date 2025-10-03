@@ -3,6 +3,11 @@ import { formatInTimeZone } from 'date-fns-tz'
 
 import { config } from '../env'
 import { getClients } from './auth'
+import { getLogger } from '../logger'
+import { normalizePhoneDigitsOnly } from '../utils/phone-normalization'
+import { normalizeNameForMatching, normalizeEmailForMatching } from '../utils/string-normalization'
+
+const logger = getLogger({ module: 'google.consent-utils' })
 
 export const PHONE_MASK_SALT = 'gdpr_withdraw_salt_v1'
 const WARSAW_TZ = 'Europe/Warsaw'
@@ -57,7 +62,7 @@ function normalizeHeader(value: string): string {
 
 export function resolveConsentColumns(headerRow: string[] | undefined): ConsentColumnMap | null {
   if (!headerRow || !headerRow.length) {
-    console.error('[resolveConsentColumns] Missing header row for consent sheet')
+    logger.error('[resolveConsentColumns] Missing header row for consent sheet')
     return null
   }
 
@@ -87,10 +92,10 @@ export function resolveConsentColumns(headerRow: string[] | undefined): ConsentC
 
   const missingRequired = REQUIRED_COLUMNS.filter(col => columnMap[col] < 0 || columnMap[col] >= headerRow.length)
   if (missingRequired.length) {
-    console.error('[resolveConsentColumns] Missing required consent columns', {
+    logger.error({
       missing: missingRequired,
       header: headerRow,
-    })
+    }, '[resolveConsentColumns] Missing required consent columns')
     return null
   }
 
@@ -101,12 +106,20 @@ export function nowInWarsawISO(date: Date = new Date()): string {
   return formatInTimeZone(date, WARSAW_TZ, "yyyy-MM-dd'T'HH:mm:ssXXX")
 }
 
+/**
+ * Normalize phone for Google Sheets storage
+ * @deprecated Use normalizePhoneDigitsOnly from utils/phone-normalization instead
+ */
 export function normalizePhoneForSheet(phone: string): string {
-  return String(phone ?? '').replace(/\D/g, '')
+  return normalizePhoneDigitsOnly(phone ?? '')
 }
 
+/**
+ * Normalize name for consent matching
+ * @deprecated Use normalizeNameForMatching from utils/string-normalization instead
+ */
 export function normalizeName(name: string): string {
-  return name.trim().toLowerCase().replace(/\s+/g, ' ')
+  return normalizeNameForMatching(name)
 }
 
 export function maskPhoneHash(phone: string): string {
@@ -121,10 +134,11 @@ export function maskPhoneHash(phone: string): string {
 
 export function maskEmailHash(email: string): string {
   if (!email) return 'unknown'
+  const normalized = normalizeEmailForMatching(email)
   return createHash('sha256')
     .update(PHONE_MASK_SALT)
     .update(':email:')
-    .update(email.trim().toLowerCase())
+    .update(normalized)
     .digest('hex')
     .slice(0, 16)
 }

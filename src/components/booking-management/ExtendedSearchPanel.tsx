@@ -106,35 +106,43 @@ export default function ExtendedSearchPanel({
             📅 Zakres dat do przeszukania
           </div>
           
-          <div className="space-y-2">
-            <div>
-              <label className="text-xs text-amber-700 dark:text-amber-400 mb-1 block">
+          <div className="space-y-3">
+            <div className="relative">
+              <label htmlFor="extended-search-start-date" className="text-xs text-amber-700 dark:text-amber-400 mb-1 block">
                 Data od:
               </label>
-              <input
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                min={minDateStr}
-                max={maxDateStr}
-                style={{ WebkitAppearance: 'none', MozAppearance: 'textfield' }}
-                className="w-full max-w-full box-border px-3 py-2 rounded-lg border border-amber-300 bg-white text-sm dark:border-amber-600 dark:bg-dark-card dark:text-dark-text focus:outline-none focus:ring-2 focus:ring-amber-500 overflow-hidden"
-              />
+              <div className="relative">
+                <input
+                  id="extended-search-start-date"
+                  name="startDate"
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  onClick={(e) => e.stopPropagation()}
+                  min={minDateStr}
+                  max={maxDateStr}
+                  className="w-full max-w-full box-border px-3 py-2 rounded-lg border border-amber-300 bg-white text-sm dark:border-amber-600 dark:bg-dark-card dark:text-dark-text focus:outline-none focus:ring-2 focus:ring-amber-500"
+                />
+              </div>
             </div>
             
-            <div>
-              <label className="text-xs text-amber-700 dark:text-amber-400 mb-1 block">
+            <div className="relative">
+              <label htmlFor="extended-search-end-date" className="text-xs text-amber-700 dark:text-amber-400 mb-1 block">
                 Data do:
               </label>
-              <input
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                min={startDate || minDateStr}
-                max={maxDateStr}
-                style={{ WebkitAppearance: 'none', MozAppearance: 'textfield' }}
-                className="w-full max-w-full box-border px-3 py-2 rounded-lg border border-amber-300 bg-white text-sm dark:border-amber-600 dark:bg-dark-card dark:text-dark-text focus:outline-none focus:ring-2 focus:ring-amber-500 overflow-hidden"
-              />
+              <div className="relative">
+                <input
+                  id="extended-search-end-date"
+                  name="endDate"
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  onClick={(e) => e.stopPropagation()}
+                  min={startDate || minDateStr}
+                  max={maxDateStr}
+                  className="w-full max-w-full box-border px-3 py-2 rounded-lg border border-amber-300 bg-white text-sm dark:border-amber-600 dark:bg-dark-card dark:text-dark-text focus:outline-none focus:ring-2 focus:ring-amber-500"
+                />
+              </div>
             </div>
           </div>
           

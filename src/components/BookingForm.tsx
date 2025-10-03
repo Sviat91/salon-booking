@@ -1,13 +1,14 @@
 "use client"
 import { useQuery } from '@tanstack/react-query'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import Link from 'next/link'
 import PhoneInput from './ui/PhoneInput'
-
-export type Slot = { startISO: string; endISO: string }
+import BookingSuccess from './BookingSuccess'
+import BookingConsentModal from './BookingConsentModal'
+import { useBookingSubmit, type Slot } from './hooks/useBookingSubmit'
+import { fullDateFormatter, formatTimeRange } from '@/lib/utils/date-formatters'
+import { validateName, validatePhone, validateEmail, validateTurnstileToken } from '@/lib/validation/client-validators'
 
 type Procedure = { id: string; name_pl: string; price_pln?: number }
-
 type ProceduresResponse = { items: Procedure[] }
 
 export default function BookingForm({
@@ -19,28 +20,31 @@ export default function BookingForm({
   procedureId?: string
   onSuccess?: () => void
 }) {
+  // Form state
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
   const [email, setEmail] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [err, setErr] = useState<string | null>(null)
-  const [ok, setOk] = useState(false)
-  const [, setEventId] = useState<string | null>(null)
-  const [tsToken, setTsToken] = useState<string | null>(null)
   
-  // ConsentModal states
-  type BookingState = 'form' | 'consent' | 'success'
-  const [bookingState, setBookingState] = useState<BookingState>('form')
+  // Validation errors
+  const [nameError, setNameError] = useState<string | null>(null)
+  const [phoneError, setPhoneError] = useState<string | null>(null)
+  const [emailError, setEmailError] = useState<string | null>(null)
+  
+  // Consent state
   const [dataProcessingConsent, setDataProcessingConsent] = useState(false)
   const [termsConsent, setTermsConsent] = useState(false)
   const [notificationsConsent, setNotificationsConsent] = useState(false)
-  const [isShowingConsent, setIsShowingConsent] = useState(false)
-  const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY as string | undefined
+  
+  // Turnstile state
+  const [tsToken, setTsToken] = useState<string | null>(null)
   const tsRef = useRef<HTMLDivElement | null>(null)
+  const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY as string | undefined
 
+  // Fetch procedures
   const { data: proceduresData } = useQuery<ProceduresResponse>({
     queryKey: ['procedures'],
     queryFn: () => fetch('/api/procedures').then(r => r.json() as Promise<ProceduresResponse>),
+    staleTime: 60 * 60 * 1000, // 1 hour - procedures rarely change
   })
 
   const selectedProcedure = useMemo(() => {
@@ -50,18 +54,41 @@ export default function BookingForm({
 
   const selectedProcedureName = selectedProcedure?.name_pl ?? null
 
+  // Use booking submit hook
+  const {
+    loading,
+    error,
+    bookingState,
+    isCheckingConsent,
+    checkConsentAndProceed,
+    bookWithConsents,
+    resetToForm,
+  } = useBookingSubmit({
+    slot,
+    procedureId,
+    name,
+    phone,
+    email,
+    tsToken,
+    onSuccess,
+  })
+
+  // Load Turnstile widget
   useEffect(() => {
     if (!siteKey) return
-    // load script once
+    
+    // Load script once
     const id = 'cf-turnstile'
     if (!document.getElementById(id)) {
       const s = document.createElement('script')
       s.id = id
       s.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js'
-      s.async = true; s.defer = true
+      s.async = true
+      s.defer = true
       document.head.appendChild(s)
     }
-    // render widget when available
+    
+    // Render widget when available
     const iv = setInterval(() => {
       // @ts-ignore -- Turnstile render helper lacks type definitions
       const t = (window as any).turnstile
@@ -80,414 +107,183 @@ export default function BookingForm({
     return () => clearInterval(iv)
   }, [siteKey])
 
+  // Hide Turnstile when showing consent modal
+  useEffect(() => {
+    if (bookingState === 'consent' && tsRef.current) {
+      tsRef.current.style.display = 'none'
+    } else if (tsRef.current) {
+      tsRef.current.style.display = 'block'
+    }
+  }, [bookingState])
+
+  // Validation
   const canSubmit = useMemo(() => {
-    // Validate phone format: should have country code + at least 6 digits
-    const phoneDigits = phone.replace(/\D/g, '')
-    const hasValidPhone = phoneDigits.length >= 9 // country code (2-3 digits) + phone (6+ digits)
+    const nameValid = validateName(name).valid
+    const phoneValid = validatePhone(phone).valid
+    const emailValid = !email || validateEmail(email).valid
+    const tokenValid = !siteKey || validateTurnstileToken(tsToken).valid
     
-    const basic = name.trim().length >= 2 && hasValidPhone && !loading
-    return siteKey ? basic && !!tsToken : basic
-  }, [name, phone, loading, siteKey, tsToken])
-  const timeFormatter = useMemo(
-    () => new Intl.DateTimeFormat('pl-PL', { hour: '2-digit', minute: '2-digit', hour12: false }),
-    [],
-  )
+    return nameValid && phoneValid && emailValid && tokenValid && !loading
+  }, [name, phone, email, loading, siteKey, tsToken])
+  
+  // Validate on blur
+  const handleNameBlur = () => {
+    const result = validateName(name)
+    setNameError(result.valid ? null : result.error || null)
+  }
+  
+  const handlePhoneBlur = () => {
+    const result = validatePhone(phone)
+    setPhoneError(result.valid ? null : result.error || null)
+  }
+  
+  const handleEmailBlur = () => {
+    if (!email) {
+      setEmailError(null)
+      return
+    }
+    const result = validateEmail(email)
+    setEmailError(result.valid ? null : result.error || null)
+  }
+
+  // Format dates
   const startDate = useMemo(() => new Date(slot.startISO), [slot.startISO])
   const endDate = useMemo(() => new Date(slot.endISO), [slot.endISO])
-  const label = `${timeFormatter.format(startDate)}–${timeFormatter.format(endDate)}`
-  const fullDateFormatter = useMemo(
-    () => new Intl.DateTimeFormat('pl-PL', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }),
-    [],
-  )
+  const label = formatTimeRange(startDate, endDate)
   const terminLabel = `${fullDateFormatter.format(startDate)}, ${label}`
 
-  // Show consent modal when user clicks "Zarezerwuj"
-  async function showConsentModal() {
-    if (!canSubmit) return
-    setErr(null)
-    setIsShowingConsent(true)
-    setLoading(true)
-    
-    try {
-      // Check if user already has valid consents (using phone + name + email for security)
-      const consentCheckRes = await fetch('/api/consents/check', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone, name, email: email || undefined }),
-      })
-      
-      if (consentCheckRes.ok) {
-        const consentData = await consentCheckRes.json()
-        if (consentData.skipConsentModal) {
-          // User already has valid consent, proceed directly to booking
-          await finalizeBookingWithoutConsents()
-          return
-        }
-      }
-      
-      // User needs to give consent, show modal
-      setBookingState('consent')
-      
-      // Hide Turnstile widget if visible
-      if (tsRef.current) {
-        tsRef.current.style.display = 'none'
-      }
-    } catch (e: any) {
-      setErr('Nie udało się sprawdzić zgód. Spróbuj ponownie.')
-    } finally {
-      setLoading(false)
-      setIsShowingConsent(false)
-    }
-  }
-
-  // Booking when consents already exist (no need to save them again)
-  async function finalizeBookingWithoutConsents() {
-    setLoading(true)
-    setErr(null)
-    
-    try {
-      const res = await fetch('/api/book', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          startISO: slot.startISO, 
-          endISO: slot.endISO, 
-          procedureId, 
-          name, 
-          phone, 
-          email: email || undefined, 
-          turnstileToken: tsToken,
-          // No consents object - user already has valid consents
-        }),
-      })
-      const body = await res.json()
-      if (!res.ok) {
-        const code = (body && body.code) || 'UNKNOWN'
-        const details = (body && body.details) || ''
-        throw new Error(`BOOKING_${code}${details ? `: ${details}` : ''}`)
-      }
-      setEventId(body.eventId || null)
-      setBookingState('success')
-      // Вызываем onSuccess - он покажет success панель и сбросит календарь
-      onSuccess?.()
-    } catch (e: any) {
-      const msg = String(e?.message || '')
-      if (msg.startsWith('BOOKING_TURNSTILE')) setErr('Potwierdź weryfikację Turnstile i spróbuj ponownie.')
-      else if (msg.startsWith('BOOKING_DUPLICATE')) setErr('Już wysłałaś/-eś rezerwację na ten przedział. Odczekaj 5 minut lub wybierz inny termin.')
-      else if (msg.startsWith('BOOKING_CONFLICT')) setErr('Ten termin jest już zajęty. Wybierz inny przedział.')
-      else if (msg.startsWith('BOOKING_RATE_LIMITED')) setErr('Zbyt wiele prób. Spróbuj później.')
-      else setErr('Nie udało się zarezerwować. Wybierz inny termin i spróbuj ponownie.')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  // Final booking after consent is given
-  async function finalizeBooking() {
+  // Handle consent confirmation
+  const handleConsentConfirm = () => {
     if (!dataProcessingConsent || !termsConsent) return
-    
-    setLoading(true)
-    setErr(null)
-    
-    try {
-      const res = await fetch('/api/book', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          startISO: slot.startISO, 
-          endISO: slot.endISO, 
-          procedureId, 
-          name, 
-          phone, 
-          email: email || undefined, 
-          turnstileToken: tsToken, // Use token from first step
-          consents: {
-            dataProcessing: dataProcessingConsent,
-            terms: termsConsent,
-            notifications: notificationsConsent
-          }
-        }),
-      })
-      const body = await res.json()
-      if (!res.ok) {
-        const code = (body && body.code) || 'UNKNOWN'
-        const details = (body && body.details) || ''
-        throw new Error(`BOOKING_${code}${details ? `: ${details}` : ''}`)
-      }
-      setEventId(body.eventId || null)
-      setBookingState('success')
-      // Вызываем onSuccess - он покажет success панель и сбросит календарь
-      onSuccess?.()
-    } catch (e: any) {
-      const msg = String(e?.message || '')
-      if (msg.startsWith('BOOKING_TURNSTILE')) setErr('Potwierdź weryfikację Turnstile i spróbuj ponownie.')
-      else if (msg.startsWith('BOOKING_DUPLICATE')) setErr('Już wysłałaś/-eś rezerwację na ten przedział. Odczekaj 5 minut lub wybierz inny termin.')
-      else if (msg.startsWith('BOOKING_CONFLICT')) setErr('Ten termin jest już zajęty. Wybierz inny przedział.')
-      else if (msg.startsWith('BOOKING_RATE_LIMITED')) setErr('Zbyt wiele prób. Spróbuj później.')
-      else setErr('Nie udało się zarezerwować. Wybierz inny termin i spróbuj ponownie.')
-    } finally {
-      setLoading(false)
+    bookWithConsents({
+      dataProcessing: dataProcessingConsent,
+      terms: termsConsent,
+      notifications: notificationsConsent,
+    })
+  }
+
+  // Handle consent back
+  const handleConsentBack = () => {
+    resetToForm()
+    // Show Turnstile again
+    if (tsRef.current) {
+      tsRef.current.style.display = 'block'
     }
   }
 
-  // Success state (either new state or old ok flag)
-  if (bookingState === 'success' || ok) {
+  // Handle success close
+  const handleSuccessClose = () => {
+    resetToForm()
+    setName('')
+    setPhone('')
+    setEmail('')
+    setDataProcessingConsent(false)
+    setTermsConsent(false)
+    setNotificationsConsent(false)
+  }
+
+  // Render success state
+  if (bookingState === 'success') {
     return (
-      <div className="transition-all duration-300 ease-out">
-        <div className="text-lg font-medium mb-3 dark:text-dark-text">Rezerwacja potwierdzona</div>
-        
-        <div className="space-y-1 mb-4">
-          <div className="text-sm text-neutral-600 dark:text-dark-muted">
-            <strong>Usługa:</strong> {selectedProcedureName ?? 'Brak danych'}
-          </div>
-          <div className="text-sm text-neutral-600 dark:text-dark-muted">
-            <strong>Termin:</strong> {terminLabel}
-          </div>
-          {selectedProcedure?.price_pln && (
-            <div className="text-sm text-neutral-600 dark:text-dark-muted">
-              <strong>Cena:</strong> {selectedProcedure.price_pln} zł
-            </div>
-          )}
-        </div>
-        
-        <div className="mb-4 p-3 bg-neutral-50 dark:bg-dark-border/30 rounded-lg">
-          <div className="text-sm text-neutral-600 dark:text-dark-muted">
-            <strong className="text-text dark:text-dark-text">Adres:</strong><br />
-            Sarmacka 4B/ lokal 106<br />
-            02-972 Warszawa<br />
-            +48 789 894 948
-          </div>
-        </div>
-        
-        <div className="text-emerald-700 dark:text-emerald-400 mb-4">Dziękujemy, do zobaczenia!</div>
-        
-        {/* Кнопка закрытия - просто скрывает success панель */}
-        <button
-          type="button"
-          onClick={() => {
-            // Просто сбрасываем состояние формы
-            setBookingState('form')
-            setName('')
-            setPhone('')
-            setEmail('')
-            setDataProcessingConsent(false)
-            setTermsConsent(false)
-            setNotificationsConsent(false)
-          }}
-          className="w-full rounded-lg bg-neutral-800 px-4 py-3 text-sm font-medium text-white transition-all duration-200 hover:bg-neutral-900 hover:shadow-md dark:bg-neutral-700 dark:hover:bg-neutral-600"
-        >
-          Zamknij
-        </button>
-      </div>
+      <BookingSuccess
+        procedureName={selectedProcedureName}
+        terminLabel={terminLabel}
+        procedurePrice={selectedProcedure?.price_pln}
+        onClose={handleSuccessClose}
+      />
     )
   }
 
-  // Consent modal state
+  // Render consent modal state
   if (bookingState === 'consent') {
-    const canConfirm = dataProcessingConsent && termsConsent && !loading
-    
     return (
-      <div className="transition-all duration-300 ease-out">
-        <div className="text-lg font-medium mb-4 dark:text-dark-text">Przed dokonaniem rezerwacji:</div>
-        
-        {/* Booking summary */}
-        <div className="mb-4 p-3 bg-neutral-50 dark:bg-dark-border/30 rounded-lg">
-          <div className="text-sm text-neutral-600 dark:text-dark-muted">
-            <strong className="text-text dark:text-dark-text">{selectedProcedureName}</strong>
-            <br />
-            {terminLabel}
-          </div>
-        </div>
-
-        {/* Consent checkboxes */}
-        <div className="space-y-4 mb-6">
-          {/* Terms consent */}
-          <label className="flex items-start space-x-3 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={termsConsent}
-              onChange={(e) => setTermsConsent(e.target.checked)}
-              className="mt-1 h-4 w-4 text-primary focus:ring-primary border-border dark:border-dark-border rounded"
-            />
-            <span className="text-sm text-text dark:text-dark-text leading-5">
-              Przeczytałem/am i akceptuję{' '}
-              <Link 
-                href="/terms" 
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-primary hover:text-primary/80 dark:text-accent dark:hover:text-accent/80 underline"
-              >
-                Warunki korzystania z usług
-              </Link>
-            </span>
-          </label>
-
-          {/* Data processing consent */}
-          <label className="flex items-start space-x-3 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={dataProcessingConsent}
-              onChange={(e) => setDataProcessingConsent(e.target.checked)}
-              className="mt-1 h-4 w-4 text-primary focus:ring-primary border-border dark:border-dark-border rounded"
-            />
-            <span className="text-sm text-text dark:text-dark-text leading-5">
-              Wyrażam zgodę na przetwarzanie moich danych osobowych w celu realizacji rezerwacji zgodnie z{' '}
-              <Link 
-                href="/privacy" 
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-primary hover:text-primary/80 dark:text-accent dark:hover:text-accent/80 underline"
-              >
-                Polityką Prywatności
-              </Link>
-            </span>
-          </label>
-
-          {/* Notifications consent (optional) */}
-          <label className="flex items-start space-x-3 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={notificationsConsent}
-              onChange={(e) => setNotificationsConsent(e.target.checked)}
-              className="mt-1 h-4 w-4 text-primary focus:ring-primary border-border dark:border-dark-border rounded"
-            />
-            <span className="text-sm text-text dark:text-dark-text leading-5">
-              Wyrażam zgodę na otrzymywanie powiadomień SMS/e-mail o zbliżających się wizytach{' '}
-              <span className="text-neutral-500 dark:text-dark-muted">(opcjonalnie)</span>
-            </span>
-          </label>
-        </div>
-
-        {/* Info about withdrawal */}
-        <div style={{
-          backgroundColor: document.documentElement.classList.contains('dark') ? 'rgba(30, 58, 138, 0.3)' : '#eff6ff',
-          border: document.documentElement.classList.contains('dark') ? '1px solid rgba(59, 130, 246, 0.7)' : '1px solid #bfdbfe',
-          borderRadius: '8px',
-          padding: '16px',
-          marginBottom: '16px',
-          display: 'flex',
-          alignItems: 'flex-start',
-          gap: '12px'
-        }}>
-          <span style={{
-            color: document.documentElement.classList.contains('dark') ? '#93c5fd' : '#2563eb',
-            fontSize: '14px',
-            marginTop: '2px',
-            flexShrink: 0
-          }}>ⓘ</span>
-          <p style={{
-            color: document.documentElement.classList.contains('dark') ? '#dbeafe' : '#1e40af',
-            fontSize: '14px',
-            lineHeight: '1.5',
-            margin: 0
-          }}>
-            Zgoda może być wycofana w każdym momencie poprzez naszą{' '}
-            <Link 
-              href="/support" 
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{
-                color: document.documentElement.classList.contains('dark') ? '#bfdbfe' : '#1d4ed8',
-                textDecoration: 'underline',
-                fontWeight: '500'
-              }}
-            >
-              stronę wsparcia
-            </Link>
-          </p>
-        </div>
-
-        {/* Error message */}
-        {err && <div className="mb-4 text-sm text-red-600 dark:text-red-400">{err}</div>}
-
-        {/* Action buttons */}
-        <div className="flex space-x-3">
-          <button
-            onClick={() => {
-              // Minimal reset to prevent flickering but keep consent data
-              setBookingState('form')
-              setErr(null)
-              setLoading(false)
-              // DON'T reset consent states - keep them for potential re-use
-              // Clear form data to prevent conflicts  
-              setName('')
-              setPhone('')
-              setEmail('')
-              // Restore Turnstile widget
-              if (tsRef.current) {
-                tsRef.current.style.display = ''
-              }
-            }}
-            className="btn btn-outline flex-1"
-            disabled={loading}
-          >
-            Powrót
-          </button>
-          <button
-            onClick={finalizeBooking}
-            disabled={!canConfirm}
-            className={`btn btn-primary flex-1 transition-all duration-200 ${!canConfirm ? 'opacity-60 pointer-events-none' : 'hover:shadow-lg'}`}
-          >
-            {loading ? (
-              <span className="flex items-center justify-center gap-2">
-                <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                <span>Rezerwowanie...</span>
-              </span>
-            ) : (
-              'Potwierdź i zarezerwuj'
-            )}
-          </button>
-        </div>
-      </div>
+      <BookingConsentModal
+        procedureName={selectedProcedureName}
+        terminLabel={terminLabel}
+        dataProcessingConsent={dataProcessingConsent}
+        termsConsent={termsConsent}
+        notificationsConsent={notificationsConsent}
+        onDataProcessingChange={setDataProcessingConsent}
+        onTermsChange={setTermsConsent}
+        onNotificationsChange={setNotificationsConsent}
+        loading={loading}
+        error={error}
+        onBack={handleConsentBack}
+        onConfirm={handleConsentConfirm}
+      />
     )
   }
 
-  // Form state (default)
-  if (bookingState === 'form' || !bookingState) {
-    return (
-      <div className={"transition-all duration-300 ease-out transform opacity-100 translate-y-0"}>
-        <div className="mb-2 text-sm text-neutral-600 dark:text-dark-muted">Aby zakończyć rezerwację, uzupełnij dane:</div>
-      <div className="mb-3 text-[15px] dark:text-dark-text"><span className="font-medium">Wybrany czas:</span> {label}</div>
-      <div className="space-y-3">
-        <input className="w-full rounded-xl border border-border bg-white/80 px-3 py-2 dark:bg-dark-card/80 dark:border-dark-border dark:text-dark-text dark:placeholder-dark-muted" placeholder="Imię i nazwisko" value={name} onChange={e => setName(e.target.value)} />
-        <PhoneInput 
-          value={phone} 
-          onChange={setPhone} 
-          placeholder="Telefon"
-          error={err && err.includes('telefon') ? err : undefined}
-        />
-        <input className="w-full rounded-xl border border-border bg-white/80 px-3 py-2 dark:bg-dark-card/80 dark:border-dark-border dark:text-dark-text dark:placeholder-dark-muted" placeholder="E-mail (opcjonalnie)" value={email} onChange={e => setEmail(e.target.value)} />
+  // Render form input state
+  return (
+    <div className="space-y-3">
+      <div className="text-neutral-700 dark:text-dark-muted">
+        <div className="font-medium text-text dark:text-dark-text mb-0.5">{selectedProcedureName}</div>
+        <div className="text-sm">{terminLabel}</div>
+      </div>
+      <div className="space-y-2">
+        <div>
+          <input 
+            className={`w-full rounded-xl border ${nameError ? 'border-red-500' : 'border-border'} bg-white/80 px-3 py-2 dark:bg-dark-card/80 dark:border-dark-border dark:text-dark-text dark:placeholder-dark-muted`}
+            placeholder="Imię i nazwisko" 
+            value={name} 
+            onChange={e => { setName(e.target.value); if (nameError) setNameError(null); }}
+            onBlur={handleNameBlur}
+          />
+          {nameError && <div className="mt-1 text-xs text-red-600 dark:text-red-400">{nameError}</div>}
+        </div>
+        <div>
+          <PhoneInput 
+            value={phone} 
+            onChange={(val) => { 
+              setPhone(val); 
+              if (phoneError) setPhoneError(null);
+              // Validate after 500ms of no typing
+              setTimeout(() => {
+                const result = validatePhone(val);
+                if (!result.valid && val.length > 0) {
+                  setPhoneError(result.error || null);
+                }
+              }, 500);
+            }}
+            placeholder="Telefon"
+          />
+          {phoneError && <div className="mt-1 text-xs text-red-600 dark:text-red-400">{phoneError}</div>}
+        </div>
+        <div>
+          <input 
+            className={`w-full rounded-xl border ${emailError ? 'border-red-500' : 'border-border'} bg-white/80 px-3 py-2 dark:bg-dark-card/80 dark:border-dark-border dark:text-dark-text dark:placeholder-dark-muted`}
+            placeholder="E-mail (opcjonalnie)" 
+            value={email} 
+            onChange={e => { setEmail(e.target.value); if (emailError) setEmailError(null); }}
+            onBlur={handleEmailBlur}
+          />
+          {emailError && <div className="mt-1 text-xs text-red-600 dark:text-red-400">{emailError}</div>}
+        </div>
       </div>
       {siteKey && (
         <div className="mt-3">
           <div ref={tsRef} className="rounded-xl" />
         </div>
       )}
-        {err && <div className="mt-3 text-sm text-red-600 dark:text-red-400">{err}</div>}
-        <button 
-          disabled={!canSubmit || isShowingConsent} 
-          onClick={showConsentModal} 
-          className={`btn btn-primary mt-4 w-full transition-all duration-200 ${!canSubmit || isShowingConsent ? 'opacity-60 pointer-events-none' : 'hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]'}`}
-        >
-          {isShowingConsent ? (
-            <span className="flex items-center justify-center gap-2">
-              <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-              <span>Przygotowanie...</span>
-            </span>
-          ) : (
-            'Zarezerwuj'
-          )}
-        </button>
-      </div>
-    )
-  }
-  
-  // Fallback (should not happen)
-  return <div>Unknown state: {bookingState}</div>
+      {error && <div className="mt-3 text-sm text-red-600 dark:text-red-400">{error}</div>}
+      <button 
+        disabled={!canSubmit || isCheckingConsent} 
+        onClick={checkConsentAndProceed} 
+        className={`btn btn-primary mt-4 w-full transition-all duration-200 ${!canSubmit || isCheckingConsent ? 'opacity-60 pointer-events-none' : 'hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]'}`}
+      >
+        {isCheckingConsent ? (
+          <span className="flex items-center justify-center gap-2">
+            <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span>Przygotowanie...</span>
+          </span>
+        ) : (
+          'Zarezerwuj'
+        )}
+      </button>
+    </div>
+  )
 }

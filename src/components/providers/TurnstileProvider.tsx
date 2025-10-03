@@ -1,6 +1,6 @@
 "use client"
-
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback, ReactNode } from 'react'
+import { clientLog } from '@/lib/client-logger'
 
 // Определение интерфейса для объекта Turnstile
 interface Turnstile {
@@ -82,7 +82,7 @@ export const TurnstileProvider: React.FC<{ children: ReactNode }> = ({ children 
         turnstileRef.current.reset(widgetIdRef.current)
         setToken(null)
       } catch (error) {
-        console.warn('Failed to reset Turnstile widget:', error)
+        clientLog.warn('Failed to reset Turnstile widget:', error)
       }
     }
   }, [])
@@ -95,7 +95,7 @@ export const TurnstileProvider: React.FC<{ children: ReactNode }> = ({ children 
     if (container && !widgetIdRef.current) {
       const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY
       if (!siteKey) {
-        console.error('Turnstile site key is not configured.')
+        clientLog.error('Turnstile site key is not configured.')
         return
       }
 
@@ -104,11 +104,11 @@ export const TurnstileProvider: React.FC<{ children: ReactNode }> = ({ children 
         language: 'pl',
         callback: (t: string) => setToken(t),
         'error-callback': () => {
-          console.error('Turnstile error: Challenge failed to render.')
+          clientLog.error('Turnstile error: Challenge failed to render.')
           setToken(null)
         },
         'expired-callback': () => {
-          console.warn('Turnstile warning: Token expired.')
+          clientLog.warn('Turnstile warning: Token expired.')
           reset()
         },
       })
@@ -116,7 +116,7 @@ export const TurnstileProvider: React.FC<{ children: ReactNode }> = ({ children 
       if (widgetId) {
         widgetIdRef.current = widgetId
       } else {
-        console.error('Turnstile error: Failed to obtain widget ID.')
+        clientLog.error('Turnstile error: Failed to obtain widget ID.')
       }
     }
 
@@ -125,7 +125,7 @@ export const TurnstileProvider: React.FC<{ children: ReactNode }> = ({ children 
       try {
         turnstileRef.current.remove(widgetIdRef.current)
       } catch (error) {
-        console.warn('Failed to remove Turnstile widget:', error)
+        clientLog.warn('Failed to remove Turnstile widget:', error)
       }
       widgetIdRef.current = null
       setToken(null)

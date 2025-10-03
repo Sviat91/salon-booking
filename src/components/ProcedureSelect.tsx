@@ -1,6 +1,6 @@
 "use client"
 import { useQuery } from '@tanstack/react-query'
-import { useEffect, useState, MouseEvent } from 'react'
+import { useEffect, useState, useMemo, MouseEvent } from 'react'
 
 type Procedure = { id: string; name_pl: string; duration_min: number; price_pln?: number }
 
@@ -8,8 +8,12 @@ export default function ProcedureSelect({ valueId, onChange }: { valueId?: strin
   const { data, isLoading } = useQuery({
     queryKey: ['procedures'],
     queryFn: () => fetch('/api/procedures').then(r => r.json()),
+    staleTime: 60 * 60 * 1000, // 1 hour - procedures rarely change
   })
-  const items: Procedure[] = data?.items || []
+  
+  // Memoize items array to prevent unnecessary re-renders
+  const items = useMemo<Procedure[]>(() => data?.items || [], [data?.items])
+  
   const [open, setOpen] = useState(false)
   const [selected, setSelected] = useState<Procedure | null>(null)
 

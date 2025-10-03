@@ -132,4 +132,31 @@ npm run test tests/lib/google/
 
 # Verify Redis connection
 npm run test tests/lib/cache/
+
+# Inspect consent sheet with data masking
+npx tsx scripts/inspect-consent.ts
+
+# Find specific user consent
+node scripts/debug-find-consent.js
+
+# Test date parsing from Google Sheets
+node scripts/debug-dates.js
+
+# Test consent withdrawal API
+node scripts/test-withdraw.js
+
+# Use consent management CLI
+npx tsx scripts/consent-cli.ts header
+npx tsx scripts/consent-cli.ts show <phone> <name> [email]
 ```
+
+### Administrative Scripts
+
+All GDPR maintenance scripts are now located in `/scripts` folder:
+- `consent-cli.ts` - Main CLI tool for consent management
+- `inspect-consent.ts` - Inspect consent sheet with data masking
+- `debug-find-consent.js` - Find specific user consent
+- `debug-dates.js` - Test date parsing from Google Sheets
+- `test-withdraw.js` - Test consent withdrawal API
+
+See `docs/CONTRIBUTING.md` for detailed usage instructions.

@@ -1,6 +1,7 @@
 "use client"
 import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { fullDateFormatter, formatTimeRange } from '@/lib/utils/date-formatters'
 
 type Procedure = { id: string; name_pl: string; price_pln?: number }
 type ProceduresResponse = { items: Procedure[] }
@@ -15,6 +16,7 @@ export default function BookingSuccessPanel({ slot, procedureId, onClose }: Book
   const { data: proceduresData } = useQuery<ProceduresResponse>({
     queryKey: ['procedures'],
     queryFn: () => fetch('/api/procedures').then(r => r.json() as Promise<ProceduresResponse>),
+    staleTime: 60 * 60 * 1000, // 1 hour - procedures rarely change
   })
 
   const selectedProcedure = useMemo(() => {
@@ -24,17 +26,9 @@ export default function BookingSuccessPanel({ slot, procedureId, onClose }: Book
 
   const selectedProcedureName = selectedProcedure?.name_pl ?? null
 
-  const timeFormatter = useMemo(
-    () => new Intl.DateTimeFormat('pl-PL', { hour: '2-digit', minute: '2-digit', hour12: false }),
-    [],
-  )
   const startDate = useMemo(() => new Date(slot.startISO), [slot.startISO])
   const endDate = useMemo(() => new Date(slot.endISO), [slot.endISO])
-  const label = `${timeFormatter.format(startDate)}–${timeFormatter.format(endDate)}`
-  const fullDateFormatter = useMemo(
-    () => new Intl.DateTimeFormat('pl-PL', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }),
-    [],
-  )
+  const label = formatTimeRange(startDate, endDate)
   const terminLabel = `${fullDateFormatter.format(startDate)}, ${label}`
 
   return (

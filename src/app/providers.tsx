@@ -6,7 +6,11 @@ export default function Providers({ children }: { children: React.ReactNode }) {
   const clientRef = useRef<QueryClient>()
   if (!clientRef.current) clientRef.current = new QueryClient({
     defaultOptions: {
-      queries: { staleTime: 10 * 60 * 1000, gcTime: 15 * 60 * 1000, refetchOnWindowFocus: false },
+      queries: { 
+        staleTime: 10 * 60 * 1000, // 10 minutes default
+        gcTime: 30 * 60 * 1000, // 30 minutes - keep unused cache longer for better UX
+        refetchOnWindowFocus: false,
+      },
     }
   })
 

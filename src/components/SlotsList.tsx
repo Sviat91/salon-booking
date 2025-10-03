@@ -1,6 +1,7 @@
 "use client"
 import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { formatTimeRange } from '@/lib/utils/date-formatters'
 
 function toISO(d: Date) {
   const y = d.getFullYear(); const m = String(d.getMonth() + 1).padStart(2, '0'); const day = String(d.getDate()).padStart(2, '0')
@@ -21,14 +22,10 @@ export default function SlotsList({ date, procedureId, selected, onPick }: { dat
       if (!res.ok) throw new Error(`Failed: ${res.status}`)
       return res.json()
     },
-    staleTime: 30_000,
+    staleTime: 5 * 60 * 1000, // 5 minutes - slots can change frequently
   })
 
   const slots = useMemo(() => (data?.slots ?? []) as { startISO: string; endISO: string }[], [data])
-  const timeFormatter = useMemo(
-    () => new Intl.DateTimeFormat('pl-PL', { hour: '2-digit', minute: '2-digit', hour12: false }),
-    [],
-  )
 
   const ready = !!procedureId && !!dateISO
   const panelState = ready
@@ -56,7 +53,7 @@ export default function SlotsList({ date, procedureId, selected, onPick }: { dat
               {!error && slots.length > 0 && (
                 <div className="grid max-h-[18rem] grid-cols-2 gap-2 overflow-y-auto pr-1">
                   {slots.map((s) => {
-                    const label = `${timeFormatter.format(new Date(s.startISO))}–${timeFormatter.format(new Date(s.endISO))}`
+                    const label = formatTimeRange(new Date(s.startISO), new Date(s.endISO))
                     const isSelected = selected?.startISO === s.startISO && selected?.endISO === s.endISO
                     const cls = isSelected ? 'btn btn-primary' : 'btn btn-outline'
                     return (

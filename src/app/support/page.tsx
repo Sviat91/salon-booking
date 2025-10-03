@@ -6,6 +6,7 @@ import ConsentWithdrawalModal from '../../components/ConsentWithdrawalModal'
 import DataErasureModal from '../../components/DataErasureModal'
 import DataExportModal from '../../components/DataExportModal'
 import { useState, useRef, useEffect } from 'react'
+import { clientLog } from '@/lib/client-logger'
 
 export default function SupportPage() {
   const [formData, setFormData] = useState({
@@ -51,7 +52,7 @@ export default function SupportPage() {
           })
           clearInterval(interval)
         } catch (error) {
-          console.warn('Turnstile render failed:', error)
+          clientLog.warn('Turnstile render failed:', error)
         }
       }
     }, 200)
@@ -64,7 +65,7 @@ export default function SupportPage() {
           try {
             turnstile.remove(widgetIdRef.current)
           } catch (error) {
-            console.warn('Turnstile cleanup failed:', error)
+            clientLog.warn('Turnstile cleanup failed:', error)
           }
         }
       }
@@ -100,7 +101,7 @@ export default function SupportPage() {
         }
       }
     } catch (error) {
-      console.error('Contact form submission failed:', error)
+      clientLog.error('Contact form submission failed:', error)
       setSubmitError('Wystąpił błąd połączenia. Sprawdź połączenie internetowe i spróbuj ponownie.')
     } finally {
       setIsSubmitting(false)

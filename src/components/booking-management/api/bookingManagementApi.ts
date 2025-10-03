@@ -4,6 +4,7 @@ import type {
   SearchFormData,
   SlotSelection,
 } from '../types'
+import { clientLog } from '@/lib/client-logger'
 
 // API response interfaces
 export interface SearchResultApi {
@@ -87,7 +88,7 @@ export async function searchBookings(
 ): Promise<BookingResult[]> {
   const { firstName, lastName } = splitFullName(form.fullName)
   
-  console.log('🔍 Searching for:', { firstName, lastName, phone: form.phone, dateRange })
+  clientLog.info('🔍 Searching for:', { firstName, lastName, phone: form.phone, dateRange })
 
   // Fetch ALL calendar events for the period, then filter on client
   // Add force=true to bypass cache for new searches
@@ -104,7 +105,7 @@ export async function searchBookings(
   }
   
   const allBookingsData = await response.json()
-  console.log(`📅 Fetched ${allBookingsData.count} bookings (cached: ${allBookingsData.cached})`)
+  clientLog.info(`📅 Fetched ${allBookingsData.count} bookings (cached: ${allBookingsData.cached})`)
   
   const allBookings = allBookingsData.bookings || []
   
@@ -179,7 +180,7 @@ export async function searchBookings(
     return false
   })
   
-  console.log(`✅ Found ${matchingBookings.length} matching bookings`)
+  clientLog.info(`✅ Found ${matchingBookings.length} matching bookings`)
   
   return matchingBookings.map((booking: SearchResultApi) => mapApiResult(booking, procedures))
 }
@@ -250,7 +251,7 @@ export async function checkProcedureExtension(
     duration: number
   }
 }> {
-  console.log('🔍 Checking procedure extension availability (no Turnstile):', {
+  clientLog.info('🔍 Checking procedure extension availability (no Turnstile):', {
     eventId: booking.eventId,
     newProcedureId,
   })
@@ -287,7 +288,7 @@ export async function updateBookingProcedure(
   booking: BookingResult,
   newProcedureId: string,
 ): Promise<void> {
-  console.log('🔄 Updating booking procedure (no Turnstile):', {
+  clientLog.info('🔄 Updating booking procedure (no Turnstile):', {
     eventId: booking.eventId,
     oldProcedure: booking.procedureName,
     newProcedureId,
@@ -331,7 +332,7 @@ export async function updateBookingTime(
   booking: BookingResult,
   newSlot: SlotSelection,
 ): Promise<void> {
-  console.log('🔄 Updating booking time (no Turnstile):', {
+  clientLog.info('🔄 Updating booking time (no Turnstile):', {
     eventId: booking.eventId,
     oldTime: `${booking.startTime.toISOString()} - ${booking.endTime.toISOString()}`,
     newTime: `${newSlot.startISO} - ${newSlot.endISO}`,
@@ -369,7 +370,7 @@ export async function updateBookingTime(
     throw new Error(detail)
   }
   
-  console.log('✅ Booking time updated successfully')
+  clientLog.info('✅ Booking time updated successfully')
 }
 
 export async function cancelBooking(booking: BookingResult): Promise<void> {
@@ -381,8 +382,8 @@ export async function cancelBooking(booking: BookingResult): Promise<void> {
     email: booking.email || '',
   }
   
-  console.log('🔓 Cancelling without Turnstile (user already verified during search)')
-  console.log('🗑️ Cancelling booking with eventId:', booking.eventId)
+  clientLog.info('🔓 Cancelling without Turnstile (user already verified during search)')
+  clientLog.info('🗑️ Cancelling booking with eventId:', booking.eventId)
   
   const response = await fetch('/api/bookings/cancel', {
     method: 'POST',

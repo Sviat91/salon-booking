@@ -107,15 +107,19 @@ export default function DayCalendar({ procedureId, onChange }: { procedureId?: s
     }
   }
 
+  // Memoize available dates set and array
   const set = useMemo(() => new Set<string>(Array.from(daysMap.entries()).filter(([, v]) => v).map(([k]) => k)), [daysMap])
   const available = useMemo(() => Array.from(set.values()).map(s => new Date(s + 'T00:00:00')), [set])
 
-  const isDisabled = (day: Date) => {
-    const iso = toISO(day)
-    if (day < today) return true
-    if (!procedureId) return true // до выбора услуги все дни отключены
-    return !set.has(iso)
-  }
+  // Memoize isDisabled callback to prevent unnecessary re-calculations
+  const isDisabled = useMemo(() => {
+    return (day: Date) => {
+      const iso = toISO(day)
+      if (day < today) return true
+      if (!procedureId) return true // до выбора услуги все дни отключены
+      return !set.has(iso)
+    }
+  }, [today, procedureId, set])
 
   function handleMonthChange(next: Date) {
     const normalized = new Date(next.getFullYear(), next.getMonth(), 1)

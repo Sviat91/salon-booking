@@ -1,6 +1,7 @@
 "use client"
 import { useState } from 'react'
 import PhoneInput from '../ui/PhoneInput'
+import { clientLog } from '@/lib/client-logger'
 
 interface ContactMasterPanelProps {
   onBack: () => void
@@ -29,7 +30,7 @@ export default function ContactMasterPanel({ onBack, onSuccess }: ContactMasterP
     setError(null)
     
     try {
-      console.log('Sending contact form to master:', {
+      clientLog.info('Sending contact form to master:', {
         fullName: fullName.trim(),
         phone: phone.trim(),
         hasEmail: !!email.trim(),
@@ -49,10 +50,10 @@ export default function ContactMasterPanel({ onBack, onSuccess }: ContactMasterP
         }),
       })
       
-      console.log('Response status:', response.status)
+      clientLog.info('Response status:', response.status)
       
       const data = await response.json()
-      console.log('Response data:', data)
+      clientLog.info('Response data:', data)
       
       if (!response.ok) {
         const errorMsg = data.error || `Błąd serwera: ${response.status}`
@@ -60,10 +61,10 @@ export default function ContactMasterPanel({ onBack, onSuccess }: ContactMasterP
       }
       
       // Success
-      console.log('Contact form sent successfully')
+      clientLog.info('Contact form sent successfully')
       onSuccess()
     } catch (err: any) {
-      console.error('Failed to send message to master:', err)
+      clientLog.error('Failed to send message to master:', err)
       setError(err.message || 'Wystąpił błąd podczas wysyłania wiadomości')
     } finally {
       setIsSubmitting(false)

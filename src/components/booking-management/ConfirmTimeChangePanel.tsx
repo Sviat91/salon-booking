@@ -1,11 +1,13 @@
 "use client"
 import type { BookingResult, SlotSelection } from './types'
+import { timeFormatter, dateFormatter } from '@/lib/utils/date-formatters'
 
 interface ConfirmTimeChangePanelProps {
   booking: BookingResult
   newSlot: SlotSelection
   isSubmitting: boolean
-  errorMessage: string | null
+  errorMessage?: string | null
+  onCancel: () => void
   onConfirm: () => void
   onBack: () => void
 }
@@ -18,16 +20,7 @@ export default function ConfirmTimeChangePanel({
   onConfirm,
   onBack,
 }: ConfirmTimeChangePanelProps) {
-  const timeFormatter = new Intl.DateTimeFormat('pl-PL', {
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  })
-  const dateFormatter = new Intl.DateTimeFormat('pl-PL', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-  })
+  // Using centralized formatters
 
   // Current booking time
   const currentDateStr = dateFormatter.format(booking.startTime)

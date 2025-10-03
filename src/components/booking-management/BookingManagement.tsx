@@ -1,19 +1,13 @@
 "use client"
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import Card from '../ui/Card'
-import { useMutation, useQuery } from '@tanstack/react-query'
 import PanelRenderer from './PanelRenderer'
 import { useBookingManagementState } from './state/useBookingManagementState'
 import { useTurnstileSession } from './hooks/useTurnstileSession'
-import {
-  fetchProcedures,
-  searchBookings,
-  updateBookingTime,
-  updateBooking,
-  updateBookingProcedure,
-  cancelBooking,
-  checkProcedureExtension,
-} from './api/bookingManagementApi'
+import { useBookingMutations } from './hooks/useBookingMutations'
+import { useBookingHandlers } from './hooks/useBookingHandlers'
+import { fetchProcedures } from './api/bookingManagementApi'
 import type { ProceduresResponse } from './api/bookingManagementApi'
 import type {
   BookingManagementRef,
@@ -31,10 +25,6 @@ interface BookingManagementProps {
   onCalendarModeChange?: (mode: CalendarMode) => void
   onSlotSelected?: (slot: SlotSelection) => void
   onPanelOpenChange?: (isOpen: boolean) => void
-}
-
-interface MutationError {
-  message: string
 }
 
 const BookingManagement = forwardRef<BookingManagementRef, BookingManagementProps>(
@@ -57,14 +47,14 @@ const BookingManagement = forwardRef<BookingManagementRef, BookingManagementProp
     const turnstileSession = useTurnstileSession(siteKey)
 
     // Fetch procedures
-    const proceduresQuery = useQuery<ProceduresResponse>({
+    const { data: proceduresData } = useQuery<ProceduresResponse>({
       queryKey: ['procedures'],
       queryFn: fetchProcedures,
-      staleTime: 10 * 60 * 1000,
+      staleTime: 60 * 60 * 1000, // 1 hour - procedures rarely change
     })
-    const procedures = proceduresQuery.data?.items ?? []
+    const procedures = proceduresData?.items ?? []
 
-    // Imperative handle for parent component
+    // Expose close method via ref
     useImperativeHandle(ref, () => ({
       close: actions.closePanel,
     }))
@@ -128,606 +118,75 @@ const BookingManagement = forwardRef<BookingManagementRef, BookingManagementProp
       return baseValid && !!turnstileSession.turnstileToken
     }, [state.form.fullName, state.form.phone, siteKey, turnstileSession.turnstileToken])
 
-    // Search mutation
-    const searchMutation = useMutation<typeof state.results, MutationError, { turnstileToken?: string; dateRange?: { start: string; end: string } }>({
-      mutationFn: async ({ turnstileToken: providedToken, dateRange } = {}) => {
-        return searchBookings(state.form, procedures, providedToken, dateRange)
-      },
-      onMutate: () => {
-        actions.startSearch()
-      },
-      onSuccess: (results) => {
-        actions.handleSearchSuccess(results)
-      },
-      onError: (error) => {
-        actions.handleSearchError(`Nie udało się wyszukać rezerwacji: ${error.message}`)
-      },
+    // Initialize mutations hook
+    const mutations = useBookingMutations({
+      state,
+      actions,
+      procedures,
+      turnstileToken: turnstileSession.turnstileToken,
+      onDateReset,
+      onCalendarModeChange,
+      onProcedureChange,
     })
 
-    // Мутация для изменения процедуры (M1 Step 2) - простая без валидации
-    const updateProcedureMutation = useMutation<void, MutationError, void>({
-      mutationFn: async () => {
-        if (!state.selectedBooking) {
-          throw new Error('Brak wybranej rezerwacji.')
-        }
-        if (!state.selectedProcedure) {
-          throw new Error('Wybierz procedurę.')
-        }
-        console.log('🔄 Updating procedure:', state.selectedProcedure.name_pl)
-        // NO TURNSTILE - user already verified during search (like updateBookingTime)
-        await updateBookingProcedure(state.selectedBooking, state.selectedProcedure.id)
-      },
-      onSuccess: () => {
-        console.log('✅ Procedure updated successfully')
-        actions.setActionError(null)
-        actions.clearExtensionCheck() // Очищаем проверку после успешного сохранения
-        
-        // Сбрасываем календарь к начальному состоянию
-        resetCalendarState()
-        
-        actions.setState('procedure-change-success')
-      },
-      onError: (error) => {
-        console.error('❌ Procedure update failed:', error.message)
-        actions.setActionError(error.message)
-        
-        // Сбрасываем календарь при ошибке тоже
-        resetCalendarState()
-        
-        actions.setState('procedure-change-error')
-      },
+    // Initialize handlers hook
+    const handlers = useBookingHandlers({
+      state,
+      actions,
+      mutations,
+      canSearch,
+      siteKey,
+      turnstileSession,
+      deriveProcedureForBooking,
+      selectedSlot,
+      onSlotSelected,
     })
 
-    // Update mutation (для комбинированных изменений - процедура + время)
-    const updateMutation = useMutation<
-      { startTime?: string; endTime?: string; procedure?: string }, 
-      MutationError, 
-      { newProcedureId?: string; newSlot?: SlotSelection }
-    >({
-      mutationFn: async (changes) => {
-        if (!state.selectedBooking) {
-          throw new Error('Brak wybranej rezerwacji.')
-        }
-        const token = turnstileSession.turnstileToken ?? undefined
-        return await updateBooking(state.selectedBooking, changes, token)
-      },
-      onSuccess: (data) => {
-        console.log('✅ Combined procedure+time update successful', data)
-        actions.setActionError(null)
-        actions.clearExtensionCheck()
-        
-        // Update booking time in state if it changed
-        if (data.startTime && data.endTime && state.selectedBooking) {
-          console.log('🔄 Updating booking time in state:', {
-            old: { start: state.selectedBooking.startTime, end: state.selectedBooking.endTime },
-            new: { start: data.startTime, end: data.endTime }
-          })
-          actions.updateBookingTime({
-            startTime: new Date(data.startTime),
-            endTime: new Date(data.endTime)
-          })
-        }
-        
-        // Сбрасываем календарь к начальному состоянию
-        resetCalendarState()
-        
-        // Показываем панель успеха изменения процедуры (не просто results)
-        actions.setState('procedure-change-success')
-      },
-      onError: (error) => {
-        console.error('❌ Combined update failed:', error.message)
-        actions.setActionError(error.message)
-        
-        // Сбрасываем календарь при ошибке тоже
-        resetCalendarState()
-        
-        actions.setState('procedure-change-error')
-      },
-    })
+    // Destructure for convenience
+    const {
+      searchMutation,
+      updateTimeMutation,
+      updateMutation,
+      updateProcedureMutation,
+      cancelMutation,
+    } = mutations
 
-    // Универсальная функция для сброса состояния календаря
-    const resetCalendarState = useCallback(() => {
-      console.log('🔄 Resetting calendar state to initial (no procedure, no date, no slot)')
-      actions.setPendingSlot(null)
-      onDateReset?.() // Сбрасываем выбранную дату
-      onCalendarModeChange?.('booking') // Возвращаем в режим бронирования
-      onProcedureChange?.(undefined) // Сбрасываем процедуру - календарь станет неактивным
-    }, [onDateReset, onCalendarModeChange, onProcedureChange, actions])
+    const {
+      handleSearch,
+      handleSelectBooking,
+      handleChangeBooking,
+      handleSelectChangeProcedure,
+      handleSelectProcedure,
+      handleConfirmSameTime,
+      handleSelectChangeTime,
+      handleRequestNewTime,
+      handleCheckAvailability,
+      handleSelectAlternativeSlot,
+      handleConfirmAlternativeSlot,
+      handleConfirmSlot,
+      handleConfirmTimeChange,
+      handleConfirmTimeChangeBack,
+      handleEditSelectionBack,
+      handleBackToEditSelection,
+      handleBackToResults,
+      handleBackToSearch,
+      handleStartNewSearch,
+      handleRetryTimeChange,
+      handleRetryCancel,
+      handleConfirmCancel,
+      handleContactMaster,
+      handleContactMasterSuccess,
+      handleContactMasterBack,
+      handleContactMasterClose,
+      handleExtendSearch,
+      handleExtendedSearchSubmit,
+      handleExtendedSearchBack,
+    } = handlers
 
-    // Простая мутация для изменения времени - чистая архитектура
-    // NO TURNSTILE - user already verified during search
-    const updateTimeMutation = useMutation<void, MutationError, void>({
-      mutationFn: async () => {
-        if (!state.timeChangeSession?.newSlot) {
-          throw new Error('Brak wybranego nowego terminu.')
-        }
-        
-        console.log('🚀 Starting simple time update (no Turnstile):', state.timeChangeSession.originalBooking.eventId)
-        
-        await updateBookingTime(
-          state.timeChangeSession.originalBooking,
-          state.timeChangeSession.newSlot
-        )
-      },
-      onSuccess: () => {
-        console.log('🎉 Time change successful - showing success state')
-        actions.setActionError(null)
-        
-        // Сбрасываем состояние календаря и показываем панель успеха
-        resetCalendarState()
-        actions.setState('time-change-success')
-        
-        console.log('✅ State changed to time-change-success')
-        
-        // НЕ обновляем поиск сразу - пусть пользователь увидит success панель
-        // Обновим когда он нажмет "Powrót do wyników"
-      },
-      onError: (error) => {
-        console.error('❌ Time change failed:', error.message)
-        actions.setActionError(error.message)
-        
-        // Сбрасываем состояние календаря при ошибке тоже
-        resetCalendarState()
-        actions.setState('time-change-error')
-        
-        console.log('❌ State changed to time-change-error')
-      },
-    })
-
-    // Cancel mutation
-    const cancelMutation = useMutation<void, MutationError, void>({
-      mutationFn: async () => {
-        if (!state.selectedBooking) {
-          throw new Error('Brak wybranej rezerwacji.')
-        }
-        await cancelBooking(state.selectedBooking)
-      },
-      onSuccess: () => {
-        actions.setActionError(null)
-        // Pokaż zielонą панель успеха anulowania; не обновляем список сразу
-        actions.setState('cancel-success')
-      },
-      onError: (error) => {
-        // Переходим на красную панель ошибки с понятным сообщением
-        actions.setActionError(error.message)
-        actions.setState('cancel-error')
-      },
-    })
-
-    // Event handlers
-    const handleSearch = useCallback(() => {
-      if (!canSearch) {
-        if (!siteKey) {
-          actions.setFormError('Podaj imię, nazwisko i numer telefonu (min. 9 cyfr).')
-        } else if (!turnstileSession.turnstileToken) {
-          actions.setFormError('Potwierdź weryfikację Turnstile i spróbuj ponownie.')
-        } else {
-          actions.setFormError('Podaj imię, nazwisko i numer telefonu (min. 9 cyfr).')
-        }
-        return
-      }
-      const token = siteKey ? turnstileSession.turnstileToken ?? undefined : undefined
-      if (siteKey && !token) {
-        actions.setFormError('Potwierdź weryfikację Turnstile i spróbuj ponownie.')
-        return
-      }
-      if (token) {
-        turnstileSession.setTurnstileToken(token)
-      }
-      searchMutation.mutate({ turnstileToken: token })
-    }, [canSearch, searchMutation, siteKey, turnstileSession, actions])
-
-    const handleToggle = () => {
-      if (state.isOpen) {
-        // При закрытии панели - сбрасываем календарь если была активна сессия изменения времени
-        if (state.timeChangeSession || state.wasEditing) {
-          console.log('🔙 Closing BookingManagement panel - resetting calendar state')
-          resetCalendarState()
-        }
-        // Полностью удаляем Turnstile при закрытии панели, чтобы корректно пересоздать при следующем открытии
-        if (siteKey) {
-          turnstileSession.removeWidget()
-        }
-        actions.closePanel()
-        onPanelOpenChange?.(false)
-      } else {
-        actions.togglePanel()
-        // Гарантируем рендер Turnstile при открытии панели
-        if (siteKey) {
-          turnstileSession.ensureWidget()
-        }
-        if (siteKey && turnstileSession.turnstileToken) {
-          actions.setFormError(null)
-        }
-        onPanelOpenChange?.(true)
-      }
-    }
-
-    const handleSelectBooking = (booking: typeof state.selectedBooking) => {
-      actions.selectBooking(booking)
-    }
-
-    const handleChangeBooking = (booking: typeof state.selectedBooking) => {
-      if (!booking) return
-      actions.selectBooking(booking)
-      actions.setState('edit-selection')
-    }
-
-    // M1: Изменение процедуры - базовые хендлеры (навигация и выбор)
-    const handleSelectChangeProcedure = () => {
-      console.log('💆‍♀️ Starting procedure change flow')
-      actions.setActionError(null)
-      actions.selectProcedure(null)
-      actions.clearExtensionCheck() // Очищаем предыдущую проверку
-      actions.setState('edit-procedure')
-    }
-
-    const handleSelectProcedure = (proc: ProcedureOption | null) => {
-      console.log('🧭 Procedure selected:', proc?.name_pl)
-      actions.selectProcedure(proc)
-    }
-
-    // M1 Step 2: Подтверждение изменения процедуры на тот же час - сразу выполняем
-    const handleConfirmSameTime = () => {
-      console.log('✅ Confirming procedure change on same time - executing immediately')
-      console.log('📋 Selected procedure:', state.selectedProcedure)
-      console.log('📋 Selected booking:', state.selectedBooking)
-      if (!state.selectedProcedure) {
-        console.warn('⚠️ No procedure selected!')
-        actions.setActionError('Wybierz procedurę')
-        return
-      }
-      if (!state.selectedBooking) {
-        console.error('❌ No selected booking!')
-        return
-      }
-      actions.setActionError(null)
-      console.log('🚀 Executing procedure change immediately')
-      // Сразу вызываем мутацию без промежуточного состояния
-      updateProcedureMutation.mutate()
-    }
-
-    // Новая простая логика изменения времени - сразу показываем direct-time-change панель
-    const handleSelectChangeTime = () => {
-      console.log('⏰ Starting direct time change for booking:', state.selectedBooking?.eventId)
-      if (!state.selectedBooking) return
-      
-      // Создаем сессию изменения времени
-      const procedure = deriveProcedureForBooking(state.selectedBooking)
-      if (!procedure) {
-        console.error('❌ Cannot derive procedure for booking')
-        return
-      }
-      const session = {
-        originalBooking: state.selectedBooking,
-        selectedProcedure: procedure,
-        newSlot: null,
-      }
-      
-      // Активируем Turnstile для изменения времени
-      if (siteKey && turnstileSession.turnstileToken) {
-        actions.setActionError(null)
-      }
-      
-      console.log('💾 Creating time change session and going direct to comparison:', session.originalBooking.procedureName)
-      actions.startTimeChange(session)
-      actions.setState('direct-time-change')
-    }
-
-    const handleEditSelectionBack = () => {
-      actions.clearExtensionCheck() // Очищаем проверку при возврате
-      actions.setState('results')
-      actions.setActionError(null)
-    }
-
-    // Заглушка - эта функция больше не используется
-    // const handleConfirmSameTime = () => { ... }
-
-    const handleRequestNewTime = () => {
-      console.log('📅 Requesting new time for procedure change:', state.selectedProcedure?.name_pl)
-      if (!state.selectedBooking || !state.selectedProcedure) {
-        console.error('❌ No booking or procedure selected!')
-        return
-      }
-      
-      // Очищаем проверку доступности если была
-      actions.clearExtensionCheck()
-      
-      // Создаем сессию изменения времени с НОВОЙ процедурой
-      // Это позволит показать direct-time-change панель с правильными данными
-      const session = {
-        originalBooking: state.selectedBooking,
-        selectedProcedure: state.selectedProcedure, // НОВАЯ процедура!
-        newSlot: null,
-      }
-      
-      console.log('💾 Creating time change session for procedure change:', {
-        oldProcedure: state.selectedBooking.procedureName,
-        newProcedure: state.selectedProcedure.name_pl,
-      })
-      
-      actions.startTimeChange(session)
-      actions.setState('direct-time-change')
-    }
-
-    // Обновленная логика проверки доступности для длинных процедур
-    const handleCheckAvailability = async () => {
-      if (!state.selectedBooking || !state.selectedProcedure) {
-        console.error('❌ No booking or procedure selected!')
-        return
-      }
-      
-      console.log('🔍 Checking extension availability for:', state.selectedProcedure.name_pl)
-      
-      // Устанавливаем статус проверки
-      actions.setExtensionCheckStatus('checking')
-      actions.setActionError(null)
-      
-      try {
-        console.log('🔍 Calling checkProcedureExtension (no Turnstile):', {
-          eventId: state.selectedBooking.eventId,
-          procedureId: state.selectedProcedure.id,
-          currentStart: state.selectedBooking.startTime.toISOString(),
-          currentEnd: state.selectedBooking.endTime.toISOString(),
-        })
-        
-        const response = await checkProcedureExtension(
-          state.selectedBooking,
-          state.selectedProcedure.id
-        )
-        
-        console.log('✅ Extension check result:', response.result.status, response.result)
-        
-        // Сохраняем результат проверки
-        actions.setExtensionCheckResult(response.result)
-        
-      } catch (error) {
-        console.error('❌ Extension check failed:', error)
-        actions.setActionError(error instanceof Error ? error.message : 'Nie udało się sprawdzić dostępności')
-        actions.setExtensionCheckStatus(null)
-      }
-    }
-    
-    // Выбор альтернативного слота из списка
-    const handleSelectAlternativeSlot = (slot: SlotSelection) => {
-      console.log('📍 Selected alternative slot:', slot)
-      actions.selectAlternativeSlot(slot)
-    }
-    
-    // Подтверждение альтернативного слота (сдвиг назад или выбранный из списка)
-    const handleConfirmAlternativeSlot = () => {
-      if (!state.selectedBooking || !state.selectedProcedure) {
-        console.error('❌ No booking or procedure selected!')
-        return
-      }
-      
-      // Используем выбранный альтернативный слот или предложенный системой
-      const slotToUse = state.selectedAlternativeSlot || 
-        (state.extensionCheckResult?.suggestedStartISO && state.extensionCheckResult?.suggestedEndISO
-          ? {
-              startISO: state.extensionCheckResult.suggestedStartISO,
-              endISO: state.extensionCheckResult.suggestedEndISO,
-            }
-          : null)
-      
-      if (!slotToUse) {
-        console.error('❌ No alternative slot available!')
-        return
-      }
-      
-      console.log('✅ Confirming alternative slot:', slotToUse)
-      
-      // Используем updateMutation для комбинированного изменения (процедура + время)
-      updateMutation.mutate({
-        newProcedureId: state.selectedProcedure.id,
-        newSlot: slotToUse,
-      })
-    }
-
-    // Новая простая логика подтверждения слота
-    const handleConfirmSlot = () => {
-      console.log('🎯 Confirming slot for time change:', selectedSlot)
-      if (!selectedSlot || !state.timeChangeSession) {
-        console.error('❌ No selectedSlot or timeChangeSession available!')
-        return
-      }
-      
-      // Сохраняем выбранный слот в сессию
-      console.log('💾 Saving slot to time change session')
-      actions.setTimeChangeSlot(selectedSlot)
-      
-      if (onSlotSelected) {
-        onSlotSelected(selectedSlot)
-      }
-    }
-
-    const handleBackToResults = () => {      
-      actions.clearTimeChange() // Очищаем сессию при возврате
-      actions.selectProcedure(null) // Очищаем выбранную процедуру
-      actions.setState('results')
-      
-      // Сбрасываем Turnstile для чистого старта
-      if (siteKey) {
-        turnstileSession.resetWidget()
-      }
-      
-      // Обновляем поиск при возврате к результатам
-      console.log('🔄 Refreshing search after successful change')
-      const token = siteKey ? (turnstileSession.turnstileToken ?? undefined) : undefined
-      if (token) turnstileSession.setTurnstileToken(token)
-      searchMutation.mutate({ turnstileToken: token })
-    }
-
-    const handleRetryTimeChange = () => {
-      // Возвращаемся к выбору времени для повторной попытки и сбрасываем календарь
-      console.log('🔄 User retrying time change after error - resetting calendar')
-      resetCalendarState()
-      if (state.timeChangeSession) {
-        actions.setState('edit-datetime')
-      } else {
-        actions.setState('results')
-      }
-    }
-
-    const handleRetryCancel = () => {
-      // Вернуться к подтверждению отмены, чтобы попробовать снова
-      actions.setActionError(null)
-      actions.setState('confirm-cancel')
-    }
-
-    const handleBackToSearch = () => {
-      actions.setState('search')
-      actions.setActionError(null)
-      actions.selectProcedure(null)
-      actions.setPendingSlot(null)
-      actions.resetForm()
-    }
-
-    const handleContactMaster = useCallback(() => {
-      console.log('Opening contact master panel')
-      actions.setState('contact-master')
-    }, [actions])
-    
-    const handleContactMasterSuccess = useCallback(() => {
-      console.log('Contact master success')
-      actions.setState('contact-master-success')
-    }, [actions])
-    
-    const handleContactMasterBack = useCallback(() => {
-      console.log('Going back from contact master')
-      actions.setState('not-found')
-    }, [actions])
-    
-    const handleContactMasterClose = useCallback(() => {
-      console.log('Closing contact master success')
-      actions.setState('search')
-      actions.resetForm()
-    }, [actions])
-
-    const handleStartNewSearch = useCallback(() => {
-      actions.resetForm()
-      actions.setState('search')
-    }, [actions])
-
-    const handleExtendSearch = useCallback(() => {
-      console.log('Opening extended search panel')
-      actions.setState('extended-search')
-    }, [actions])
-    
-    const handleExtendedSearchSubmit = useCallback((
-      fullName: string, 
-      phone: string, 
-      email: string, 
-      startDate: string, 
-      endDate: string
-    ) => {
-      console.log('Extended search submitted:', { fullName, phone, email, startDate, endDate })
-      
-      // Обновляем форму с новыми данными
-      actions.updateForm({ fullName, phone, email })
-      
-      // Выполняем поиск с расширенным диапазоном дат
-      actions.setState('loading')
-      
-      const token = turnstileSession.turnstileToken ?? undefined
-      searchMutation.mutate({
-        turnstileToken: token,
-        dateRange: { start: startDate, end: endDate }
-      })
-    }, [actions, searchMutation, turnstileSession])
-    
-    const handleExtendedSearchBack = useCallback(() => {
-      console.log('Going back from extended search')
-      actions.setState('not-found')
-    }, [actions])
-
-    // Заглушка - эта функция больше не используется
-    // const handleBackToProcedure = () => { ... }
-
-    // Возврат к выбору типа изменения - очищаем сессию времени и сбрасываем календарь
-    const handleBackToEditSelection = () => {
-      console.log('🔙 Going back to edit selection - clearing time change session and resetting calendar')
-      resetCalendarState()
-      actions.clearTimeChange()
-      actions.setState('edit-selection')
-      actions.setActionError(null)
-    }
-
-    // Удалены handleConfirmChange и handleConfirmChangeBack - больше не нужны
-    // Изменение процедуры теперь выполняется сразу из handleConfirmSameTime
-
-    // Подтверждение изменения времени (возможно с изменением процедуры)
-    const handleConfirmTimeChange = () => {
-      console.log('🔄 Confirming time change from session:', state.timeChangeSession?.originalBooking.eventId)
-      
-      if (!state.timeChangeSession) {
-        console.error('❌ No time change session!')
-        return
-      }
-      
-      // Если есть selectedSlot, но нет newSlot в сессии - сохраняем
-      if (selectedSlot && !state.timeChangeSession.newSlot) {
-        console.log('💾 First saving selectedSlot to session:', selectedSlot)
-        actions.setTimeChangeSlot(selectedSlot)
-        if (onSlotSelected) {
-          onSlotSelected(selectedSlot)
-        }
-      }
-      
-      // Проверяем что есть слот для изменения  
-      const slotToUse = state.timeChangeSession.newSlot || selectedSlot
-      if (!slotToUse) {
-        console.error('❌ No slot available for time change!')
-        return
-      }
-      
-      // Проверяем, меняется ли процедура
-      const isProcedureChange = state.timeChangeSession.selectedProcedure.name_pl !== state.timeChangeSession.originalBooking.procedureName
-      
-      if (isProcedureChange) {
-        // Комбинированное изменение: процедура + время
-        console.log('📤 Executing combined procedure+time change...')
-        updateMutation.mutate({
-          newProcedureId: state.timeChangeSession.selectedProcedure.id,
-          newSlot: slotToUse,
-        })
-      } else {
-        // Только изменение времени
-        console.log('📤 Executing time change only...')
-        updateTimeMutation.mutate()
-      }
-    }
-
-    const handleConfirmTimeChangeBack = () => {
-      // Проверяем, это была смена процедуры или просто время
-      const isProcedureChange = state.timeChangeSession && 
-        state.timeChangeSession.selectedProcedure.name_pl !== state.timeChangeSession.originalBooking.procedureName
-      
-      console.log('🔙 User canceled time change - resetting calendar', {
-        isProcedureChange,
-        goingTo: isProcedureChange ? 'edit-procedure' : 'edit-selection'
-      })
-      
-      resetCalendarState()
-      
-      if (isProcedureChange) {
-        // При возврате к смене процедуры - сохраняем selectedProcedure, но очищаем session
-        actions.clearTimeChange()
-        actions.setState('edit-procedure')
-      } else {
-        // При возврате от простой смены времени - очищаем всё
-        if (siteKey) {
-          turnstileSession.resetWidget()
-        }
-        actions.setState('edit-selection')
-      }
-      
-      actions.setActionError(null)
-    }
-
-    const handleConfirmCancel = () => {
-      cancelMutation.mutate()
-    }
+    // handleToggle needs onPanelOpenChange callback
+    const handleToggle = useCallback(() => {
+      handlers.handleToggle(onPanelOpenChange)
+    }, [handlers, onPanelOpenChange])
 
     const fallbackProcedure = deriveProcedureForBooking(state.selectedBooking)
 

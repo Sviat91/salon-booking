@@ -7,33 +7,19 @@ import { verifyTurnstile } from '../../../lib/turnstile'
 import { config } from '../../../lib/env'
 import { getLogger } from '../../../lib/logger'
 import { reportError } from '../../../lib/sentry'
+import { bookingApiSchema, type BookingApiInput } from '../../../lib/validation/api-schemas'
 
 export const runtime = 'nodejs'
 
 const log = getLogger({ module: 'api.book' })
 
-const BodySchema = z.object({
-  startISO: z.string().min(16),
-  endISO: z.string().min(16),
-  procedureId: z.string().optional(),
-  name: z.string().min(2),
-  phone: z.string().min(5),
-  email: z.string().email().optional(),
-  turnstileToken: z.string().optional(),
-  consents: z.object({
-    dataProcessing: z.boolean(),
-    terms: z.boolean(),
-    notifications: z.boolean(),
-  }).optional(),
-})
-
 export async function POST(req: NextRequest) {
   let idemKey: string | null = null
-  let body: z.infer<typeof BodySchema> | null = null
+  let body: BookingApiInput | null = null
   let ip = '0.0.0.0'
 
   try {
-    const booking = BodySchema.parse(await req.json())
+    const booking = bookingApiSchema.parse(await req.json())
     body = booking
     ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || ip
 

@@ -1,12 +1,13 @@
 "use client"
 import { useMemo } from 'react'
 import type { BookingResult } from './types'
+import { timeFormatter, dateFormatter } from '@/lib/utils/date-formatters'
 
 interface ResultsPanelProps {
   results: BookingResult[]
   selectedBookingId?: string
   searchCriteria?: {
-    fullName: string
+    fullName?: string
     phone: string
     email?: string
   }
@@ -29,24 +30,7 @@ export default function ResultsPanel({
   onBackToSearch,
   onNewSearch,
 }: ResultsPanelProps) {
-  const timeFormatter = useMemo(
-    () =>
-      new Intl.DateTimeFormat('pl-PL', {
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false,
-      }),
-    [],
-  )
-  const dateFormatter = useMemo(
-    () =>
-      new Intl.DateTimeFormat('pl-PL', {
-        weekday: 'long',
-        day: 'numeric',
-        month: 'long',
-      }),
-    [],
-  )
+  // Using centralized formatters
 
   const displayName = searchCriteria?.fullName || 'nieznany'
   const displayPhone = searchCriteria?.phone || 'nieznany'

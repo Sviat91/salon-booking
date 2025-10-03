@@ -1,5 +1,6 @@
 "use client"
 import type { BookingResult } from './types'
+import { timeFormatter, dateFormatter } from '@/lib/utils/date-formatters'
 
 interface EditSelectionPanelProps {
   booking: BookingResult
@@ -14,16 +15,7 @@ export default function EditSelectionPanel({
   onBack,
   onChangeProcedure,
 }: EditSelectionPanelProps) {
-  const timeFormatter = new Intl.DateTimeFormat('pl-PL', {
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  })
-  const dateFormatter = new Intl.DateTimeFormat('pl-PL', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-  })
+  // Using centralized formatters
 
   const dateStr = dateFormatter.format(booking.startTime)
   const timeStr = `${timeFormatter.format(booking.startTime)}–${timeFormatter.format(booking.endTime)}`

@@ -295,6 +295,7 @@ export default function PanelRenderer(props: PanelRendererProps) {
           isSubmitting={confirmTimeChangeSubmitting}
           errorMessage={confirmTimeChangeError}
           onConfirm={onConfirmTimeChange}
+          onCancel={onConfirmTimeChangeBack}
           onBack={onConfirmTimeChangeBack}
         />
       )
@@ -379,6 +380,7 @@ export default function PanelRenderer(props: PanelRendererProps) {
         <TimeChangeSuccessPanel
           timeChangeSession={{
             originalBooking: timeChangeSession.originalBooking,
+            selectedProcedure: timeChangeSession.selectedProcedure,
             newSlot: timeChangeSession.newSlot,
           }}
           onBackToResults={onBackToResults}
