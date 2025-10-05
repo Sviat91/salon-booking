@@ -2,6 +2,7 @@
 import { motion } from 'framer-motion'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
+import { flushSync } from 'react-dom'
 import { getAllMasters, type MasterId } from '@/config/masters'
 import { useMaster } from '@/contexts/MasterContext'
 import { useReducedMotion } from '@/hooks/useReducedMotion'
@@ -18,8 +19,10 @@ export default function MasterSelector() {
   const prefersReducedMotion = useReducedMotion()
 
   const handleMasterSelect = (masterId: MasterId) => {
-    // Set master in context (saves to localStorage)
-    setMaster(masterId)
+    // Flush master change so booking page sees the updated context on first paint
+    flushSync(() => {
+      setMaster(masterId)
+    })
     
     // Navigate to master-specific page
     router.push(`/${masterId}`)

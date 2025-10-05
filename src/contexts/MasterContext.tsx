@@ -1,5 +1,5 @@
 "use client"
-import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react'
+import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode, useRef } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { 
   Master, 
@@ -73,6 +73,11 @@ export const MasterProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   const [selectedMasterId, setSelectedMasterId] = useState<MasterId>(() => {
     return getStoredMasterId() ?? DEFAULT_MASTER_ID
   })
+  const selectedMasterIdRef = useRef<MasterId>(selectedMasterId)
+  
+  useEffect(() => {
+    selectedMasterIdRef.current = selectedMasterId
+  }, [selectedMasterId])
 
   const selectedMaster = MASTERS[selectedMasterId]
 
@@ -88,13 +93,16 @@ export const MasterProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     }
 
     // Skip if already selected (prevents unnecessary re-renders and animations)
-    if (masterId === selectedMasterId) {
+    if (masterId === selectedMasterIdRef.current) {
       clientLog.info('Master already selected:', masterId)
       return
     }
 
     clientLog.info('Changing master to:', masterId)
     
+    // Update ref immediately so downstream hooks see the new value even before React flushes state
+    selectedMasterIdRef.current = masterId
+
     // Update state
     setSelectedMasterId(masterId)
     
@@ -108,7 +116,7 @@ export const MasterProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     queryClient.invalidateQueries({ queryKey: ['bookings'] })
     
     clientLog.info('Master changed successfully. Cache invalidated.')
-  }, [queryClient, selectedMasterId])
+  }, [queryClient])
 
   /**
    * Check if a specific master is currently selected
@@ -128,7 +136,9 @@ export const MasterProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === STORAGE_KEY && e.newValue && isValidMasterId(e.newValue)) {
-        setSelectedMasterId(e.newValue as MasterId)
+        const newId = e.newValue as MasterId
+        selectedMasterIdRef.current = newId
+        setSelectedMasterId(newId)
       }
     }
 
