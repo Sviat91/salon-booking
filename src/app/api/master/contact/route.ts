@@ -14,6 +14,7 @@ const BodySchema = z.object({
   phone: z.string().trim().min(9, 'Numer telefonu musi mieć co najmniej 9 cyfr').max(20),
   email: z.string().trim().email('Nieprawidłowy adres e-mail').max(180).optional().or(z.literal('')),
   message: z.string().trim().min(10, 'Wiadomość musi mieć co najmniej 10 znaków').max(5000),
+  masterId: z.string().optional(),
   requestId: z.string().trim().max(64).optional(),
 })
 
@@ -113,8 +114,9 @@ export async function POST(req: NextRequest) {
     }, { status: 400 })
   }
   
-  const { fullName, phone, email, message, requestId } = body
+  const { fullName, phone, email, message, masterId, requestId } = body
   const finalRequestId = requestId || `master-contact-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`
+  const masterName = masterId === 'juli' ? 'Juli' : 'Olga'
   
   // Rate limiting: 3 requests per 15 minutes per IP
   const rateKey = `rate:master-contact:${ip}`
@@ -154,7 +156,7 @@ export async function POST(req: NextRequest) {
       phone: phone.trim(),
       email: email?.trim().toLowerCase() || '',
       message: message.trim(),
-      master: 'Ольга', // Жестко прописанный мастер
+      master: masterName,
       metadata: {
         ip,
         userAgent,
@@ -176,7 +178,7 @@ export async function POST(req: NextRequest) {
           requestId: finalRequestId,
           phone: maskPhoneForLog(phone),
           email: maskEmailForLog(email || ''),
-          master: 'Ольга',
+          master: masterName,
           attempt: attempt + 1,
         }, 'Master contact form submitted successfully')
         

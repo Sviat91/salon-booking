@@ -98,11 +98,11 @@ export default function MasterSelector() {
 
             {/* Master Name - fades out on exit */}
             <motion.div 
-              className="absolute bottom-0 left-0 right-0 p-6 text-center"
+              className="absolute bottom-0 left-0 right-0 p-3 text-center"
               exit={{ opacity: 0, y: 20 }}
               transition={{ duration: 0.5, ease: "easeOut" }}
             >
-              <h2 className="text-3xl sm:text-4xl font-bold text-white mb-2 transform group-hover:translate-y-[-4px] transition-transform duration-300">
+              <h2 className="text-3xl sm:text-4xl font-bold text-white mb-1 transform group-hover:translate-y-[-4px] transition-transform duration-300">
                 {master.name}
               </h2>
               <div className="flex items-center justify-center gap-2 text-white/90 opacity-0 group-hover:opacity-100 transition-opacity duration-300">

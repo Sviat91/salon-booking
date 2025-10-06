@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import PhoneInput from '../ui/PhoneInput'
 import { clientLog } from '@/lib/client-logger'
+import { useSelectedMaster } from '@/contexts/MasterContext'
 
 interface ContactMasterPanelProps {
   onBack: () => void
@@ -9,6 +10,7 @@ interface ContactMasterPanelProps {
 }
 
 export default function ContactMasterPanel({ onBack, onSuccess }: ContactMasterPanelProps) {
+  const selectedMaster = useSelectedMaster()
   const [fullName, setFullName] = useState('')
   const [phone, setPhone] = useState('')
   const [email, setEmail] = useState('')
@@ -47,6 +49,7 @@ export default function ContactMasterPanel({ onBack, onSuccess }: ContactMasterP
           phone: phone.trim(),
           email: email.trim() || undefined,
           message: message.trim(),
+          masterId: selectedMaster.id,
         }),
       })
       
@@ -78,7 +81,7 @@ export default function ContactMasterPanel({ onBack, onSuccess }: ContactMasterP
           Skontaktuj się z mistrzem
         </h3>
         <p className="text-sm text-neutral-600 dark:text-dark-muted mt-1">
-          Mistrz - Olga
+          Mistrz - {selectedMaster.name}
         </p>
       </div>
       

@@ -27,7 +27,7 @@ type Procedure = {
   name_ru?: string
   category?: string
   duration_min: number
-  price_pln?: number
+  price_pln?: number | string
   is_active: boolean
   order?: number
 }
@@ -68,6 +68,14 @@ function parseProcedures(rows: any[][]): Procedure[] {
     return Number.isFinite(num) && num > 0 ? num : 30
   }
   const asNum = (v: any) => Number.parseInt(String(v ?? '').replace(/\D/g, ''), 10) || 0
+  const asPrice = (v: any) => {
+    const str = String(v ?? '').trim()
+    // If contains dash (range), keep as string
+    if (str.includes('-')) return str
+    // Otherwise parse as number
+    const num = Number.parseInt(str.replace(/\D/g, ''), 10)
+    return num > 0 ? num : undefined
+  }
 
   const out: Procedure[] = []
   rest.forEach((r, idxRow) => {
@@ -81,7 +89,7 @@ function parseProcedures(rows: any[][]): Procedure[] {
       name_ru: gi.name_ru >= 0 ? String(r[gi.name_ru] ?? '') : undefined,
       category: gi.category >= 0 ? String(r[gi.category] ?? '') : undefined,
       duration_min: duration,
-      price_pln: gi.price_pln >= 0 ? asNum(r[gi.price_pln]) : undefined,
+      price_pln: gi.price_pln >= 0 ? asPrice(r[gi.price_pln]) : undefined,
       is_active: gi.is_active >= 0 ? asBool(r[gi.is_active]) : true,
       order: gi.order >= 0 ? asNum(r[gi.order]) : idxRow + 1,
     })
