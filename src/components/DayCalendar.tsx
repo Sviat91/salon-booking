@@ -4,6 +4,7 @@ import { DayPicker } from 'react-day-picker'
 import { pl } from 'date-fns/locale'
 import 'react-day-picker/dist/style.css'
 import { useQuery } from '@tanstack/react-query'
+import { useSelectedMasterId } from '@/contexts/MasterContext'
 
 // Produce YYYY-MM-DD in LOCAL time, not UTC.
 function toISO(d: Date) {
@@ -14,6 +15,7 @@ function toISO(d: Date) {
 }
 
 export default function DayCalendar({ procedureId, onChange }: { procedureId?: string; onChange?: (d: Date | undefined) => void }) {
+  const masterId = useSelectedMasterId()
   const [selected, setSelected] = useState<Date | undefined>(undefined)
   const today = useMemo(() => {
     const now = new Date()
@@ -37,21 +39,22 @@ export default function DayCalendar({ procedureId, onChange }: { procedureId?: s
   const untilISO = toISO(rangeUntil)
 
   const { data, isFetching, isLoading } = useQuery({
-    queryKey: ['availability', procedureId, fromISO, untilISO],
+    queryKey: ['availability', masterId, procedureId, fromISO, untilISO],
     enabled: !!procedureId, // подсветку дней делаем только после выбора процедуры
     queryFn: async () => {
       const qs = new URLSearchParams({ from: fromISO, until: untilISO })
       if (procedureId) qs.set('procedureId', procedureId)
+      if (masterId) qs.set('masterId', masterId)
       const res = await fetch(`/api/availability?${qs.toString()}`)
       return res.json()
     },
     staleTime: 10 * 60 * 1000,
   })
 
-  // Merge fetched days into an accumulator map; clear on procedure change
+  // Merge fetched days into an accumulator map; clear on procedure or master change
   useEffect(() => {
     setDaysMap(new Map())
-  }, [procedureId])
+  }, [procedureId, masterId])
 
   useEffect(() => {
     if (!data?.days) return

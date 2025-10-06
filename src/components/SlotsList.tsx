@@ -2,6 +2,7 @@
 import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { formatTimeRange } from '@/lib/utils/date-formatters'
+import { useSelectedMasterId } from '@/contexts/MasterContext'
 
 function toISO(d: Date) {
   const y = d.getFullYear(); const m = String(d.getMonth() + 1).padStart(2, '0'); const day = String(d.getDate()).padStart(2, '0')
@@ -9,15 +10,17 @@ function toISO(d: Date) {
 }
 
 export default function SlotsList({ date, procedureId, selected, onPick }: { date?: Date; procedureId?: string; selected?: { startISO: string; endISO: string } | null; onPick?: (slot: { startISO: string; endISO: string }) => void }) {
+  const masterId = useSelectedMasterId()
   const dateISO = date ? toISO(date) : null
 
   const { data, isFetching, error } = useQuery({
-    queryKey: ['day-slots', dateISO, procedureId],
+    queryKey: ['day-slots', masterId, dateISO, procedureId],
     enabled: !!dateISO && !!procedureId,
     queryFn: async () => {
       if (!dateISO) return { slots: [] }
       const qs = new URLSearchParams()
       if (procedureId) qs.set('procedureId', procedureId)
+      if (masterId) qs.set('masterId', masterId)
       const res = await fetch(`/api/day/${dateISO}?${qs.toString()}`)
       if (!res.ok) throw new Error(`Failed: ${res.status}`)
       return res.json()

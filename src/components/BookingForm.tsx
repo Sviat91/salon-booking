@@ -69,6 +69,7 @@ export default function BookingForm({
   } = useBookingSubmit({
     slot,
     procedureId,
+    masterId,
     name,
     phone,
     email,

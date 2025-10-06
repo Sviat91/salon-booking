@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
     ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || ip
 
     log.debug(
-      { ip, startISO: booking.startISO, endISO: booking.endISO, procedureId: booking.procedureId },
+      { ip, startISO: booking.startISO, endISO: booking.endISO, procedureId: booking.procedureId, masterId: booking.masterId },
       'Incoming booking request',
     )
 
@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const busy = await freeBusy(booking.startISO, booking.endISO)
+    const busy = await freeBusy(booking.startISO, booking.endISO, booking.masterId)
     if (busy.length > 0) {
       log.info({ ip, startISO: booking.startISO, endISO: booking.endISO, conflicts: busy.length }, 'Booking conflict detected')
       return NextResponse.json({ error: 'Slot is no longer available', code: 'CONFLICT' }, { status: 409 })
@@ -68,7 +68,7 @@ export async function POST(req: NextRequest) {
     
     if (booking.procedureId) {
       try {
-        const procs = await readProcedures()
+        const procs = await readProcedures(booking.masterId)
         const proc = procs.find(p => p.id === booking.procedureId)
         if (proc) {
           summary = proc.name_pl // Use only procedure name as title
@@ -91,7 +91,7 @@ Cena: ${price}zł
 ---
 Utworzono: ${new Date().toLocaleString('pl-PL', { timeZone: 'Europe/Warsaw' })}`
 
-    const ev = await createEvent({ startISO: booking.startISO, endISO: booking.endISO, summary, description })
+    const ev = await createEvent({ startISO: booking.startISO, endISO: booking.endISO, summary, description, masterId: booking.masterId })
     log.info({ ip, startISO: booking.startISO, endISO: booking.endISO, eventId: ev.id }, 'Booking created successfully')
 
     // Save user consents if provided
@@ -129,7 +129,7 @@ Utworzono: ${new Date().toLocaleString('pl-PL', { timeZone: 'Europe/Warsaw' })}`
       log.warn({ ip, issuePaths }, 'Booking request validation failed')
     } else {
       log.error(
-        { err, idemKey, ip, startISO: body?.startISO, endISO: body?.endISO, procedureId: body?.procedureId },
+        { err, idemKey, ip, startISO: body?.startISO, endISO: body?.endISO, procedureId: body?.procedureId, masterId: body?.masterId },
         'Booking handler failed',
       )
       await reportError(err, {
@@ -140,6 +140,7 @@ Utworzono: ${new Date().toLocaleString('pl-PL', { timeZone: 'Europe/Warsaw' })}`
           startISO: body?.startISO,
           endISO: body?.endISO,
           procedureId: body?.procedureId,
+          masterId: body?.masterId,
         },
       })
     }

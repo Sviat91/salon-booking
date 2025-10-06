@@ -21,6 +21,7 @@ export const bookingApiSchema = z.object({
   startISO: z.string().min(16, 'Invalid start time format'),
   endISO: z.string().min(16, 'Invalid end time format'),
   procedureId: z.string().optional(),
+  masterId: z.string().optional(),
   name: z.string().min(2, 'Name must be at least 2 characters').max(100, 'Name is too long'),
   phone: z.string().min(5, 'Phone number is too short').max(20, 'Phone number is too long'),
   email: z.string().email('Invalid email format').optional().or(z.literal('')),

@@ -7,6 +7,7 @@ type BookingState = 'form' | 'consent' | 'success'
 interface UseBookingSubmitProps {
   slot: Slot
   procedureId?: string
+  masterId?: string
   name: string
   phone: string
   email: string
@@ -23,6 +24,7 @@ interface ConsentData {
 export function useBookingSubmit({
   slot,
   procedureId,
+  masterId,
   name,
   phone,
   email,
@@ -80,7 +82,8 @@ export function useBookingSubmit({
         body: JSON.stringify({ 
           startISO: slot.startISO, 
           endISO: slot.endISO, 
-          procedureId, 
+          procedureId,
+          masterId, 
           name, 
           phone, 
           email: email || undefined, 
@@ -116,7 +119,8 @@ export function useBookingSubmit({
         body: JSON.stringify({ 
           startISO: slot.startISO, 
           endISO: slot.endISO, 
-          procedureId, 
+          procedureId,
+          masterId, 
           name, 
           phone, 
           email: email || undefined, 

@@ -13,11 +13,12 @@ function isValidISODate(s: string) {
   return /^\d{4}-\d{2}-\d{2}$/.test(s)
 }
 
-async function computeMinDuration(procedureId?: string | null) {
+async function computeMinDuration(procedureId?: string | null, masterId?: string | null) {
   // Try shared cache from /api/procedures to avoid hitting Sheets on hot paths
-  const cached = await cacheGet<any[]>('procedures:v1')
-  const procs = cached ?? await readProcedures()
-  if (!cached) await cacheSet('procedures:v1', procs, 900)
+  const procCacheKey = `procedures:v1:${masterId || 'default'}`
+  const cached = await cacheGet<any[]>(procCacheKey)
+  const procs = cached ?? await readProcedures(masterId || undefined)
+  if (!cached) await cacheSet(procCacheKey, procs, 900)
 
   let minDuration = 30
   if (procedureId) {
@@ -33,6 +34,7 @@ async function computeMinDuration(procedureId?: string | null) {
 export async function GET(req: NextRequest, ctx: { params: { date: string } }) {
   const date = ctx.params?.date ?? null
   let procedureId: string | null = null
+  let masterId: string | null = null
 
   try {
     if (!date || !isValidISODate(date)) {
@@ -42,13 +44,14 @@ export async function GET(req: NextRequest, ctx: { params: { date: string } }) {
 
     const { searchParams } = new URL(req.url)
     procedureId = searchParams.get('procedureId')
+    masterId = searchParams.get('masterId')
 
-    const minDuration = await computeMinDuration(procedureId)
-    const cacheKey = `day:v1:${date}:${minDuration}`
+    const minDuration = await computeMinDuration(procedureId, masterId)
+    const cacheKey = `day:v1:${date}:${minDuration}:${masterId || 'default'}`
     let payload = await cacheGet<{ slots: { startISO: string; endISO: string }[] }>(cacheKey)
     if (!payload) {
-      log.debug({ date, procedureId, minDuration }, 'Cache miss for day slots')
-      payload = await getDaySlots(date, minDuration)
+      log.debug({ date, procedureId, masterId, minDuration }, 'Cache miss for day slots')
+      payload = await getDaySlots(date, minDuration, 15, masterId || undefined)
       await cacheSet(cacheKey, payload, 30)
     }
 
@@ -56,10 +59,10 @@ export async function GET(req: NextRequest, ctx: { params: { date: string } }) {
     res.headers.set('Cache-Control', 'public, s-maxage=30, stale-while-revalidate=10')
     return res
   } catch (err: any) {
-    log.error({ err, date, procedureId }, 'Failed to compute day slots')
+    log.error({ err, date, procedureId, masterId }, 'Failed to compute day slots')
     await reportError(err, {
       tags: { module: 'api.day' },
-      extras: { date, procedureId },
+      extras: { date, procedureId, masterId },
     })
     return NextResponse.json({ error: 'Failed to compute day slots', details: String(err?.message || err) }, { status: 500 })
   }
