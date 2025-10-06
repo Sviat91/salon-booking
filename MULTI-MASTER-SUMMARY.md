@@ -4,7 +4,7 @@
 
 ### Core Features
 - **Landing Page** (`/`) with master selection cards
-- **Dynamic Routes** (`/olga`, `/juli`) for each master  
+- **Dynamic Routes** (`/olga`, `/yuliia`) for each master  
 - **Separate Calendars** for each master's bookings
 - **Separate Procedures** from individual Google Sheets
 - **Cache Isolation** - no data mixing between masters
@@ -34,7 +34,7 @@
 #### 3. API Layer
 All endpoints support optional `masterId` parameter:
 - `/api/procedures?masterId=olga`
-- `/api/availability?masterId=juli`
+- `/api/availability?masterId=yuliia`
 - `/api/day/[date]?masterId=olga`
 - `/api/book` (accepts `masterId` in body)
 - `/api/bookings/*` (all booking management endpoints)
@@ -49,9 +49,9 @@ All endpoints support optional `masterId` parameter:
 Each master has isolated cache entries:
 ```typescript
 ['procedures', 'olga']  // Olga's procedures
-['procedures', 'juli']  // Juli's procedures
+['procedures', 'yuliia']  // Yuliia's procedures
 ['availability', 'olga', date]  // Olga's availability
-['availability', 'juli', date]  // Juli's availability
+['availability', 'yuliia', date]  // Yuliia's availability
 ```
 
 **Benefits:**
@@ -75,7 +75,7 @@ src/
 │   └── ErrorBoundary.tsx    # Error handling ✅
 ├── app/
 │   ├── page.tsx             # Landing (/) ✅
-│   ├── [masterId]/page.tsx  # Booking (/olga, /juli) ✅
+│   ├── [masterId]/page.tsx  # Booking (/olga, /yuliia) ✅
 │   └── providers.tsx        # Context wrapper ✅
 └── lib/
     ├── google/
@@ -91,9 +91,9 @@ src/
 GOOGLE_CALENDAR_ID=<olga_calendar>
 GOOGLE_SHEET_ID=<olga_sheet>
 
-# Master 2 (Juli)
-GOOGLE_CALENDAR_ID_JULI=<juli_calendar>
-GOOGLE_SHEET_ID_JULI=<juli_sheet>
+# Master 2 (Yuliia)
+GOOGLE_CALENDAR_ID_YULIIA=<yuliia_calendar>
+GOOGLE_SHEET_ID_YULIIA=<yuliia_sheet>
 ```
 
 ### Testing Coverage

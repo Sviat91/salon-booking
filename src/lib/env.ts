@@ -22,9 +22,9 @@ const EnvSchema = z.object({
   // Master Olga (default)
   GOOGLE_CALENDAR_ID: z.string(),
   GOOGLE_SHEET_ID: z.string(),
-  // Master Juli
-  GOOGLE_CALENDAR_ID_JULI: z.string(),
-  GOOGLE_SHEET_ID_JULI: z.string(),
+  // Master Yuliia
+  GOOGLE_CALENDAR_ID_Yuliia: z.string(),
+  GOOGLE_SHEET_ID_Yuliia: z.string(),
   // Shared
   USER_CONSENTS_GOOGLE_SHEET_ID: z.string(),
   UPSTASH_REDIS_REST_URL: z.string().url(),
@@ -46,8 +46,8 @@ export const config = {
   // Explicitly export master-specific IDs for better type safety
   GOOGLE_CALENDAR_ID: env.GOOGLE_CALENDAR_ID,
   GOOGLE_SHEET_ID: env.GOOGLE_SHEET_ID,
-  GOOGLE_CALENDAR_ID_JULI: env.GOOGLE_CALENDAR_ID_JULI,
-  GOOGLE_SHEET_ID_JULI: env.GOOGLE_SHEET_ID_JULI,
+  GOOGLE_CALENDAR_ID_Yuliia: env.GOOGLE_CALENDAR_ID_Yuliia,
+  GOOGLE_SHEET_ID_Yuliia: env.GOOGLE_SHEET_ID_Yuliia,
   TURNSTILE_SECRET_EFFECTIVE: env.TURNSTILE_SECRET || env.TURNSTILE_SECRET_KEY,
   GOOGLE_SERVICE_ACCOUNT: parseServiceAccount(env.GOOGLE_APPLICATION_CREDENTIALS_JSON),
   SHEET_TABS: {

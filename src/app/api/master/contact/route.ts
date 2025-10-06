@@ -116,7 +116,7 @@ export async function POST(req: NextRequest) {
   
   const { fullName, phone, email, message, masterId, requestId } = body
   const finalRequestId = requestId || `master-contact-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`
-  const masterName = masterId === 'juli' ? 'Juli' : 'Olga'
+  const masterName = masterId === 'yuliia' ? 'Yuliia' : 'Olga'
   
   // Rate limiting: 3 requests per 15 minutes per IP
   const rateKey = `rate:master-contact:${ip}`

@@ -5,15 +5,15 @@
 ### Environment Setup
 - [ ] All environment variables configured for both masters
   - [ ] `GOOGLE_CALENDAR_ID` (Olga)
-  - [ ] `GOOGLE_CALENDAR_ID_JULI` (Juli)
+  - [ ] `GOOGLE_CALENDAR_ID_YULIIA` (Yuliia)
   - [ ] `GOOGLE_SHEET_ID` (Olga)
-  - [ ] `GOOGLE_SHEET_ID_JULI` (Juli)
+  - [ ] `GOOGLE_SHEET_ID_YULIIA` (Yuliia)
 - [ ] Master photos exist in `/public/`
   - [ ] `/public/photo_master_olga.png`
-  - [ ] `/public/photo_master_juli.png`
+  - [ ] `/public/photo_master_yuliia.png`
 - [ ] Google Sheets have correct structure
   - [ ] Procedures sheet for Olga
-  - [ ] Procedures sheet for Juli
+  - [ ] Procedures sheet for Yuliia
   - [ ] Weekly schedule configured
   - [ ] Exceptions configured
 
@@ -30,7 +30,7 @@
 
 ### Master Selection Flow
 - [ ] Clicking Olga card navigates to `/olga`
-- [ ] Clicking Juli card navigates to `/juli`
+- [ ] Clicking Yuliia card navigates to `/yuliia`
 - [ ] Selection saved to localStorage
 - [ ] Page refresh maintains selection
 - [ ] Invalid URL (e.g., `/invalid`) redirects to `/`
@@ -50,29 +50,29 @@
 - [ ] Booking creates event in Olga's calendar
 - [ ] Success message displays correctly
 
-### Booking Page - Juli
+### Booking Page - Yuliia
 - [ ] Back button navigates to landing page
 - [ ] Master photo displays in header (circular, 80x80px)
-- [ ] Procedures load for Juli
-- [ ] Calendar shows Juli's availability
-- [ ] Time slots match Juli's schedule
-- [ ] Booking creates event in Juli's calendar
+- [ ] Procedures load for Yuliia
+- [ ] Calendar shows Yuliia's availability
+- [ ] Time slots match Yuliia's schedule
+- [ ] Booking creates event in Yuliia's calendar
 - [ ] Success message displays correctly
 
 ### Data Isolation
-- [ ] Olga's procedures ≠ Juli's procedures
-- [ ] Olga's availability ≠ Juli's availability
+- [ ] Olga's procedures ≠ Yuliia's procedures
+- [ ] Olga's availability ≠ Yuliia's availability
 - [ ] Bookings go to correct calendar
 - [ ] Cache keys are separate per master
 - [ ] Switching masters doesn't mix data
 
 ### Booking Management
 - [ ] Can find existing bookings for Olga
-- [ ] Can find existing bookings for Juli
+- [ ] Can find existing bookings for Yuliia
 - [ ] Can modify Olga's bookings
-- [ ] Can modify Juli's bookings
+- [ ] Can modify Yuliia's bookings
 - [ ] Can cancel Olga's bookings
-- [ ] Can cancel Juli's bookings
+- [ ] Can cancel Yuliia's bookings
 - [ ] Changes go to correct calendar
 
 ### Performance
@@ -140,16 +140,16 @@
 9. Verify event in Olga's calendar
 
 ### Scenario 2: Returning User
-1. User previously selected Juli
+1. User previously selected Yuliia
 2. Visit `/` 
-3. Click Juli (localStorage restores selection)
+3. Click Yuliia (localStorage restores selection)
 4. Procedures load instantly (prefetched)
 5. Complete booking
-6. Event created in Juli's calendar
+6. Event created in Yuliia's calendar
 
 ### Scenario 3: Direct URL Access
-1. User visits `/juli` directly
-2. Context sets Juli as selected master
+1. User visits `/yuliia` directly
+2. Context sets Yuliia as selected master
 3. Procedures and availability load correctly
 4. Booking works normally
 
@@ -157,14 +157,14 @@
 1. User on `/olga` 
 2. Click back button
 3. Return to landing page
-4. Click Juli
-5. Data switches to Juli
+4. Click Yuliia
+5. Data switches to Yuliia
 6. No Olga data visible
 
 ### Scenario 5: Cache Validation
 1. Load Olga's procedures
-2. Switch to Juli
-3. Load Juli's procedures
+2. Switch to Yuliia
+3. Load Yuliia's procedures
 4. Switch back to Olga
 5. Olga's data loads from cache (instant)
 
@@ -173,7 +173,7 @@
 2. Search for booking
 3. Modify time/procedure
 4. Changes saved to Olga's calendar
-5. Switch to Juli
+5. Switch to Yuliia
 6. Different set of bookings visible
 
 ## 🐛 Known Issues

@@ -27,9 +27,9 @@ GOOGLE_APPLICATION_CREDENTIALS_JSON=<service_account_json_or_base64>
 GOOGLE_CALENDAR_ID=<olga_calendar_id>
 GOOGLE_SHEET_ID=<olga_procedures_sheet_id>
 
-# Master 2 (Juli)
-GOOGLE_CALENDAR_ID_JULI=<juli_calendar_id>
-GOOGLE_SHEET_ID_JULI=<juli_procedures_sheet_id>
+# Master 2 (Yuliia)
+GOOGLE_CALENDAR_ID_YULIIA=<yuliia_calendar_id>
+GOOGLE_SHEET_ID_YULIIA=<yuliia_procedures_sheet_id>
 
 # Shared Consent Tracking
 USER_CONSENTS_GOOGLE_SHEET_ID=<consent_tracking_sheet_id>
@@ -53,7 +53,7 @@ N8N_SECRET_TOKEN=<n8n_bearer_token>
 The application supports multiple beauty masters, each with their own:
 - Google Calendar for bookings
 - Google Sheet for procedures and schedule
-- Dedicated URL route (`/olga`, `/juli`)
+- Dedicated URL route (`/olga`, `/yuliia`)
 - Separate cache entries for data isolation
 
 #### Adding a New Master
@@ -62,7 +62,7 @@ The application supports multiple beauty masters, each with their own:
    ```typescript
    export const MASTERS = {
      olga: { id: 'olga', name: 'Olga', avatar: '/photo_master_olga.png' },
-     juli: { id: 'juli', name: 'Juli', avatar: '/photo_master_juli.png' },
+     yuliia: { id: 'yuliia', name: 'Yuliia', avatar: '/photo_master_yuliia.png' },
      // Add new master here
    }
    ```

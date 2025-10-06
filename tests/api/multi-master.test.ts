@@ -141,11 +141,11 @@ describe('Multi-Master API Support', () => {
     })
 
     it('should not invalidate cache for other masters', () => {
-      // When Olga's data changes, Juli's cache should remain intact
+      // When Olga's data changes, Yuliia's cache should remain intact
       const olgaKey = 'procedures:v1:olga'
-      const juliKey = 'procedures:v1:juli'
+      const yuliiaKey = 'procedures:v1:yuliia'
       
-      expect(olgaKey).not.toBe(juliKey)
+      expect(olgaKey).not.toBe(yuliiaKey)
     })
   })
 })
@@ -155,9 +155,9 @@ describe('Server-Side Master Configuration', () => {
     // These should be defined in .env.example
     const requiredEnvVars = [
       'GOOGLE_CALENDAR_ID',       // Olga
-      'GOOGLE_CALENDAR_ID_JULI',  // Juli
+      'GOOGLE_CALENDAR_ID_YULIIA',  // Yuliia
       'GOOGLE_SHEET_ID',          // Olga
-      'GOOGLE_SHEET_ID_JULI',     // Juli
+      'GOOGLE_SHEET_ID_YULIIA',     // Yuliia
     ]
 
     // This is a documentation test - actual env vars are checked at runtime
@@ -169,11 +169,11 @@ describe('Master Context Integration', () => {
   it('should include masterId in all React Query keys', () => {
     const queryKeys = [
       ['procedures', 'olga'],
-      ['procedures', 'juli'],
+      ['procedures', 'yuliia'],
       ['availability', 'olga', '2024-01-15'],
-      ['availability', 'juli', '2024-01-15'],
+      ['availability', 'yuliia', '2024-01-15'],
       ['day-slots', 'olga', '2024-01-15', 'proc-1'],
-      ['day-slots', 'juli', '2024-01-15', 'proc-1'],
+      ['day-slots', 'yuliia', '2024-01-15', 'proc-1'],
     ]
 
     // All query keys should include masterId as second element
@@ -183,12 +183,12 @@ describe('Master Context Integration', () => {
   })
 
   it('should invalidate only current master queries on change', () => {
-    // When switching from Olga to Juli:
+    // When switching from Olga to Yuliia:
     // - Should NOT invalidate Olga's cached data
-    // - Should load Juli's data (either from cache or fetch)
+    // - Should load Yuliia's data (either from cache or fetch)
     const olgaKey = ['procedures', 'olga']
-    const juliKey = ['procedures', 'juli']
+    const yuliiaKey = ['procedures', 'yuliia']
     
-    expect(olgaKey[1]).not.toBe(juliKey[1])
+    expect(olgaKey[1]).not.toBe(yuliiaKey[1])
   })
 })

@@ -10,7 +10,7 @@ export interface Master {
 /**
  * Valid master IDs as union type
  */
-export type MasterId = 'olga' | 'juli'
+export type MasterId = 'olga' | 'yuliia'
 
 /**
  * Client-safe master configuration
@@ -23,17 +23,17 @@ export const MASTERS: Record<MasterId, Master> = {
     name: 'Olga',
     avatar: '/photo_master_olga.png',
   },
-  juli: {
-    id: 'juli',
-    name: 'Juli',
-    avatar: '/photo_master_juli.png',
+  yuliia: {
+    id: 'yuliia',
+    name: 'Yuliia',
+    avatar: '/photo_master_yuliia.png',
   },
 } as const
 
 /**
  * Array of all master IDs for iteration
  */
-export const MASTER_IDS: readonly MasterId[] = ['olga', 'juli'] as const
+export const MASTER_IDS: readonly MasterId[] = ['olga', 'yuliia'] as const
 
 /**
  * Default master (fallback)

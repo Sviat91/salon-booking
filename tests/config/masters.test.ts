@@ -23,17 +23,17 @@ describe('Master Configuration', () => {
       expect(MASTERS.olga.avatar).toBe('/photo_master_olga.png')
     })
 
-    it('should have juli master configured', () => {
-      expect(MASTERS.juli).toBeDefined()
-      expect(MASTERS.juli.id).toBe('juli')
-      expect(MASTERS.juli.name).toBe('Juli')
-      expect(MASTERS.juli.avatar).toBe('/photo_master_juli.png')
+    it('should have yuliia master configured', () => {
+      expect(MASTERS.yuliia).toBeDefined()
+      expect(MASTERS.yuliia.id).toBe('yuliia')
+      expect(MASTERS.yuliia.name).toBe('Yuliia')
+      expect(MASTERS.yuliia.avatar).toBe('/photo_master_yuliia.png')
     })
   })
 
   describe('MASTER_IDS constant', () => {
     it('should contain both master IDs', () => {
-      expect(MASTER_IDS).toEqual(['olga', 'juli'])
+      expect(MASTER_IDS).toEqual(['olga', 'yuliia'])
     })
 
     it('should be readonly', () => {
@@ -50,7 +50,7 @@ describe('Master Configuration', () => {
   describe('isValidMasterId()', () => {
     it('should return true for valid master IDs', () => {
       expect(isValidMasterId('olga')).toBe(true)
-      expect(isValidMasterId('juli')).toBe(true)
+      expect(isValidMasterId('yuliia')).toBe(true)
     })
 
     it('should return false for invalid master IDs', () => {
@@ -73,9 +73,9 @@ describe('Master Configuration', () => {
       expect(olga.id).toBe('olga')
       expect(olga.name).toBe('Olga')
 
-      const juli = getMasterById('juli')
-      expect(juli.id).toBe('juli')
-      expect(juli.name).toBe('Juli')
+      const yuliia = getMasterById('yuliia')
+      expect(yuliia.id).toBe('yuliia')
+      expect(yuliia.name).toBe('Yuliia')
     })
 
     it('should throw error for invalid ID', () => {
@@ -89,8 +89,8 @@ describe('Master Configuration', () => {
       const olga = getMasterByIdSafe('olga')
       expect(olga.id).toBe('olga')
 
-      const juli = getMasterByIdSafe('juli')
-      expect(juli.id).toBe('juli')
+      const yuliia = getMasterByIdSafe('yuliia')
+      expect(yuliia.id).toBe('yuliia')
     })
 
     it('should return default master for invalid ID', () => {
@@ -113,12 +113,12 @@ describe('Master Configuration', () => {
       const masters = getAllMasters()
       expect(masters).toHaveLength(2)
       expect(masters[0].id).toBe('olga')
-      expect(masters[1].id).toBe('juli')
+      expect(masters[1].id).toBe('yuliia')
     })
 
     it('should return masters in correct order', () => {
       const masters = getAllMasters()
-      expect(masters.map(m => m.id)).toEqual(['olga', 'juli'])
+      expect(masters.map(m => m.id)).toEqual(['olga', 'yuliia'])
     })
   })
 
