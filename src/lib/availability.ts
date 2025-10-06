@@ -45,9 +45,10 @@ function minusBusy(open: Range[], busy: Range[]): Range[] {
 
 function isoDate(d: Date) { return format(d, 'yyyy-MM-dd') }
 
-export async function getAvailableDays(fromISO: string, untilISO: string, minDuration: number, opts?: { debug?: boolean }) {
-  const weekly = await readWeekly()
-  const exceptions = await readExceptions()
+export async function getAvailableDays(fromISO: string, untilISO: string, minDuration: number, opts?: { debug?: boolean; masterId?: string }) {
+  const masterId = opts?.masterId
+  const weekly = await readWeekly(masterId)
+  const exceptions = await readExceptions(masterId)
 
   // Fetch busy in chunks (max 30 days per request) to avoid API range limits
   const busy: { start: string; end: string }[] = []
@@ -56,7 +57,7 @@ export async function getAvailableDays(fromISO: string, untilISO: string, minDur
   for (let start = new Date(from); start <= until; ) {
     const chunkStart = new Date(start)
     const chunkEnd = new Date(Math.min(until.getTime(), start.getTime() + 29 * 24 * 3600 * 1000))
-    const part = await freeBusy(chunkStart.toISOString(), chunkEnd.toISOString())
+    const part = await freeBusy(chunkStart.toISOString(), chunkEnd.toISOString(), masterId)
     busy.push(...part)
     // next day after chunkEnd
     const next = new Date(chunkEnd); next.setUTCDate(next.getUTCDate() + 1); next.setUTCHours(0,0,0,0)
@@ -116,9 +117,9 @@ export async function getAvailableDays(fromISO: string, untilISO: string, minDur
 }
 
 // Generate concrete slots for a specific date in Europe/Warsaw
-export async function getDaySlots(dateISO: string, minDuration: number, stepMin: number = 15) {
-  const weekly = await readWeekly()
-  const exceptions = await readExceptions()
+export async function getDaySlots(dateISO: string, minDuration: number, stepMin: number = 15, masterId?: string) {
+  const weekly = await readWeekly(masterId)
+  const exceptions = await readExceptions(masterId)
 
   // Determine working hours for the specific date
   const base = new Date(dateISO + 'T00:00:00')
@@ -138,7 +139,7 @@ export async function getDaySlots(dateISO: string, minDuration: number, stepMin:
   // Query busy periods only for this day (in UTC, but interpreted with TZ on the API side)
   const dayStartUtc = fromZonedTime(dateISO + 'T00:00:00', TZ).toISOString()
   const dayEndUtc = fromZonedTime(dateISO + 'T23:59:59', TZ).toISOString()
-  const busy = await freeBusy(dayStartUtc, dayEndUtc)
+  const busy = await freeBusy(dayStartUtc, dayEndUtc, masterId)
 
   // Convert busy intervals to minutes of the local day and clamp to [0..1440]
   const clamp = (x: number, a: number, b: number) => Math.max(a, Math.min(b, x))

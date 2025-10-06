@@ -93,10 +93,11 @@ function parseProcedures(rows: any[][]): Procedure[] {
 export type DayRange = { start: string; end: string }
 export type WeeklyMap = Record<string, { hours: string; isDayOff: boolean }>
 
-export async function readWeekly(): Promise<WeeklyMap> {
+export async function readWeekly(masterId?: string): Promise<WeeklyMap> {
   const { sheets } = getClients()
+  const sheetId = getMasterSheetIdSafe(masterId)
   const range = `${config.SHEET_TABS.WEEKLY}!A1:Z1000`
-  const res = await sheets.spreadsheets.values.get({ spreadsheetId: config.GOOGLE_SHEET_ID, range })
+  const res = await sheets.spreadsheets.values.get({ spreadsheetId: sheetId, range })
   const rows = res.data.values ?? []
   if (!rows.length) return {}
 
@@ -133,10 +134,11 @@ export async function readWeekly(): Promise<WeeklyMap> {
 
 export type ExceptionsMap = Record<string, { hours: string; isDayOff: boolean }>
 
-export async function readExceptions(): Promise<ExceptionsMap> {
+export async function readExceptions(masterId?: string): Promise<ExceptionsMap> {
   const { sheets } = getClients()
+  const sheetId = getMasterSheetIdSafe(masterId)
   const range = `${config.SHEET_TABS.EXCEPTIONS}!A1:Z1000`
-  const res = await sheets.spreadsheets.values.get({ spreadsheetId: config.GOOGLE_SHEET_ID, range })
+  const res = await sheets.spreadsheets.values.get({ spreadsheetId: sheetId, range })
   const rows = res.data.values ?? []
   if (!rows.length) return {}
 

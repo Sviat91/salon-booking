@@ -1,5 +1,5 @@
 import { getClients } from './auth'
-import { config } from '../env'
+import { getMasterCalendarIdSafe } from '@/config/masters.server'
 
 export type BusyInterval = { start: string; end: string; id?: string } // ISO strings
 
@@ -15,17 +15,18 @@ export interface BookingData {
   eventId: string
 }
 
-export async function freeBusy(timeMin: string, timeMax: string) {
+export async function freeBusy(timeMin: string, timeMax: string, masterId?: string) {
   const { calendar } = getClients()
+  const calendarId = getMasterCalendarIdSafe(masterId)
   const res = await calendar.freebusy.query({
     requestBody: {
       timeMin,
       timeMax,
       timeZone: 'Europe/Warsaw',
-      items: [{ id: config.GOOGLE_CALENDAR_ID }],
+      items: [{ id: calendarId }],
     },
   })
-  const cal = res.data.calendars?.[config.GOOGLE_CALENDAR_ID]
+  const cal = res.data.calendars?.[calendarId]
   const busy = (cal?.busy ?? []) as BusyInterval[]
   return busy
 }
@@ -34,10 +35,11 @@ export async function freeBusy(timeMin: string, timeMax: string) {
  * Get detailed busy times with event IDs for a date range
  * This is more detailed than freeBusy() and includes event IDs
  */
-export async function getBusyTimesWithIds(timeMin: string, timeMax: string): Promise<BusyInterval[]> {
+export async function getBusyTimesWithIds(timeMin: string, timeMax: string, masterId?: string): Promise<BusyInterval[]> {
   const { calendar } = getClients()
+  const calendarId = getMasterCalendarIdSafe(masterId)
   const res = await calendar.events.list({
-    calendarId: config.GOOGLE_CALENDAR_ID,
+    calendarId,
     timeMin,
     timeMax,
     timeZone: 'Europe/Warsaw',
@@ -61,10 +63,12 @@ export async function createEvent(params: {
   summary: string
   description?: string
   attendees?: { email: string }[]
+  masterId?: string
 }) {
   const { calendar } = getClients()
+  const calendarId = getMasterCalendarIdSafe(params.masterId)
   const res = await calendar.events.insert({
-    calendarId: config.GOOGLE_CALENDAR_ID,
+    calendarId,
     requestBody: {
       summary: params.summary,
       description: params.description,
