@@ -4,6 +4,7 @@ import { readProcedures } from './google/sheets'
 import { verifyBookingAccess, canModifyBooking, BookingErrors, type UserAccessCriteria } from './booking-helpers'
 import { config } from './env'
 import { getLogger } from './logger'
+import { getMasterCalendarIdSafe } from '@/config/masters.server'
 
 const log = getLogger({ module: 'booking.modification.helpers' })
 
@@ -13,7 +14,8 @@ const log = getLogger({ module: 'booking.modification.helpers' })
 export async function getAndValidateBooking(
   eventId: string,
   userCriteria: UserAccessCriteria,
-  ip: string
+  ip: string,
+  masterId?: string,
 ) {
   const { calendar } = getClients()
 
@@ -21,7 +23,7 @@ export async function getAndValidateBooking(
   let existingEvent
   try {
     const response = await calendar.events.get({
-      calendarId: config.GOOGLE_CALENDAR_ID,
+      calendarId: getMasterCalendarIdSafe(masterId),
       eventId: eventId,
     })
     existingEvent = response.data
@@ -94,7 +96,8 @@ export async function updateBookingInCalendar(
     startISO: string
     endISO: string
   },
-  ip: string
+  ip: string,
+  masterId?: string,
 ) {
   try {
     const { calendar } = getClients()
@@ -107,7 +110,7 @@ export async function updateBookingInCalendar(
     }
 
     await calendar.events.update({
-      calendarId: config.GOOGLE_CALENDAR_ID,
+      calendarId: getMasterCalendarIdSafe(masterId),
       eventId: eventId,
       requestBody: eventUpdate,
     })
@@ -130,13 +133,14 @@ export async function updateBookingInCalendar(
  */
 export async function deleteBookingFromCalendar(
   eventId: string,
-  ip: string
+  ip: string,
+  masterId?: string,
 ) {
   try {
     const { calendar } = getClients()
 
     await calendar.events.delete({
-      calendarId: config.GOOGLE_CALENDAR_ID,
+      calendarId: getMasterCalendarIdSafe(masterId),
       eventId: eventId,
     })
 
@@ -161,11 +165,12 @@ export async function validateTimeSlotAvailability(
   newEndISO: string,
   existingBooking: { startTime: Date, endTime: Date },
   ip: string,
-  eventId: string
+  eventId: string,
+  masterId?: string,
 ) {
   try {
     // Use getBusyTimesWithIds to get event IDs for proper filtering
-    const busy = await getBusyTimesWithIds(newStartISO, newEndISO)
+    const busy = await getBusyTimesWithIds(newStartISO, newEndISO, masterId)
     
     // Filter out the current booking by eventId (not by time!)
     // This is crucial for shift-back scenarios where time changes
@@ -236,9 +241,9 @@ export async function validateTimeSlotAvailability(
 /**
  * Get procedure info by ID
  */
-export async function getProcedureInfo(procedureId: string) {
+export async function getProcedureInfo(procedureId: string, masterId?: string) {
   try {
-    const procedures = await readProcedures()
+    const procedures = await readProcedures(masterId)
     const procedure = procedures.find(p => p.id === procedureId)
     
     if (!procedure) {

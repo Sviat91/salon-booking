@@ -5,10 +5,12 @@ Next.js application for face massage booking with GDPR compliance features.
 ## Features
 
 - 📅 **Booking System**: Google Calendar integration for appointment scheduling
+- 👥 **Multi-Master Support**: Separate calendars and schedules for multiple beauty masters
 - 🛡️ **GDPR Compliance**: Data export, erasure, and consent management
 - 🔒 **Security**: Turnstile protection, rate limiting, data masking
 - 🌙 **Dark/Light Theme**: Automatic theme switching with localStorage persistence
 - 📱 **Mobile Responsive**: Optimized for all device sizes
+- ✨ **Smooth Animations**: Framer Motion transitions with reduced motion support
 - 💬 **Support System**: Secure contact form with N8N integration
 
 ## Setup
@@ -20,8 +22,16 @@ Copy `.env.example` to `.env.local` and configure:
 ```bash
 # Google Services
 GOOGLE_APPLICATION_CREDENTIALS_JSON=<service_account_json_or_base64>
-GOOGLE_CALENDAR_ID=<calendar_id>
-GOOGLE_SHEET_ID=<procedures_sheet_id>
+
+# Master 1 (Olga) - Default
+GOOGLE_CALENDAR_ID=<olga_calendar_id>
+GOOGLE_SHEET_ID=<olga_procedures_sheet_id>
+
+# Master 2 (Juli)
+GOOGLE_CALENDAR_ID_JULI=<juli_calendar_id>
+GOOGLE_SHEET_ID_JULI=<juli_procedures_sheet_id>
+
+# Shared Consent Tracking
 USER_CONSENTS_GOOGLE_SHEET_ID=<consent_tracking_sheet_id>
 
 # Redis Cache (Upstash)
@@ -37,6 +47,53 @@ SENTRY_DSN=<sentry_dsn>
 N8N_WEBHOOK_URL=<n8n_support_webhook_url>
 N8N_SECRET_TOKEN=<n8n_bearer_token>
 ```
+
+### Multi-Master Configuration
+
+The application supports multiple beauty masters, each with their own:
+- Google Calendar for bookings
+- Google Sheet for procedures and schedule
+- Dedicated URL route (`/olga`, `/juli`)
+- Separate cache entries for data isolation
+
+#### Adding a New Master
+
+1. **Update Configuration** (`src/config/masters.ts`):
+   ```typescript
+   export const MASTERS = {
+     olga: { id: 'olga', name: 'Olga', avatar: '/photo_master_olga.png' },
+     juli: { id: 'juli', name: 'Juli', avatar: '/photo_master_juli.png' },
+     // Add new master here
+   }
+   ```
+
+2. **Add Environment Variables**:
+   ```bash
+   GOOGLE_CALENDAR_ID_NEWMASTER=<calendar_id>
+   GOOGLE_SHEET_ID_NEWMASTER=<sheet_id>
+   ```
+
+3. **Update Server Config** (`src/config/masters.server.ts`):
+   Add case for new master in `getMasterCalendarId()` and `getMasterSheetId()`
+
+4. **Add Master Photo**:
+   Place photo in `/public/photo_master_<name>.png`
+
+#### Master Selection Flow
+
+1. User visits landing page (`/`)
+2. Selects master from photo cards
+3. Selection saved to localStorage
+4. Redirects to master-specific page (`/[masterId]`)
+5. All API calls include `masterId` parameter
+
+#### Cache Strategy
+
+Each master has isolated cache entries:
+- `procedures:v1:olga` vs `procedures:v1:juli`
+- `availability:olga:...` vs `availability:juli:...`
+- Switching masters doesn't invalidate other master's cache
+- Prefetching on landing page for instant loading
 
 ### Google Sheets Setup
 

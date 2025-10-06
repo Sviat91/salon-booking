@@ -129,6 +129,7 @@ const BookingManagement = forwardRef<BookingManagementRef, BookingManagementProp
       onDateReset,
       onCalendarModeChange,
       onProcedureChange,
+      masterId,
     })
 
     // Initialize handlers hook

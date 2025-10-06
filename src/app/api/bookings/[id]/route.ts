@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { getClients } from '../../../../lib/google/auth'
 import { config } from '../../../../lib/env'
+import { getMasterCalendarIdSafe } from '@/config/masters.server'
 import { 
   updateBookingInCalendar,
   validateTimeSlotAvailability,
@@ -22,6 +23,8 @@ const UpdateBookingSchema = z.object({
   newStartISO: z.string().optional(),
   newEndISO: z.string().optional(),
   newProcedureId: z.string().optional(),
+  // Master selection
+  masterId: z.string().optional(),
 }).refine(
   (data) => data.newStartISO || data.newEndISO || data.newProcedureId,
   { message: 'At least one change (newStartISO, newEndISO, or newProcedureId) must be provided' }
@@ -38,7 +41,7 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  let body: z.infer<typeof UpdateBookingSchema> | null = null
+  let body: (z.infer<typeof UpdateBookingSchema> & { masterId?: string }) | null = null
   let ip = '0.0.0.0'
 
   try {
@@ -62,7 +65,7 @@ export async function PATCH(
     let existingEvent
     try {
       existingEvent = await calendar.events.get({
-        calendarId: config.GOOGLE_CALENDAR_ID,
+        calendarId: getMasterCalendarIdSafe(body.masterId),
         eventId: eventId,
       })
     } catch (error: any) {
@@ -93,7 +96,7 @@ export async function PATCH(
 
     // If procedure is changing, get new procedure info and update duration
     if (body.newProcedureId) {
-      const procedureResult = await getProcedureInfo(body.newProcedureId)
+      const procedureResult = await getProcedureInfo(body.newProcedureId, body.masterId)
       if (!procedureResult.success) {
         return NextResponse.json(
           procedureResult.error,
@@ -128,7 +131,8 @@ export async function PATCH(
       newEndISO,
       existingBooking,
       ip,
-      eventId
+      eventId,
+      body.masterId,
     )
 
     if (!availabilityResult.success) {
@@ -147,7 +151,8 @@ export async function PATCH(
         startISO: newStartISO,
         endISO: newEndISO,
       },
-      ip
+      ip,
+      body.masterId,
     )
 
     if (!updateResult.success) {

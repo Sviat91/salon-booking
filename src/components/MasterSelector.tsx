@@ -65,6 +65,7 @@ export default function MasterSelector() {
             }}
             whileTap={prefersReducedMotion ? {} : { scale: 0.95 }}
             onClick={() => handleMasterSelect(master.id as MasterId)}
+            aria-label={`Zarezerwuj wizytę u ${master.name}`}
             className="group relative w-full max-w-[260px] aspect-square rounded-3xl overflow-hidden shadow-2xl focus:outline-none focus:ring-4 focus:ring-accent/50 transition-all duration-300"
           >
             {/* Master Photo with layoutId for shared element transition */}

@@ -25,6 +25,7 @@ const UpdateTimeSchema = z.object({
   // New time (both required together)
   newStartISO: z.string(),
   newEndISO: z.string(),
+  masterId: z.string().optional(),
 })
 
 /**
@@ -41,7 +42,7 @@ export async function POST(req: NextRequest) {
     // Validate request body
     const validatedData = UpdateTimeSchema.parse(body)
     
-    const { eventId, procedureName, firstName, lastName, phone, email, price, newStartISO, newEndISO } = validatedData
+    const { eventId, procedureName, firstName, lastName, phone, email, price, newStartISO, newEndISO, masterId } = validatedData
 
     // NO TURNSTILE VALIDATION - user already verified during search
     log.info('✅ Skipping Turnstile (user already verified during search)')
@@ -62,7 +63,8 @@ export async function POST(req: NextRequest) {
         startISO: newStartISO,
         endISO: newEndISO,
       },
-      req.ip || '127.0.0.1'
+      req.ip || '127.0.0.1',
+      masterId,
     )
 
     if (!success) {

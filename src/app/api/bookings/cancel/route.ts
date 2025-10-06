@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { validateTurnstileForAPI } from '../../../../lib/turnstile'
 import { getClients } from '../../../../lib/google/auth'
 import { config } from '../../../../lib/env'
+import { getMasterCalendarIdSafe } from '@/config/masters.server'
 import { getLogger } from '../../../../lib/logger'
 import { reportError } from '../../../../lib/sentry'
 import { cacheGet, cacheDel } from '../../../../lib/cache'
@@ -20,6 +21,7 @@ const CancelBookingSchema = z.object({
   firstName: z.string().min(1).max(50),
   phone: z.string().min(5).max(20),
   email: z.string().email().optional().or(z.literal('')),
+  masterId: z.string().optional(),
 })
 
 // Removed CachedBooking interface - no longer needed with direct calendar approach
@@ -32,13 +34,14 @@ export async function POST(req: NextRequest) {
     body = CancelBookingSchema.parse(await req.json())
     ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || ip
 
-    const { eventId, firstName, phone, email, turnstileToken } = body
+    const { eventId, firstName, phone, email, turnstileToken, masterId } = body
     
     log.info({ 
       ip, 
       eventId,
       firstName,
       phone: phone.replace(/\D/g, '').slice(-4), // Only last 4 digits for privacy
+      masterId,
     }, 'CANCEL REQUEST: Booking cancellation request received')
 
     // Skip Turnstile validation for cancellation - user was already verified during search
@@ -52,7 +55,7 @@ export async function POST(req: NextRequest) {
     try {
       // First, get the event to verify it contains user's data (security check)
       const eventResponse = await calendar.events.get({
-        calendarId: config.GOOGLE_CALENDAR_ID,
+        calendarId: getMasterCalendarIdSafe(masterId),
         eventId,
       })
       
@@ -87,7 +90,7 @@ export async function POST(req: NextRequest) {
       
       // Now delete the event
       await calendar.events.delete({
-        calendarId: config.GOOGLE_CALENDAR_ID,
+        calendarId: getMasterCalendarIdSafe(masterId),
         eventId,
       })
       

@@ -86,6 +86,7 @@ export async function searchBookings(
   procedures: ProcedureOption[],
   turnstileToken?: string,
   dateRange?: { start: string; end: string },
+  masterId?: string,
 ): Promise<BookingResult[]> {
   const { firstName, lastName } = splitFullName(form.fullName)
   
@@ -95,6 +96,9 @@ export async function searchBookings(
   // Add force=true to bypass cache for new searches
   // Add dateRange if provided for extended search
   let url = '/api/bookings/all?force=true'
+  if (masterId) {
+    url += `&masterId=${encodeURIComponent(masterId)}`
+  }
   if (dateRange) {
     // API expects 'start' and 'end' parameters (not 'startDate' and 'endDate')
     url += `&start=${dateRange.start}&end=${dateRange.end}`
@@ -193,6 +197,7 @@ export async function updateBooking(
     newSlot?: SlotSelection
   },
   turnstileToken?: string, // Not used anymore - kept for compatibility
+  masterId?: string,
 ): Promise<{ startTime?: string; endTime?: string; procedure?: string }> {
   // NO USER DATA - user already validated during search
   // We trust the eventId and only send changes
@@ -210,7 +215,7 @@ export async function updateBooking(
   const response = await fetch(`/api/bookings/${booking.eventId}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
+    body: JSON.stringify(masterId ? { ...body, masterId } : body),
   })
   
   if (!response.ok) {
@@ -234,6 +239,7 @@ export async function updateBooking(
 export async function checkProcedureExtension(
   booking: BookingResult,
   newProcedureId: string,
+  masterId?: string,
 ): Promise<{
   result: {
     status: 'can_extend' | 'can_shift_back' | 'no_availability'
@@ -267,7 +273,7 @@ export async function checkProcedureExtension(
   const response = await fetch(`/api/bookings/${booking.eventId}/check-extension`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
+    body: JSON.stringify(masterId ? { ...body, masterId } : body),
   })
 
   if (!response.ok) {
@@ -288,6 +294,7 @@ export async function checkProcedureExtension(
 export async function updateBookingProcedure(
   booking: BookingResult,
   newProcedureId: string,
+  masterId?: string,
 ): Promise<void> {
   clientLog.info('🔄 Updating booking procedure (no Turnstile):', {
     eventId: booking.eventId,
@@ -312,7 +319,7 @@ export async function updateBookingProcedure(
   const response = await fetch('/api/bookings/update-procedure', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
+    body: JSON.stringify(masterId ? { ...body, masterId } : body),
   })
   
   if (!response.ok) {
@@ -332,6 +339,7 @@ export async function updateBookingProcedure(
 export async function updateBookingTime(
   booking: BookingResult,
   newSlot: SlotSelection,
+  masterId?: string,
 ): Promise<void> {
   clientLog.info('🔄 Updating booking time (no Turnstile):', {
     eventId: booking.eventId,
@@ -357,7 +365,7 @@ export async function updateBookingTime(
   const response = await fetch('/api/bookings/update-time', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
+    body: JSON.stringify(masterId ? { ...body, masterId } : body),
   })
   
   if (!response.ok) {
@@ -374,7 +382,7 @@ export async function updateBookingTime(
   clientLog.info('✅ Booking time updated successfully')
 }
 
-export async function cancelBooking(booking: BookingResult): Promise<void> {
+export async function cancelBooking(booking: BookingResult, masterId?: string): Promise<void> {
   // No Turnstile needed for cancellation - user was already verified during search
   const body = {
     eventId: booking.eventId,
@@ -389,7 +397,7 @@ export async function cancelBooking(booking: BookingResult): Promise<void> {
   const response = await fetch('/api/bookings/cancel', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
+    body: JSON.stringify(masterId ? { ...body, masterId } : body),
   })
   
   if (!response.ok) {

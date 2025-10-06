@@ -29,6 +29,7 @@ const UpdateProcedureSchema = z.object({
   
   // New procedure
   newProcedureId: z.string().min(1, 'New procedure ID is required'),
+  masterId: z.string().optional(),
 })
 
 /**
@@ -57,7 +58,8 @@ export async function POST(req: NextRequest) {
       email, 
       currentStartISO,
       newProcedureId, 
-      turnstileToken 
+      turnstileToken,
+      masterId,
     } = validatedData
 
     // Validate Turnstile if token provided
@@ -75,7 +77,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Get new procedure info
-    const procedureResult = await getProcedureInfo(newProcedureId)
+    const procedureResult = await getProcedureInfo(newProcedureId, masterId)
     if (!procedureResult.success || !procedureResult.procedure) {
       log.error({ newProcedureId, message: '❌ Failed to fetch procedure' })
       return NextResponse.json(
@@ -116,7 +118,8 @@ export async function POST(req: NextRequest) {
         startISO: currentStartISO, // Keep start time
         endISO: newEndISO, // Adjust end time for new duration
       },
-      req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || '127.0.0.1'
+      req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || '127.0.0.1',
+      masterId,
     )
 
     if (!updateResult.success) {

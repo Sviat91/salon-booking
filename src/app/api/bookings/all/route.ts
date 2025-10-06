@@ -6,6 +6,7 @@ import { config } from '../../../../lib/env'
 import { getLogger } from '../../../../lib/logger'
 import { reportError } from '../../../../lib/sentry'
 import { cacheGet, cacheSet } from '../../../../lib/cache'
+import { getMasterCalendarIdSafe } from '@/config/masters.server'
 
 export const runtime = 'nodejs'
 
@@ -31,6 +32,7 @@ export async function GET(req: NextRequest) {
     const startParam = searchParams.get('start')
     const endParam = searchParams.get('end')
     const forceRefresh = searchParams.get('force') === 'true'
+    const masterId = searchParams.get('masterId') || undefined
 
     // Default to 90 days from now if no dates provided
     // Round to current day for stable cache keys
@@ -45,10 +47,10 @@ export async function GET(req: NextRequest) {
     const startISO = startDate.toISOString()
     const endISO = endDate.toISOString()
 
-    log.debug({ startISO, endISO }, 'Fetching all calendar events')
+    log.debug({ startISO, endISO, masterId }, 'Fetching all calendar events')
 
     // Create stable cache key (same for all requests on the same day)
-    const cacheKey = `calendar:events:${startISO}:${endISO}`
+    const cacheKey = `calendar:events:${startISO}:${endISO}:${masterId || 'default'}`
     
     // Try to get from cache first (unless force refresh requested)
     if (!forceRefresh) {
@@ -71,7 +73,7 @@ export async function GET(req: NextRequest) {
     const { calendar } = getClients()
     
     const response = await calendar.events.list({
-      calendarId: config.GOOGLE_CALENDAR_ID,
+      calendarId: getMasterCalendarIdSafe(masterId),
       timeMin: startISO,
       timeMax: endISO,
       singleEvents: true,

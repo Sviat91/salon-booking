@@ -202,6 +202,7 @@ export async function getAvailableSlotsForRebooking(options: {
     endTime: Date
   }
   maxSlots?: number // Limit results for performance
+  masterId?: string
 }): Promise<TimeSlot[]> {
   const { dateFrom, dateTo, procedureDurationMin, excludeBooking, maxSlots = 50 } = options
   
@@ -217,7 +218,7 @@ export async function getAvailableSlotsForRebooking(options: {
     try {
       // Use existing getDaySlots function to get available slots for this day
       // This respects the master's schedule from Google Sheets (weekly + exceptions)
-      const dayResult = await getDaySlots(dateISO, procedureDurationMin, 15) // 15min step
+      const dayResult = await getDaySlots(dateISO, procedureDurationMin, 15, options.masterId) // 15min step
       const daySlots = dayResult.slots || []
       
       // Convert to TimeSlot format and filter out excluded booking
@@ -263,9 +264,9 @@ export async function getAvailableSlotsForRebooking(options: {
 /**
  * Get procedure duration by ID
  */
-export async function getProcedureDuration(procedureId?: string): Promise<number> {
+export async function getProcedureDuration(procedureId?: string, masterId?: string): Promise<number> {
   try {
-    const procedures = await readProcedures()
+    const procedures = await readProcedures(masterId)
     
     if (procedureId) {
       const procedure = procedures.find(p => p.id === procedureId)

@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useRef } from 'react'
 import { LayoutGroup } from 'framer-motion'
 import { MasterProvider } from '@/contexts/MasterContext'
+import { ErrorBoundary } from '@/components/ErrorBoundary'
 
 export default function Providers({ children }: { children: React.ReactNode }) {
   const clientRef = useRef<QueryClient>()
@@ -19,13 +20,15 @@ export default function Providers({ children }: { children: React.ReactNode }) {
   // Prefetch moved to landing page (page.tsx) - prefetches for BOTH masters
 
   return (
-    <QueryClientProvider client={clientRef.current}>
-      <MasterProvider>
-        <LayoutGroup>
-          {children}
-        </LayoutGroup>
-      </MasterProvider>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={clientRef.current}>
+        <MasterProvider>
+          <LayoutGroup>
+            {children}
+          </LayoutGroup>
+        </MasterProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   )
 }
 

@@ -11,8 +11,9 @@ import {
   BookingErrors,
   type UserAccessCriteria 
 } from '../../../../../lib/booking-helpers'
-import { readProcedures } from '../../../../../lib/google/sheets'
+import { readProcedures, readWeekly, readExceptions } from '../../../../../lib/google/sheets'
 import { config } from '../../../../../lib/env'
+import { getMasterCalendarIdSafe } from '@/config/masters.server'
 import { getLogger } from '../../../../../lib/logger'
 import { reportError } from '../../../../../lib/sentry'
 
@@ -35,6 +36,7 @@ const AvailabilityQuerySchema = z.object({
   dateFrom: z.string().optional(), // ISO date string, default: today
   dateTo: z.string().optional(),   // ISO date string, default: +2 weeks
   procedureId: z.string().optional(), // If changing procedure
+  masterId: z.string().optional(),
 })
 
 // Output types
@@ -100,7 +102,7 @@ export async function POST(
     let existingEvent
     try {
       const response = await calendar.events.get({
-        calendarId: config.GOOGLE_CALENDAR_ID,
+        calendarId: getMasterCalendarIdSafe(body.masterId),
         eventId: eventId,
       })
       existingEvent = response.data
@@ -168,10 +170,10 @@ export async function POST(
       
       if (body.procedureId) {
         // User wants to change procedure, get new duration
-        procedureDurationMin = await getProcedureDuration(body.procedureId)
+        procedureDurationMin = await getProcedureDuration(body.procedureId, body.masterId)
         if (procedureDurationMin === 60 && body.procedureId) {
           // Check if procedure actually exists
-          const procedures = await readProcedures()
+          const procedures = await readProcedures(body.masterId)
           const procedure = procedures.find(p => p.id === body.procedureId)
           if (!procedure) {
             return NextResponse.json(
@@ -196,7 +198,8 @@ export async function POST(
             startTime: existingBooking.startTime,
             endTime: existingBooking.endTime
           },
-          maxSlots: 50
+          maxSlots: 50,
+          masterId: body.masterId,
         })
 
         availabilityInfo.availableSlots = availableSlots

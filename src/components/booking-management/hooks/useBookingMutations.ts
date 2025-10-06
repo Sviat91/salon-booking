@@ -23,6 +23,7 @@ interface UseBookingMutationsProps {
   onDateReset?: () => void
   onCalendarModeChange?: (mode: 'booking' | 'editing') => void
   onProcedureChange?: (procedureId: string | undefined) => void
+  masterId?: string
 }
 
 export function useBookingMutations({
@@ -33,6 +34,7 @@ export function useBookingMutations({
   onDateReset,
   onCalendarModeChange,
   onProcedureChange,
+  masterId,
 }: UseBookingMutationsProps) {
   // Универсальная функция для сброса состояния календаря
   const resetCalendarState = useCallback(() => {
@@ -46,7 +48,7 @@ export function useBookingMutations({
   // Search mutation
   const searchMutation = useMutation<typeof state.results, MutationError, { turnstileToken?: string; dateRange?: { start: string; end: string } }>({
     mutationFn: async ({ turnstileToken: providedToken, dateRange } = {}) => {
-      return searchBookings(state.form, procedures, providedToken, dateRange)
+      return searchBookings(state.form, procedures, providedToken, dateRange, masterId)
     },
     onMutate: () => {
       actions.startSearch()
@@ -70,7 +72,7 @@ export function useBookingMutations({
       }
       clientLog.info('🔄 Updating procedure:', state.selectedProcedure.name_pl)
       // NO TURNSTILE - user already verified during search (like updateBookingTime)
-      await updateBookingProcedure(state.selectedBooking, state.selectedProcedure.id)
+      await updateBookingProcedure(state.selectedBooking, state.selectedProcedure.id, masterId)
     },
     onSuccess: () => {
       clientLog.info('✅ Procedure updated successfully')
@@ -104,7 +106,7 @@ export function useBookingMutations({
         throw new Error('Brak wybranej rezerwacji.')
       }
       const token = turnstileToken ?? undefined
-      return await updateBooking(state.selectedBooking, changes, token)
+      return await updateBooking(state.selectedBooking, changes, token, masterId)
     },
     onSuccess: (data) => {
       clientLog.info('✅ Combined procedure+time update successful', data)
@@ -152,7 +154,8 @@ export function useBookingMutations({
       
       await updateBookingTime(
         state.timeChangeSession.originalBooking,
-        state.timeChangeSession.newSlot
+        state.timeChangeSession.newSlot,
+        masterId,
       )
     },
     onSuccess: () => {
@@ -186,7 +189,7 @@ export function useBookingMutations({
       if (!state.selectedBooking) {
         throw new Error('Brak wybranej rezerwacji.')
       }
-      await cancelBooking(state.selectedBooking)
+      await cancelBooking(state.selectedBooking, masterId)
     },
     onSuccess: () => {
       actions.setActionError(null)
@@ -223,7 +226,8 @@ export function useBookingMutations({
       
       const response = await checkProcedureExtension(
         state.selectedBooking,
-        state.selectedProcedure.id
+        state.selectedProcedure.id,
+        masterId,
       )
       
       clientLog.info('✅ Extension check result:', response.result.status, response.result)

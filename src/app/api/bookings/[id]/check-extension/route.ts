@@ -17,6 +17,7 @@ const CheckExtensionSchema = z.object({
   currentStartISO: z.string(),
   currentEndISO: z.string(),
   newProcedureId: z.string().min(1),
+  masterId: z.string().optional(),
 })
 
 // Response types
@@ -72,7 +73,7 @@ export async function POST(
     })
 
     // Get new procedure info
-    const procedures = await readProcedures()
+    const procedures = await readProcedures(body.masterId)
     const newProcedure = procedures.find(p => p.id === body.newProcedureId)
     
     if (!newProcedure) {
@@ -117,7 +118,7 @@ export async function POST(
     const dayStart = fromZonedTime(dateISO + 'T05:00:00', TZ)
     const dayEnd = fromZonedTime(dateISO + 'T22:00:00', TZ)
 
-    const busyTimes = await getBusyTimesWithIds(dayStart.toISOString(), dayEnd.toISOString())
+    const busyTimes = await getBusyTimesWithIds(dayStart.toISOString(), dayEnd.toISOString(), body.masterId)
     
     log.info({
       dateISO,
@@ -133,8 +134,8 @@ export async function POST(
     })
 
     // STEP 4: Get working hours from Weekly + Exceptions
-    const weekly = await readWeekly()
-    const exceptions = await readExceptions()
+    const weekly = await readWeekly(body.masterId)
+    const exceptions = await readExceptions(body.masterId)
     
     const weekday = currentStartLocal.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase()
     
