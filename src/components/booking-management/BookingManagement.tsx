@@ -1,6 +1,7 @@
 "use client"
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import Card from '../ui/Card'
 import PanelRenderer from './PanelRenderer'
 import { useBookingManagementState } from './state/useBookingManagementState'
@@ -43,6 +44,7 @@ const BookingManagement = forwardRef<BookingManagementRef, BookingManagementProp
     ref,
   ) => {
     // Initialize state management and turnstile
+    const { t } = useTranslation()
     const { state, actions } = useBookingManagementState()
     const masterId = useSelectedMasterId()
     const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY as string | undefined
@@ -197,27 +199,25 @@ const BookingManagement = forwardRef<BookingManagementRef, BookingManagementProp
       <Card>
         <div className="space-y-3">
           {!state.isOpen ? (
-            // Закрытое состояние - обычная кнопка
             <>
-              <label className="block text-sm text-muted dark:text-dark-muted">Zarządzanie rezerwacją</label>
+              <label className="block text-sm text-muted dark:text-dark-muted">{t('booking.manageBooking')}</label>
               <button
                 type="button"
                 onClick={handleToggle}
                 className="btn btn-primary w-full"
               >
-                Kliknij, aby zarządzać rezerwacją
+                {t('booking.clickToManage')}
               </button>
             </>
           ) : (
-            // Открытое состояние - заголовок и кнопка закрытия в одной строке
             <div className="flex items-center justify-between">
-              <label className="text-sm text-muted dark:text-dark-muted">Zarządzanie rezerwacją</label>
+              <label className="text-sm text-muted dark:text-dark-muted">{t('booking.manageBooking')}</label>
               <button
                 type="button"
                 onClick={handleToggle}
                 className="text-xs text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-colors"
               >
-                Zamknij panel
+                {t('booking.closePanel', 'Zamknij panel')}
               </button>
             </div>
           )}

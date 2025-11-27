@@ -3,7 +3,11 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useRef } from 'react'
 import { LayoutGroup } from 'framer-motion'
 import { MasterProvider } from '@/contexts/MasterContext'
+import { LanguageProvider } from '@/contexts/LanguageContext'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
+
+// Initialize i18n
+import '@/lib/i18n'
 
 export default function Providers({ children }: { children: React.ReactNode }) {
   const clientRef = useRef<QueryClient>()
@@ -22,11 +26,13 @@ export default function Providers({ children }: { children: React.ReactNode }) {
   return (
     <ErrorBoundary>
       <QueryClientProvider client={clientRef.current}>
-        <MasterProvider>
-          <LayoutGroup>
-            {children}
-          </LayoutGroup>
-        </MasterProvider>
+        <LanguageProvider>
+          <MasterProvider>
+            <LayoutGroup>
+              {children}
+            </LayoutGroup>
+          </MasterProvider>
+        </LanguageProvider>
       </QueryClientProvider>
     </ErrorBoundary>
   )

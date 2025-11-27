@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { flushSync } from 'react-dom'
+import { useTranslation } from 'react-i18next'
 import { getAllMasters, type MasterId } from '@/config/masters'
 import { useMaster } from '@/contexts/MasterContext'
 import { useReducedMotion } from '@/hooks/useReducedMotion'
@@ -14,6 +15,7 @@ import { useReducedMotion } from '@/hooks/useReducedMotion'
  */
 export default function MasterSelector() {
   const router = useRouter()
+  const { t } = useTranslation()
   const { setMaster } = useMaster()
   const masters = getAllMasters()
   const prefersReducedMotion = useReducedMotion()
@@ -39,10 +41,10 @@ export default function MasterSelector() {
         className="text-center mb-6"
       >
         <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-text dark:text-dark-text mb-2">
-          Wybierz swojego specjalistę
+          {t('master.selectTitle')}
         </h1>
         <p className="text-base sm:text-lg text-muted dark:text-dark-muted">
-          Zarezerwuj wizytę u wybranego specjalisty
+          {t('master.selectSubtitle', 'Zarezerwuj wizytę u wybranego specjalisty')}
         </p>
       </motion.div>
 
@@ -65,7 +67,7 @@ export default function MasterSelector() {
             }}
             whileTap={prefersReducedMotion ? {} : { scale: 0.95 }}
             onClick={() => handleMasterSelect(master.id as MasterId)}
-            aria-label={`Zarezerwuj wizytę u ${master.name}`}
+            aria-label={t('master.bookWith', { name: master.name })}
             className="group relative w-full max-w-[260px] aspect-square rounded-3xl overflow-hidden shadow-2xl focus:outline-none focus:ring-4 focus:ring-accent/50 transition-all duration-300"
           >
             {/* Master Photo with layoutId for shared element transition */}
@@ -106,7 +108,7 @@ export default function MasterSelector() {
                 {master.name}
               </h2>
               <div className="flex items-center justify-center gap-2 text-white/90 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                <span className="text-sm font-medium">Zarezerwuj wizytę</span>
+                <span className="text-sm font-medium">{t('master.bookVisit', 'Zarezerwuj wizytę')}</span>
                 <svg 
                   className="w-5 h-5 transform group-hover:translate-x-1 transition-transform duration-300" 
                   fill="none" 
@@ -140,7 +142,7 @@ export default function MasterSelector() {
         }}
         className="mt-4 text-xs sm:text-sm text-muted dark:text-dark-muted text-center max-w-md px-4"
       >
-        Twój wybór zostanie zapamiętany dla wygodniejszego korzystania z systemu rezerwacji
+        {t('master.choiceRemembered', 'Twój wybór zostanie zapamiętany dla wygodniejszego korzystania z systemu rezerwacji')}
       </motion.p>
     </div>
   )

@@ -1,0 +1,156 @@
+{
+  "common": {
+    "loading": "Ładowanie…",
+    "cancel": "Anuluj",
+    "confirm": "Potwierdź",
+    "save": "Zapisz",
+    "back": "Powrót",
+    "close": "Zamknij",
+    "error": "Błąd",
+    "success": "Sukces",
+    "noData": "Brak danych",
+    "currency": "zł"
+  },
+  "master": {
+    "selectTitle": "Wybierz swojego specjalistę",
+    "selectSubtitle": "Zarezerwuj wizytę u wybranego specjalisty",
+    "bookWith": "Zarezerwuj wizytę u {{name}}",
+    "bookVisit": "Zarezerwuj wizytę",
+    "choiceRemembered": "Twój wybór zostanie zapamiętany dla wygodniejszego korzystania z systemu rezerwacji",
+    "yearsExperience": "lat doświadczenia"
+  },
+  "booking": {
+    "service": "Usługa",
+    "selectService": "Wybierz usługę",
+    "selectDate": "Wybierz datę",
+    "selectTime": "Wybierz godzinę",
+    "reservation": "Rezerwacja",
+    "reservationConfirmed": "Rezerwacja potwierdzona",
+    "book": "Zarezerwuj",
+    "bookVisit": "Zarezerwuj wizytę",
+    "preparing": "Przygotowanie...",
+    "slotTaken": "Ten termin jest już zajęty. Wybierz inny przedział.",
+    "bookingFailed": "Nie udało się zarezerwować. Wybierz inny termin i spróbuj ponownie.",
+    "confirmTurnstile": "Potwierdź weryfikację Turnstile i spróbuj ponownie.",
+    "minutes": "min",
+    "manageBooking": "Zarządzanie rezerwacją",
+    "clickToManage": "Kliknij, aby zarządzać rezerwacją",
+    "closePanel": "Zamknij panel"
+  },
+  "form": {
+    "name": "Imię i nazwisko",
+    "phone": "Telefon",
+    "email": "E-mail",
+    "emailOptional": "E-mail (opcjonalnie)",
+    "message": "Wiadomość",
+    "selectTopic": "Wybierz temat"
+  },
+  "validation": {
+    "nameRequired": "Imię jest wymagane",
+    "nameMinLength": "Imię musi mieć min. 2 znaki",
+    "phoneRequired": "Telefon jest wymagany",
+    "phoneInvalid": "Nieprawidłowy numer telefonu",
+    "emailInvalid": "Nieprawidłowy adres e-mail"
+  },
+  "consent": {
+    "confirmAndBook": "Potwierdź i zarezerwuj",
+    "dataProcessing": "Zgadzam się na przetwarzanie moich danych osobowych",
+    "terms": "Akceptuję regulamin usług",
+    "notifications": "Zgadzam się na otrzymywanie powiadomień"
+  },
+  "success": {
+    "title": "Rezerwacja potwierdzona",
+    "serviceLabel": "Usługa:",
+    "dateLabel": "Termin:",
+    "priceLabel": "Cena:",
+    "addressLabel": "Adres:",
+    "thankYou": "Dziękujemy, do zobaczenia!",
+    "close": "Zamknij"
+  },
+  "management": {
+    "searchTitle": "Zarządzaj rezerwacją",
+    "notFound": "Rezerwacja nie została znaleziona. Spróbuj wyszukać ponownie.",
+    "cancelled": "Rezerwacja została anulowana",
+    "selectChangeType": "Wybierz typ zmiany",
+    "changeDatetime": "Wybierz inną datę lub godzinę",
+    "changeProcedure": "Wybierz nowy zabieg lub wróć",
+    "selectNewProcedure": "Wybierz nową procedurę dla rezerwacji:",
+    "selectNewDatetime": "Wybierz nową datę i godzinę w kalendarzu.",
+    "selectDateAndTime": "Wybierz datę i godzinę",
+    "selectTimeFromList": "Wybierz godzinę z listy dostępnych terminów",
+    "selectDateFromCalendar": "Wybierz datę w kalendarzu po lewej stronie",
+    "confirmNewTerm": "Potwierdź nowy termin",
+    "confirmChange": "Potwierdź zmianę",
+    "confirmChanges": "Potwierdź zmiany",
+    "confirmChangesTitle": "Potwierdź zmiany rezerwacji:",
+    "saving": "Zapisywanie…",
+    "selectProcedure": "Wybierz procedurę",
+    "selectProcedureFromList": "Wybierz procedurę z listy powyżej, aby kontynuować.",
+    "selectNewTerm": "Wybierz nowy termin",
+    "confirmSameTime": "Potwierdź na ten sam czas",
+    "confirmAt": "Potwierdź na",
+    "selectNewTermInCalendar": "Wybierz nowy termin w kalendarzu używając przycisku poniżej.",
+    "cannotExtendToday": "Nie można wydłużyć wizyty na obecny dzień. Wybierz nowy termin z kalendarza.",
+    "selectDate": "Wybierz datę",
+    "selectTime": "Wybierz czas",
+    "selectNewDateAndTime": "Wybierz nową datę i czas w kalendarzu"
+  },
+  "support": {
+    "title": "Wsparcie",
+    "contactUs": "Skontaktuj się z nami",
+    "topics": {
+      "booking": "Rezerwacja",
+      "technical": "Problem techniczny",
+      "privacy": "Prywatność i dane",
+      "other": "Inne"
+    },
+    "serviceUnavailable": "Usługa tymczasowo niedostępna. Spróbuj później lub skontaktuj się bezpośrednio."
+  },
+  "gdpr": {
+    "exportTitle": "Eksport danych",
+    "eraseTitle": "Usuń dane",
+    "withdrawTitle": "Wycofaj zgody"
+  },
+  "theme": {
+    "switchToLight": "Przełącz na jasną motyw",
+    "switchToDark": "Przełącz na ciemną motyw"
+  },
+  "language": {
+    "select": "Wybierz język",
+    "pl": "Polski",
+    "uk": "Українська",
+    "en": "English"
+  },
+  "dates": {
+    "monday": "Poniedziałek",
+    "tuesday": "Wtorek",
+    "wednesday": "Środa",
+    "thursday": "Czwartek",
+    "friday": "Piątek",
+    "saturday": "Sobota",
+    "sunday": "Niedziela",
+    "mondayShort": "Pn",
+    "tuesdayShort": "Wt",
+    "wednesdayShort": "Śr",
+    "thursdayShort": "Cz",
+    "fridayShort": "Pt",
+    "saturdayShort": "Sb",
+    "sundayShort": "Nd"
+  },
+  "footer": {
+    "privacy": "Polityka prywatności",
+    "terms": "Regulamin",
+    "copyright": "© 2025 Somique Beauty. Wszystkie prawa zastrzeżone."
+  },
+  "slots": {
+    "selectServiceFirst": "Najpierw wybierz usługę",
+    "searching": "Wyszukujemy wolne godziny…",
+    "loadError": "Błąd ładowania terminów",
+    "noAvailable": "Brak dostępnych terminów"
+  },
+  "calendar": {
+    "prevMonth": "Poprzedni miesiąc",
+    "nextMonth": "Następny miesiąc",
+    "searchingDays": "Wyszukujemy dostępne dni…"
+  }
+}

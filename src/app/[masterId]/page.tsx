@@ -3,6 +3,7 @@ import Image from 'next/image'
 import { useState, useRef, useEffect } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
+import { useTranslation } from 'react-i18next'
 import { motion } from 'framer-motion'
 import { isValidMasterId, type MasterId } from '@/config/masters'
 import { useMaster } from '@/contexts/MasterContext'
@@ -16,6 +17,7 @@ import BookingForm from '../../components/BookingForm'
 import BookingSuccessPanel from '../../components/BookingSuccessPanel'
 import BookingManagement, { BookingManagementRef } from '../../components/booking-management'
 import ThemeToggle from '../../components/ThemeToggle'
+import LanguageToggle from '../../components/LanguageToggle'
 import BackButton from '../../components/BackButton'
 
 interface PageProps {
@@ -26,6 +28,7 @@ interface PageProps {
 
 export default function Page({ params }: PageProps) {
   const router = useRouter()
+  const { t } = useTranslation()
   const { setMaster, selectedMasterId } = useMaster()
   const prefersReducedMotion = useReducedMotion()
   
@@ -235,7 +238,11 @@ export default function Page({ params }: PageProps) {
   return (
     <main className="px-3 py-4 sm:p-6 relative flex-1 flex flex-col justify-center w-full max-w-full box-border overflow-x-hidden">
       <BackButton />
-      <ThemeToggle />
+      {/* Theme and Language toggles */}
+      <div className="absolute top-4 right-4 z-20 flex items-center gap-2">
+        <LanguageToggle />
+        <ThemeToggle />
+      </div>
 
       <div className="absolute left-4 top-4 z-10 hidden lg:block" onClick={closeBookingManagement}>
         {/* Светлая тема */}
@@ -271,7 +278,7 @@ export default function Page({ params }: PageProps) {
           {/* На мобильных - услуги сверху, на десктопе - справа */}
           <div className="lg:order-2">
             <div className="space-y-4 w-full max-w-sm mx-auto">
-              <Card title="Usługa" className="!px-2 !py-3 sm:!px-4 sm:!py-4" ref={procedureRef}>
+              <Card title={t('booking.service')} className="!px-2 !py-3 sm:!px-4 sm:!py-4" ref={procedureRef}>
                 <ProcedureSelect
                   onChange={(p) => {
                     setProcId(p?.id)
@@ -313,7 +320,7 @@ export default function Page({ params }: PageProps) {
               </div>
               {/* BookingForm только на десктопе */}
               {calendarMode === 'booking' && selectedSlot && !showBookingSuccess && (
-                <Card title="Rezerwacja" className="hidden lg:block !px-2 !py-3 sm:!px-4 sm:!py-4" ref={bookingRef}>
+                <Card title={t('booking.reservation')} className="hidden lg:block !px-2 !py-3 sm:!px-4 sm:!py-4" ref={bookingRef}>
                   <BookingForm 
                     slot={selectedSlot} 
                     procedureId={procId}
@@ -324,7 +331,7 @@ export default function Page({ params }: PageProps) {
               
               {/* Success панель только на десктопе */}
               {showBookingSuccess && successBookingData && (
-                <Card title="Rezerwacja" className="hidden lg:block !px-2 !py-3 sm:!px-4 sm:!py-4" ref={bookingRef}>
+                <Card title={t('booking.reservation')} className="hidden lg:block !px-2 !py-3 sm:!px-4 sm:!py-4" ref={bookingRef}>
                   <BookingSuccessPanel
                     slot={successBookingData.slot}
                     procedureId={successBookingData.procedureId}
@@ -368,7 +375,7 @@ export default function Page({ params }: PageProps) {
             {/* BookingForm под календарем только на мобильных */}
             {calendarMode === 'booking' && selectedSlot && !showBookingSuccess && (
               <Card 
-                title="Rezerwacja" 
+                title={t('booking.reservation')} 
                 className="lg:hidden !px-2 !py-3 sm:!px-4 sm:!py-4 transform transition-all duration-500 ease-in-out animate-fade-in-up" 
                 ref={mobileBookingRef}
               >
@@ -383,7 +390,7 @@ export default function Page({ params }: PageProps) {
             {/* Success панель только на мобильных */}
             {showBookingSuccess && successBookingData && (
               <Card 
-                title="Rezerwacja" 
+                title={t('booking.reservation')} 
                 className="lg:hidden !px-2 !py-3 sm:!px-4 sm:!py-4 transform transition-all duration-500 ease-in-out animate-fade-in-up" 
                 ref={mobileBookingRef}
               >

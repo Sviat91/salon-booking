@@ -1,7 +1,10 @@
 "use client"
 import Link from 'next/link'
+import { useTranslation } from 'react-i18next'
 
 export default function BackButton() {
+  const { t } = useTranslation()
+  
   return (
     <div className="fixed top-6 left-6 z-50">
       <Link 
@@ -11,7 +14,7 @@ export default function BackButton() {
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
         </svg>
-        Powrót
+        {t('common.back')}
       </Link>
     </div>
   )

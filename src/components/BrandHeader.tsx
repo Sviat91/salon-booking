@@ -1,6 +1,7 @@
 "use client"
 import Image from 'next/image'
 import { motion } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
 import { useSelectedMaster } from '@/contexts/MasterContext'
 import { useReducedMotion } from '@/hooks/useReducedMotion'
 
@@ -9,6 +10,7 @@ interface BrandHeaderProps {
 }
 
 export default function BrandHeader({ onLogoClick }: BrandHeaderProps) {
+  const { t } = useTranslation()
   const selectedMaster = useSelectedMaster()
   const logoClickable = typeof onLogoClick === 'function'
   const prefersReducedMotion = useReducedMotion()
@@ -64,7 +66,7 @@ export default function BrandHeader({ onLogoClick }: BrandHeaderProps) {
         className={`text-4xl font-semibold tracking-tight${logoClickable ? ' cursor-pointer' : ''}`}
         onClick={onLogoClick}
       >
-        Zarezerwuj wizytę
+        {t('booking.bookVisit')}
       </h1>
     </header>
   )

@@ -1,0 +1,156 @@
+{
+  "common": {
+    "loading": "Завантаження…",
+    "cancel": "Скасувати",
+    "confirm": "Підтвердити",
+    "save": "Зберегти",
+    "back": "Назад",
+    "close": "Закрити",
+    "error": "Помилка",
+    "success": "Успішно",
+    "noData": "Немає даних",
+    "currency": "zł"
+  },
+  "master": {
+    "selectTitle": "Оберіть свого спеціаліста",
+    "selectSubtitle": "Забронюйте візит до обраного спеціаліста",
+    "bookWith": "Забронювати візит до {{name}}",
+    "bookVisit": "Забронювати візит",
+    "choiceRemembered": "Ваш вибір буде збережено для зручнішого користування системою бронювання",
+    "yearsExperience": "років досвіду"
+  },
+  "booking": {
+    "service": "Послуга",
+    "selectService": "Оберіть послугу",
+    "selectDate": "Оберіть дату",
+    "selectTime": "Оберіть час",
+    "reservation": "Бронювання",
+    "reservationConfirmed": "Бронювання підтверджено",
+    "book": "Забронювати",
+    "bookVisit": "Забронювати візит",
+    "preparing": "Підготовка...",
+    "slotTaken": "Цей час вже зайнятий. Оберіть інший проміжок.",
+    "bookingFailed": "Не вдалося забронювати. Оберіть інший час і спробуйте ще раз.",
+    "confirmTurnstile": "Підтвердіть перевірку Turnstile і спробуйте ще раз.",
+    "minutes": "хв",
+    "manageBooking": "Керування бронюванням",
+    "clickToManage": "Натисніть, щоб керувати бронюванням",
+    "closePanel": "Закрити панель"
+  },
+  "form": {
+    "name": "Ім'я та прізвище",
+    "phone": "Телефон",
+    "email": "E-mail",
+    "emailOptional": "E-mail (необов'язково)",
+    "message": "Повідомлення",
+    "selectTopic": "Оберіть тему"
+  },
+  "validation": {
+    "nameRequired": "Ім'я обов'язкове",
+    "nameMinLength": "Ім'я має містити мін. 2 символи",
+    "phoneRequired": "Телефон обов'язковий",
+    "phoneInvalid": "Невірний номер телефону",
+    "emailInvalid": "Невірна адреса e-mail"
+  },
+  "consent": {
+    "confirmAndBook": "Підтвердити і забронювати",
+    "dataProcessing": "Я погоджуюся на обробку моїх персональних даних",
+    "terms": "Я приймаю умови надання послуг",
+    "notifications": "Я погоджуюся отримувати сповіщення"
+  },
+  "success": {
+    "title": "Бронювання підтверджено",
+    "serviceLabel": "Послуга:",
+    "dateLabel": "Дата:",
+    "priceLabel": "Ціна:",
+    "addressLabel": "Адреса:",
+    "thankYou": "Дякуємо, до зустрічі!",
+    "close": "Закрити"
+  },
+  "management": {
+    "searchTitle": "Керування бронюванням",
+    "notFound": "Бронювання не знайдено. Спробуйте знайти ще раз.",
+    "cancelled": "Бронювання скасовано",
+    "selectChangeType": "Оберіть тип зміни",
+    "changeDatetime": "Обрати іншу дату або час",
+    "changeProcedure": "Обрати нову процедуру або повернутися",
+    "selectNewProcedure": "Оберіть нову процедуру для бронювання:",
+    "selectNewDatetime": "Оберіть нову дату і час у календарі.",
+    "selectDateAndTime": "Оберіть дату і час",
+    "selectTimeFromList": "Оберіть час зі списку доступних",
+    "selectDateFromCalendar": "Оберіть дату у календарі зліва",
+    "confirmNewTerm": "Підтвердити новий час",
+    "confirmChange": "Підтвердити зміну",
+    "confirmChanges": "Підтвердити зміни",
+    "confirmChangesTitle": "Підтвердіть зміни бронювання:",
+    "saving": "Збереження…",
+    "selectProcedure": "Оберіть процедуру",
+    "selectProcedureFromList": "Оберіть процедуру зі списку вище, щоб продовжити.",
+    "selectNewTerm": "Обрати новий час",
+    "confirmSameTime": "Підтвердити на той самий час",
+    "confirmAt": "Підтвердити на",
+    "selectNewTermInCalendar": "Оберіть новий час у календарі за допомогою кнопки нижче.",
+    "cannotExtendToday": "Неможливо продовжити візит на сьогодні. Оберіть новий час у календарі.",
+    "selectDate": "Оберіть дату",
+    "selectTime": "Оберіть час",
+    "selectNewDateAndTime": "Оберіть нову дату і час у календарі"
+  },
+  "support": {
+    "title": "Підтримка",
+    "contactUs": "Зв'яжіться з нами",
+    "topics": {
+      "booking": "Бронювання",
+      "technical": "Технічна проблема",
+      "privacy": "Конфіденційність і дані",
+      "other": "Інше"
+    },
+    "serviceUnavailable": "Сервіс тимчасово недоступний. Спробуйте пізніше або зв'яжіться напряму."
+  },
+  "gdpr": {
+    "exportTitle": "Експорт даних",
+    "eraseTitle": "Видалити дані",
+    "withdrawTitle": "Відкликати згоди"
+  },
+  "theme": {
+    "switchToLight": "Перейти на світлу тему",
+    "switchToDark": "Перейти на темну тему"
+  },
+  "language": {
+    "select": "Оберіть мову",
+    "pl": "Polski",
+    "uk": "Українська",
+    "en": "English"
+  },
+  "dates": {
+    "monday": "Понеділок",
+    "tuesday": "Вівторок",
+    "wednesday": "Середа",
+    "thursday": "Четвер",
+    "friday": "П'ятниця",
+    "saturday": "Субота",
+    "sunday": "Неділя",
+    "mondayShort": "Пн",
+    "tuesdayShort": "Вт",
+    "wednesdayShort": "Ср",
+    "thursdayShort": "Чт",
+    "fridayShort": "Пт",
+    "saturdayShort": "Сб",
+    "sundayShort": "Нд"
+  },
+  "footer": {
+    "privacy": "Політика конфіденційності",
+    "terms": "Умови використання",
+    "copyright": "© 2025 Somique Beauty. Всі права захищені."
+  },
+  "slots": {
+    "selectServiceFirst": "Спочатку оберіть послугу",
+    "searching": "Шукаємо вільні години…",
+    "loadError": "Помилка завантаження часу",
+    "noAvailable": "Немає доступних часів"
+  },
+  "calendar": {
+    "prevMonth": "Попередній місяць",
+    "nextMonth": "Наступний місяць",
+    "searchingDays": "Шукаємо доступні дні…"
+  }
+}

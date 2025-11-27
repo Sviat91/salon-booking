@@ -29,7 +29,7 @@ export default function ThemeToggle() {
   return (
     <button
       onClick={toggleTheme}
-      className="absolute top-4 right-4 z-20 p-2 hover:opacity-80 transition-opacity duration-300"
+      className="p-2 hover:opacity-80 transition-opacity duration-300"
       aria-label={isDark ? 'Переключить на светлую тему' : 'Переключить на темную тему'}
     >
       <Image

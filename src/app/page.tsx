@@ -3,6 +3,7 @@ import { useEffect } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import MasterSelector from '@/components/MasterSelector'
 import ThemeToggle from '@/components/ThemeToggle'
+import LanguageToggle from '@/components/LanguageToggle'
 import Image from 'next/image'
 import { MASTER_IDS } from '@/config/masters'
 
@@ -29,7 +30,11 @@ export default function HomePage() {
 
   return (
     <main className="flex flex-col relative pb-4">
-      <ThemeToggle />
+      {/* Theme and Language toggles */}
+      <div className="absolute top-4 right-4 z-20 flex items-center gap-2">
+        <LanguageToggle />
+        <ThemeToggle />
+      </div>
       
       {/* Desktop Logo - top left */}
       <div className="absolute left-4 top-4 z-10 hidden lg:block">

@@ -1,11 +1,16 @@
 "use client"
 import { useQuery } from '@tanstack/react-query'
 import { useEffect, useState, useMemo, MouseEvent } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useSelectedMasterId } from '@/contexts/MasterContext'
+import { useCurrentLanguage } from '@/contexts/LanguageContext'
+import { translateProcedureName } from '@/lib/procedure-translator'
 
 type Procedure = { id: string; name_pl: string; duration_min: number; price_pln?: number | string }
 
 export default function ProcedureSelect({ valueId, onChange }: { valueId?: string; onChange?: (p: Procedure | null) => void }) {
+  const { t } = useTranslation()
+  const language = useCurrentLanguage()
   const masterId = useSelectedMasterId()
   const { data, isLoading } = useQuery({
     queryKey: ['procedures', masterId],
@@ -43,9 +48,15 @@ export default function ProcedureSelect({ valueId, onChange }: { valueId?: strin
     }
   }
 
+  // Helper to format procedure display
+  const formatProcedure = (p: Procedure) => {
+    const name = translateProcedureName(p.name_pl, language)
+    return `${name} - ${p.duration_min} ${t('booking.minutes')}${p.price_pln ? ` / ${p.price_pln} zł` : ''}`
+  }
+
   return (
     <div className="relative lg:-m-4 lg:p-4" onClick={handleCardClick}>
-      <label className="block text-sm text-muted dark:text-dark-muted">Usługa</label>
+      <label className="block text-sm text-muted dark:text-dark-muted">{t('booking.service')}</label>
       <button
         type="button"
         onClick={() => setOpen(o => !o)}
@@ -53,10 +64,10 @@ export default function ProcedureSelect({ valueId, onChange }: { valueId?: strin
       >
         {selected ? (
           <span className="block whitespace-normal break-words">
-            {selected.name_pl} - {selected.duration_min} min{selected.price_pln ? ` / ${selected.price_pln} zł` : ''}
+            {formatProcedure(selected)}
           </span>
         ) : (
-          <span className="text-muted dark:text-dark-muted">{isLoading ? 'Ładowanie…' : 'Wybierz usługę'}</span>
+          <span className="text-muted dark:text-dark-muted">{isLoading ? t('common.loading') : t('booking.selectService')}</span>
         )}
         <span
           className={`absolute right-3 top-1/2 -translate-y-1/2 transition-transform ${open ? 'rotate-180' : ''}`}
@@ -79,7 +90,7 @@ export default function ProcedureSelect({ valueId, onChange }: { valueId?: strin
                   onChange?.(p)
                 }}
               >
-                {p.name_pl} - {p.duration_min} min{p.price_pln ? ` / ${p.price_pln} zł` : ''}
+                {formatProcedure(p)}
               </button>
             </li>
           ))}

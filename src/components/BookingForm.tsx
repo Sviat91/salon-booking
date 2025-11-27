@@ -1,6 +1,7 @@
 "use client"
 import { useQuery } from '@tanstack/react-query'
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import PhoneInput from './ui/PhoneInput'
 import BookingSuccess from './BookingSuccess'
 import BookingConsentModal from './BookingConsentModal'
@@ -8,6 +9,8 @@ import { useBookingSubmit, type Slot } from './hooks/useBookingSubmit'
 import { fullDateFormatter, formatTimeRange } from '@/lib/utils/date-formatters'
 import { validateName, validatePhone, validateEmail, validateTurnstileToken } from '@/lib/validation/client-validators'
 import { useSelectedMasterId } from '@/contexts/MasterContext'
+import { useCurrentLanguage } from '@/contexts/LanguageContext'
+import { translateProcedureName } from '@/lib/procedure-translator'
 
 type Procedure = { id: string; name_pl: string; price_pln?: number }
 type ProceduresResponse = { items: Procedure[] }
@@ -21,6 +24,8 @@ export default function BookingForm({
   procedureId?: string
   onSuccess?: () => void
 }) {
+  const { t } = useTranslation()
+  const language = useCurrentLanguage()
   const masterId = useSelectedMasterId()
   
   // Form state
@@ -55,7 +60,10 @@ export default function BookingForm({
     return proceduresData?.items.find(p => p.id === procedureId) ?? null
   }, [procedureId, proceduresData])
 
-  const selectedProcedureName = selectedProcedure?.name_pl ?? null
+  const selectedProcedureName = useMemo(() => {
+    if (!selectedProcedure) return null
+    return translateProcedureName(selectedProcedure.name_pl, language)
+  }, [selectedProcedure, language])
 
   // Use booking submit hook
   const {
@@ -92,16 +100,19 @@ export default function BookingForm({
       document.head.appendChild(s)
     }
     
+    // Map our language codes to Turnstile supported codes
+    const turnstileLang = language === 'uk' ? 'uk-ua' : language
+    
     // Render widget when available
     const iv = setInterval(() => {
       // @ts-ignore -- Turnstile render helper lacks type definitions
       const t = (window as any).turnstile
       if (t && tsRef.current) {
         try {
-          tsRef.current.setAttribute('data-language', 'pl')
+          tsRef.current.setAttribute('data-language', turnstileLang)
           t.render(tsRef.current, {
             sitekey: siteKey,
-            language: 'pl',
+            language: turnstileLang,
             callback: (token: string) => setTsToken(token),
           })
           clearInterval(iv)
@@ -109,7 +120,7 @@ export default function BookingForm({
       }
     }, 200)
     return () => clearInterval(iv)
-  }, [siteKey])
+  }, [siteKey, language])
 
   // Hide Turnstile when showing consent modal
   useEffect(() => {
@@ -229,7 +240,7 @@ export default function BookingForm({
         <div>
           <input 
             className={`w-full rounded-xl border ${nameError ? 'border-red-500' : 'border-border'} bg-white/80 px-3 py-2 dark:bg-dark-card/80 dark:border-dark-border dark:text-dark-text dark:placeholder-dark-muted`}
-            placeholder="Imię i nazwisko" 
+            placeholder={t('form.name')} 
             value={name} 
             onChange={e => { setName(e.target.value); if (nameError) setNameError(null); }}
             onBlur={handleNameBlur}
@@ -250,14 +261,14 @@ export default function BookingForm({
                 }
               }, 500);
             }}
-            placeholder="Telefon"
+            placeholder={t('form.phone')}
           />
           {phoneError && <div className="mt-1 text-xs text-red-600 dark:text-red-400">{phoneError}</div>}
         </div>
         <div>
           <input 
             className={`w-full rounded-xl border ${emailError ? 'border-red-500' : 'border-border'} bg-white/80 px-3 py-2 dark:bg-dark-card/80 dark:border-dark-border dark:text-dark-text dark:placeholder-dark-muted`}
-            placeholder="E-mail (opcjonalnie)" 
+            placeholder={t('form.emailOptional')} 
             value={email} 
             onChange={e => { setEmail(e.target.value); if (emailError) setEmailError(null); }}
             onBlur={handleEmailBlur}
@@ -282,10 +293,10 @@ export default function BookingForm({
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
-            <span>Przygotowanie...</span>
+            <span>{t('booking.preparing')}</span>
           </span>
         ) : (
-          'Zarezerwuj'
+          t('booking.book')
         )}
       </button>
     </div>

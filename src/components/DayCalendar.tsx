@@ -1,10 +1,26 @@
 "use client"
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { DayPicker } from 'react-day-picker'
-import { pl } from 'date-fns/locale'
+import { pl, uk, enUS } from 'date-fns/locale'
+import { format } from 'date-fns'
 import 'react-day-picker/dist/style.css'
 import { useQuery } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import { useSelectedMasterId } from '@/contexts/MasterContext'
+import { useCurrentLanguage } from '@/contexts/LanguageContext'
+import type { Language } from '@/lib/i18n'
+
+const DATE_LOCALES: Record<Language, typeof pl> = {
+  pl,
+  uk,
+  en: enUS,
+}
+
+// Capitalize first letter (works with Unicode/Cyrillic)
+function capitalizeFirst(str: string): string {
+  if (!str) return str
+  return str.charAt(0).toUpperCase() + str.slice(1)
+}
 
 // Produce YYYY-MM-DD in LOCAL time, not UTC.
 function toISO(d: Date) {
@@ -15,6 +31,9 @@ function toISO(d: Date) {
 }
 
 export default function DayCalendar({ procedureId, onChange }: { procedureId?: string; onChange?: (d: Date | undefined) => void }) {
+  const { t } = useTranslation()
+  const language = useCurrentLanguage()
+  const dateLocale = DATE_LOCALES[language]
   const masterId = useSelectedMasterId()
   const [selected, setSelected] = useState<Date | undefined>(undefined)
   const today = useMemo(() => {
@@ -149,7 +168,7 @@ export default function DayCalendar({ procedureId, onChange }: { procedureId?: s
       <div className="flex items-center justify-between pb-3">
         <button
           type="button"
-          aria-label="Poprzedni miesiąc"
+          aria-label={t('calendar.prevMonth', 'Poprzedni miesiąc')}
           onClick={(event) => {
             event.stopPropagation()
             const prevMonth = new Date(month.getFullYear(), month.getMonth() - 1, 1)
@@ -164,14 +183,13 @@ export default function DayCalendar({ procedureId, onChange }: { procedureId?: s
         <div className="relative flex-1 text-center">
           <div className="h-6 overflow-hidden">
             <span className="inline-block text-base font-medium text-neutral-800 dark:text-dark-text">
-              {month.toLocaleDateString('pl-PL', { month: 'long', year: 'numeric' })
-                .replace(/^\w/, c => c.toUpperCase())}
+              {capitalizeFirst(month.toLocaleDateString(language === 'uk' ? 'uk-UA' : language === 'en' ? 'en-US' : 'pl-PL', { month: 'long', year: 'numeric' }))}
             </span>
           </div>
         </div>
         <button
           type="button"
-          aria-label="Następny miesiąc"
+          aria-label={t('calendar.nextMonth', 'Następny miesiąc')}
           onClick={(event) => {
             event.stopPropagation()
             const nextMonth = new Date(month.getFullYear(), month.getMonth() + 1, 1)
@@ -186,7 +204,8 @@ export default function DayCalendar({ procedureId, onChange }: { procedureId?: s
         <DayPicker
           mode="single"
           month={month}
-          locale={pl}
+          locale={dateLocale}
+          weekStartsOn={1}
           selected={selected}
           onSelect={(d) => {
             setSelected(d || undefined)
@@ -209,6 +228,9 @@ export default function DayCalendar({ procedureId, onChange }: { procedureId?: s
             month: 'space-y-2',
             table: 'w-full max-w-full border-collapse mx-auto',
           }}
+          formatters={{
+            formatWeekdayName: (date) => capitalizeFirst(format(date, 'EEEEEE', { locale: dateLocale })),
+          }}
           onMonthChange={handleMonthChange}
           className="w-full max-w-full"
         />
@@ -219,7 +241,7 @@ export default function DayCalendar({ procedureId, onChange }: { procedureId?: s
           onClick={(event) => event.stopPropagation()}
         >
           <div className="h-10 w-10 animate-spin rounded-full border-2 border-neutral-300 border-t-neutral-500 dark:border-dark-muted dark:border-t-dark-text" />
-          <p className="mt-3 text-sm font-medium text-neutral-600 dark:text-dark-text">Wyszukujemy dostępne dni…</p>
+          <p className="mt-3 text-sm font-medium text-neutral-600 dark:text-dark-text">{t('calendar.searchingDays', 'Wyszukujemy dostępne dni…')}</p>
         </div>
       )}
     </div>

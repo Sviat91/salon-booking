@@ -1,0 +1,156 @@
+{
+  "common": {
+    "loading": "Loading…",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "save": "Save",
+    "back": "Back",
+    "close": "Close",
+    "error": "Error",
+    "success": "Success",
+    "noData": "No data",
+    "currency": "zł"
+  },
+  "master": {
+    "selectTitle": "Choose your specialist",
+    "selectSubtitle": "Book a visit with your chosen specialist",
+    "bookWith": "Book a visit with {{name}}",
+    "bookVisit": "Book a visit",
+    "choiceRemembered": "Your choice will be remembered for a more convenient booking experience",
+    "yearsExperience": "years of experience"
+  },
+  "booking": {
+    "service": "Service",
+    "selectService": "Select a service",
+    "selectDate": "Select a date",
+    "selectTime": "Select a time",
+    "reservation": "Booking",
+    "reservationConfirmed": "Booking confirmed",
+    "book": "Book now",
+    "bookVisit": "Book a visit",
+    "preparing": "Preparing...",
+    "slotTaken": "This time slot is already taken. Please select another.",
+    "bookingFailed": "Booking failed. Please select another time and try again.",
+    "confirmTurnstile": "Please complete the Turnstile verification and try again.",
+    "minutes": "min",
+    "manageBooking": "Manage booking",
+    "clickToManage": "Click to manage your booking",
+    "closePanel": "Close panel"
+  },
+  "form": {
+    "name": "Full name",
+    "phone": "Phone",
+    "email": "E-mail",
+    "emailOptional": "E-mail (optional)",
+    "message": "Message",
+    "selectTopic": "Select a topic"
+  },
+  "validation": {
+    "nameRequired": "Name is required",
+    "nameMinLength": "Name must be at least 2 characters",
+    "phoneRequired": "Phone is required",
+    "phoneInvalid": "Invalid phone number",
+    "emailInvalid": "Invalid email address"
+  },
+  "consent": {
+    "confirmAndBook": "Confirm and book",
+    "dataProcessing": "I agree to the processing of my personal data",
+    "terms": "I accept the terms of service",
+    "notifications": "I agree to receive notifications"
+  },
+  "success": {
+    "title": "Booking confirmed",
+    "serviceLabel": "Service:",
+    "dateLabel": "Date:",
+    "priceLabel": "Price:",
+    "addressLabel": "Address:",
+    "thankYou": "Thank you, see you soon!",
+    "close": "Close"
+  },
+  "management": {
+    "searchTitle": "Manage booking",
+    "notFound": "Booking not found. Please try searching again.",
+    "cancelled": "Booking has been cancelled",
+    "selectChangeType": "Select change type",
+    "changeDatetime": "Choose a different date or time",
+    "changeProcedure": "Choose a new procedure or go back",
+    "selectNewProcedure": "Select a new procedure for your booking:",
+    "selectNewDatetime": "Select a new date and time in the calendar.",
+    "selectDateAndTime": "Select date and time",
+    "selectTimeFromList": "Select a time from the available slots",
+    "selectDateFromCalendar": "Select a date from the calendar on the left",
+    "confirmNewTerm": "Confirm new time",
+    "confirmChange": "Confirm change",
+    "confirmChanges": "Confirm changes",
+    "confirmChangesTitle": "Confirm booking changes:",
+    "saving": "Saving…",
+    "selectProcedure": "Select procedure",
+    "selectProcedureFromList": "Select a procedure from the list above to continue.",
+    "selectNewTerm": "Select new time",
+    "confirmSameTime": "Confirm at the same time",
+    "confirmAt": "Confirm at",
+    "selectNewTermInCalendar": "Select a new time in the calendar using the button below.",
+    "cannotExtendToday": "Cannot extend the visit for today. Please select a new time from the calendar.",
+    "selectDate": "Select date",
+    "selectTime": "Select time",
+    "selectNewDateAndTime": "Select a new date and time in the calendar"
+  },
+  "support": {
+    "title": "Support",
+    "contactUs": "Contact us",
+    "topics": {
+      "booking": "Booking",
+      "technical": "Technical issue",
+      "privacy": "Privacy and data",
+      "other": "Other"
+    },
+    "serviceUnavailable": "Service temporarily unavailable. Please try again later or contact us directly."
+  },
+  "gdpr": {
+    "exportTitle": "Export data",
+    "eraseTitle": "Delete data",
+    "withdrawTitle": "Withdraw consents"
+  },
+  "theme": {
+    "switchToLight": "Switch to light theme",
+    "switchToDark": "Switch to dark theme"
+  },
+  "language": {
+    "select": "Select language",
+    "pl": "Polski",
+    "uk": "Українська",
+    "en": "English"
+  },
+  "dates": {
+    "monday": "Monday",
+    "tuesday": "Tuesday",
+    "wednesday": "Wednesday",
+    "thursday": "Thursday",
+    "friday": "Friday",
+    "saturday": "Saturday",
+    "sunday": "Sunday",
+    "mondayShort": "Mon",
+    "tuesdayShort": "Tue",
+    "wednesdayShort": "Wed",
+    "thursdayShort": "Thu",
+    "fridayShort": "Fri",
+    "saturdayShort": "Sat",
+    "sundayShort": "Sun"
+  },
+  "footer": {
+    "privacy": "Privacy Policy",
+    "terms": "Terms of Service",
+    "copyright": "© 2025 Somique Beauty. All rights reserved."
+  },
+  "slots": {
+    "selectServiceFirst": "First, select a service",
+    "searching": "Searching for available times…",
+    "loadError": "Error loading time slots",
+    "noAvailable": "No available time slots"
+  },
+  "calendar": {
+    "prevMonth": "Previous month",
+    "nextMonth": "Next month",
+    "searchingDays": "Searching for available days…"
+  }
+}
