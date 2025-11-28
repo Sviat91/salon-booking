@@ -2,11 +2,13 @@
 
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
+import Image from 'next/image'
 import { ReviewImage } from '@/lib/google/drive'
 
 interface ReviewCard extends ReviewImage {
-  rotation: number
   yOffset: number
+  renderWidth: number
+  renderHeight: number
 }
 
 export default function ReviewsMarquee() {
@@ -25,12 +27,21 @@ export default function ReviewsMarquee() {
         // Shuffle array
         const shuffled = [...images].sort(() => Math.random() - 0.5)
         
-        // Add random visual properties
-        const processed = shuffled.map(img => ({
-          ...img,
-          rotation: Math.random() * 6 - 3, // -3deg to +3deg
-          yOffset: Math.random() * 30 - 15, // -15px to +15px
-        }))
+        // Target height for the marquee items
+        const TARGET_HEIGHT = 300
+
+        // Add random visual properties and calculate dimensions
+        const processed = shuffled.map(img => {
+          const aspectRatio = (img.width && img.height) ? img.width / img.height : 0.8
+          const width = TARGET_HEIGHT * aspectRatio
+
+          return {
+            ...img,
+            renderHeight: TARGET_HEIGHT,
+            renderWidth: width,
+            yOffset: Math.random() * 60 - 30, // -30px to +30px for masonry effect
+          }
+        })
 
         setReviews(processed)
       } catch (error) {
@@ -46,21 +57,20 @@ export default function ReviewsMarquee() {
   if (loading || reviews.length === 0) return null
 
   // Duplicate content for seamless loop
-  // We need enough duplicates to fill the screen width at least twice
   const marqueeContent = [...reviews, ...reviews, ...reviews]
 
   return (
-    <div className="w-full overflow-hidden py-12 bg-transparent select-none">
+    <div className="w-full overflow-hidden py-4 bg-transparent select-none">
       <motion.div
-        className="flex gap-8 items-center px-4"
+        className="flex gap-6 items-center px-4"
         animate={{
-          x: ["0%", "-33.33%"], // Move by one set of reviews (since we have 3 sets)
+          x: ["0%", "-33.33%"],
         }}
         transition={{
           x: {
             repeat: Infinity,
             repeatType: "loop",
-            duration: Math.max(40, reviews.length * 5), // Adjust speed based on count
+            duration: Math.max(60, reviews.length * 8), // Slower scroll
             ease: "linear",
           },
         }}
@@ -72,36 +82,27 @@ export default function ReviewsMarquee() {
             key={`${review.id}-${index}`}
             className="relative flex-shrink-0"
             style={{
-              rotate: review.rotation,
               y: review.yOffset,
             }}
             whileHover={{ 
-              scale: 1.05, 
-              rotate: 0, 
-              y: 0,
+              scale: 1.02, 
               zIndex: 10,
               transition: { duration: 0.2 }
             }}
           >
-            {/* Polaroid Container */}
-            <div className="
-              bg-white dark:bg-zinc-800 
-              p-3 pb-8 
-              shadow-xl rounded-sm 
-              border border-zinc-100 dark:border-zinc-700
-              w-[280px] md:w-[320px]
-              transform transition-colors duration-300
-            ">
-              <div className="aspect-[4/5] w-full overflow-hidden bg-zinc-100 dark:bg-zinc-900 rounded-sm relative">
-                {/* Using standard img for simplicity with external URLs, or next/image if domains allowed */}
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={review.url}
-                  alt="Review"
-                  className="w-full h-full object-cover"
-                  loading="lazy"
-                />
-              </div>
+            <div className="relative overflow-hidden rounded-2xl shadow-md hover:shadow-xl transition-shadow duration-300">
+              <Image
+                src={review.url}
+                alt="Review"
+                height={review.renderHeight}
+                width={review.renderWidth}
+                className="object-cover"
+                style={{ height: `${review.renderHeight}px`, width: 'auto' }}
+                draggable={false}
+                quality={90}
+                // Adding unoptimized={true} if standard optimization fails with Drive links, 
+                // but trying standard first as per requirement for caching.
+              />
             </div>
           </motion.div>
         ))}
