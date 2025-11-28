@@ -2,6 +2,7 @@
 import { useEffect } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import MasterSelector from '@/components/MasterSelector'
+import ReviewsMarquee from '@/components/reviews/ReviewsMarquee'
 import ThemeToggle from '@/components/ThemeToggle'
 import LanguageToggle from '@/components/LanguageToggle'
 import Image from 'next/image'
@@ -83,6 +84,11 @@ export default function HomePage() {
       {/* Master Selector */}
       <div className="flex justify-center px-4 pt-8 lg:pt-24">
         <MasterSelector />
+      </div>
+
+      {/* Reviews Marquee - Desktop Only */}
+      <div className="hidden lg:block mt-auto pt-12 w-full">
+        <ReviewsMarquee />
       </div>
     </main>
   )
