@@ -1,7 +1,11 @@
 "use client"
+import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
+import { format } from 'date-fns'
+import { pl, enGB, uk } from 'date-fns/locale'
+import { useCurrentLanguage } from '@/contexts/LanguageContext'
+import { translateProcedureName } from '@/lib/procedure-translator'
 import type { BookingResult, SlotSelection, ProcedureOption } from './types'
-import { timeFormatter, dateFormatter } from '@/lib/utils/date-formatters'
 
 interface DirectTimeChangePanelProps {
   booking: BookingResult
@@ -14,7 +18,7 @@ interface DirectTimeChangePanelProps {
   onBack: () => void
   canConfirm: boolean
   // NO TURNSTILE - user already verified during search
-  newProcedure?: ProcedureOption | null // Если меняем процедуру
+  newProcedure?: ProcedureOption | null
 }
 
 export default function DirectTimeChangePanel({
@@ -30,12 +34,21 @@ export default function DirectTimeChangePanel({
   newProcedure = null,
 }: DirectTimeChangePanelProps) {
   const { t } = useTranslation()
+  const language = useCurrentLanguage()
+
+  const dateLocale = useMemo(() => {
+    switch (language) {
+      case 'uk': return uk
+      case 'en': return enGB
+      default: return pl
+    }
+  }, [language])
 
   // Current booking time
-  const currentDateStr = dateFormatter.format(booking.startTime)
-  const currentTimeStr = `${timeFormatter.format(booking.startTime)}–${timeFormatter.format(booking.endTime)}`
+  const currentDateStr = format(booking.startTime, 'EEEE, d MMMM', { locale: dateLocale })
+  const currentTimeStr = `${format(booking.startTime, 'HH:mm')}–${format(booking.endTime, 'HH:mm')}`
 
-  // New selected time - показываем selectedSlot если есть, иначе newSlot
+  // New selected time - shows selectedSlot if available, otherwise newSlot
   let newDateStr = t('management.selectDateLabel')
   let newTimeStr = t('management.andTime')
   let hasNewTime = false
@@ -44,13 +57,17 @@ export default function DirectTimeChangePanel({
   if (displaySlot) {
     const newStartTime = new Date(displaySlot.startISO)
     const newEndTime = new Date(displaySlot.endISO)
-    newDateStr = dateFormatter.format(newStartTime)
-    newTimeStr = `${timeFormatter.format(newStartTime)}–${timeFormatter.format(newEndTime)}`
+    newDateStr = format(newStartTime, 'EEEE, d MMMM', { locale: dateLocale })
+    newTimeStr = `${format(newStartTime, 'HH:mm')}–${format(newEndTime, 'HH:mm')}`
     hasNewTime = true
   } else if (selectedDate) {
-    newDateStr = dateFormatter.format(selectedDate)
+    newDateStr = format(selectedDate, 'EEEE, d MMMM', { locale: dateLocale })
     newTimeStr = t('management.selectTimeLabel')
   }
+
+  // Translations
+  const bookingProcedureName = translateProcedureName(booking.procedureName, language)
+  const newProcedureName = newProcedure ? translateProcedureName(newProcedure.name_pl, language) : ''
 
   return (
     <div className="space-y-4">
@@ -70,9 +87,9 @@ export default function DirectTimeChangePanel({
           <div className="mb-3">
             <div className="text-xs text-neutral-500 dark:text-dark-muted mb-1">{t('management.procedureChange')}</div>
             <div className="flex items-center gap-2">
-              <span className="text-sm text-neutral-600 dark:text-neutral-400 line-through">{booking.procedureName}</span>
+              <span className="text-sm text-neutral-600 dark:text-neutral-400 line-through">{bookingProcedureName}</span>
               <span className="text-neutral-400 dark:text-neutral-500">→</span>
-              <span className="font-medium text-neutral-800 dark:text-dark-text">{newProcedure.name_pl}</span>
+              <span className="font-medium text-neutral-800 dark:text-dark-text">{newProcedureName}</span>
             </div>
             <div className="text-xs text-neutral-500 dark:text-dark-muted mt-1">
               {newProcedure.duration_min} min • {newProcedure.price_pln}zł
@@ -80,7 +97,7 @@ export default function DirectTimeChangePanel({
           </div>
         ) : (
           <div className="font-medium text-neutral-800 dark:text-dark-text mb-3">
-            {booking.procedureName}
+            {bookingProcedureName}
           </div>
         )}
         

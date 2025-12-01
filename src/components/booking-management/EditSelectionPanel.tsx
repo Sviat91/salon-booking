@@ -1,7 +1,11 @@
 "use client"
+import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
+import { format } from 'date-fns'
+import { pl, enGB, uk } from 'date-fns/locale'
+import { useCurrentLanguage } from '@/contexts/LanguageContext'
+import { translateProcedureName } from '@/lib/procedure-translator'
 import type { BookingResult } from './types'
-import { timeFormatter, dateFormatter } from '@/lib/utils/date-formatters'
 
 interface EditSelectionPanelProps {
   booking: BookingResult
@@ -17,9 +21,19 @@ export default function EditSelectionPanel({
   onChangeProcedure,
 }: EditSelectionPanelProps) {
   const { t } = useTranslation()
+  const language = useCurrentLanguage()
 
-  const dateStr = dateFormatter.format(booking.startTime)
-  const timeStr = `${timeFormatter.format(booking.startTime)}–${timeFormatter.format(booking.endTime)}`
+  const dateLocale = useMemo(() => {
+    switch (language) {
+      case 'uk': return uk
+      case 'en': return enGB
+      default: return pl
+    }
+  }, [language])
+
+  const dateStr = format(booking.startTime, 'EEEE, d MMMM', { locale: dateLocale })
+  const timeStr = `${format(booking.startTime, 'HH:mm')}–${format(booking.endTime, 'HH:mm')}`
+  const procedureName = translateProcedureName(booking.procedureName, language)
 
   return (
     <div className="space-y-4">
@@ -33,7 +47,7 @@ export default function EditSelectionPanel({
       {/* Booking info */}
       <div className="rounded-xl border border-neutral-200 bg-neutral-50/50 p-4 dark:border-dark-border dark:bg-dark-border/30">
         <div className="space-y-1">
-          <div className="font-medium text-neutral-800 dark:text-dark-text">{booking.procedureName}</div>
+          <div className="font-medium text-neutral-800 dark:text-dark-text">{procedureName}</div>
           <div className="text-sm text-neutral-600 dark:text-dark-muted">
             {dateStr} • {timeStr}
           </div>

@@ -15,7 +15,6 @@ import TimeChangeErrorPanel from './TimeChangeErrorPanel'
 import CancelSuccessPanel from './CancelSuccessPanel'
 import CancelErrorPanel from './CancelErrorPanel'
 import EditProcedurePanel from './EditProcedurePanel'
-import ConfirmChangePanel from './ConfirmChangePanel'
 import ProcedureChangeSuccessPanel from './ProcedureChangeSuccessPanel'
 import ProcedureChangeErrorPanel from './ProcedureChangeErrorPanel'
 import ExtendedSearchPanel from './ExtendedSearchPanel'
@@ -125,7 +124,6 @@ export default function PanelRenderer(props: PanelRendererProps) {
     selectedSlot,
     onConfirmSlot,
     fallbackProcedure,
-    pendingSlot,
     timeChangeSession,
     confirmTimeChangeSubmitting,
     confirmTimeChangeError,
@@ -175,6 +173,7 @@ export default function PanelRenderer(props: PanelRendererProps) {
           results={results}
           selectedBookingId={selectedBooking?.eventId}
           searchCriteria={form}
+          procedures={procedures}
           onSelect={onSelectBooking}
           onChangeBooking={onChangeBooking}
           onCancelRequest={onCancelRequest}
@@ -299,7 +298,7 @@ export default function PanelRenderer(props: PanelRendererProps) {
           onBack={onConfirmTimeChangeBack}
         />
       )
-    case 'direct-time-change':
+    case 'direct-time-change': {
       if (!timeChangeSession) {
         return (
           <ErrorFallbackPanel
@@ -324,6 +323,7 @@ export default function PanelRenderer(props: PanelRendererProps) {
           newProcedure={isProcedureChange ? timeChangeSession.selectedProcedure : null}
         />
       )
+    }
     case 'confirm-cancel':
       if (!selectedBooking) {
         return (
