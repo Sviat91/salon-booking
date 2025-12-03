@@ -58,7 +58,7 @@ export async function listReviewImages(): Promise<ReviewImage[]> {
     }).filter(img => img.url) // Filter out any without URL
 
   } catch (error) {
-    logger.error('Error listing review images from Drive:', error)
+    logger.error({ err: error }, 'Error listing review images from Drive:')
     return []
   }
 }

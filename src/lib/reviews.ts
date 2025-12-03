@@ -32,7 +32,7 @@ export async function getCachedReviews(): Promise<ReviewImage[]> {
     return images
 
   } catch (error) {
-    logger.error('Error fetching reviews:', error)
+    logger.error({ err: error }, 'Error fetching reviews:')
     return []
   }
 }

@@ -42,7 +42,7 @@ export async function GET() {
     })
 
   } catch (error) {
-    logger.error('API Error /api/reviews:', error)
+    logger.error({ err: error }, 'API Error /api/reviews:')
     return NextResponse.json(
       { error: 'Failed to fetch reviews' },
       { status: 500 }
