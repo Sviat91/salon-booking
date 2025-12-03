@@ -1,8 +1,11 @@
 "use client"
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { BookingResult } from './types'
-import { timeFormatter, dateFormatter } from '@/lib/utils/date-formatters'
+import { format } from 'date-fns'
+import { pl, enGB, uk } from 'date-fns/locale'
+import { useCurrentLanguage } from '@/contexts/LanguageContext'
+import { translateProcedureName } from '@/lib/procedure-translator'
+import type { BookingResult, ProcedureOption } from './types'
 
 interface ResultsPanelProps {
   results: BookingResult[]
@@ -12,6 +15,7 @@ interface ResultsPanelProps {
     phone: string
     email?: string
   }
+  procedures?: ProcedureOption[]
   onSelect: (booking: BookingResult | null) => void
   onChangeBooking: (booking: BookingResult) => void
   onCancelRequest: (booking: BookingResult) => void
@@ -24,6 +28,7 @@ export default function ResultsPanel({
   results,
   selectedBookingId,
   searchCriteria,
+  procedures,
   onSelect,
   onChangeBooking,
   onCancelRequest,
@@ -32,6 +37,15 @@ export default function ResultsPanel({
   onNewSearch,
 }: ResultsPanelProps) {
   const { t } = useTranslation()
+  const language = useCurrentLanguage()
+
+  const dateLocale = useMemo(() => {
+    switch (language) {
+      case 'uk': return uk
+      case 'en': return enGB
+      default: return pl
+    }
+  }, [language])
 
   const displayName = searchCriteria?.fullName || t('management.unknown')
   const displayPhone = searchCriteria?.phone || t('management.unknown')
@@ -59,8 +73,15 @@ export default function ResultsPanel({
         <div className="space-y-3">
           {results.map((booking) => {
             const isSelected = booking.eventId === selectedBookingId
-            const dateStr = dateFormatter.format(booking.startTime)
-            const timeStr = `${timeFormatter.format(booking.startTime)}–${timeFormatter.format(booking.endTime)}`
+            
+            // Format date and time with current locale
+            const dateStr = format(booking.startTime, 'EEEE, d MMMM', { locale: dateLocale })
+            const timeStr = `${format(booking.startTime, 'HH:mm')}–${format(booking.endTime, 'HH:mm')}`
+            
+            // Translate procedure name
+            const matchedProcedure = procedures?.find(p => p.id === booking.procedureId)
+            const nameToTranslate = matchedProcedure?.name_pl || booking.procedureName
+            const procedureName = translateProcedureName(nameToTranslate, language)
 
             return (
               <div
@@ -73,7 +94,7 @@ export default function ResultsPanel({
                 onClick={() => onSelect(isSelected ? null : booking)}
               >
                 <div className="space-y-1 p-3">
-                  <div className="text-sm font-medium dark:text-dark-text">{booking.procedureName}</div>
+                  <div className="text-sm font-medium dark:text-dark-text">{procedureName}</div>
                   <div className="text-xs text-neutral-600 dark:text-dark-muted">
                     {dateStr} • {timeStr}
                   </div>

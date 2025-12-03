@@ -1,7 +1,11 @@
 "use client"
+import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { TimeChangeSession, BookingResult, SlotSelection } from './types'
-import { timeFormatter, dateFormatter } from '@/lib/utils/date-formatters'
+import { format } from 'date-fns'
+import { pl, enGB, uk } from 'date-fns/locale'
+import { useCurrentLanguage } from '@/contexts/LanguageContext'
+import { translateProcedureName } from '@/lib/procedure-translator'
+import type { TimeChangeSession } from './types'
 
 interface TimeChangeSuccessPanelProps {
   timeChangeSession: TimeChangeSession
@@ -13,8 +17,17 @@ export default function TimeChangeSuccessPanel({
   onBackToResults,
 }: TimeChangeSuccessPanelProps) {
   const { t } = useTranslation()
+  const language = useCurrentLanguage()
   const { originalBooking: booking, newSlot } = timeChangeSession
   
+  const dateLocale = useMemo(() => {
+    switch (language) {
+      case 'uk': return uk
+      case 'en': return enGB
+      default: return pl
+    }
+  }, [language])
+
   // Safety check - should not happen in success state
   if (!newSlot) {
     return null
@@ -22,8 +35,10 @@ export default function TimeChangeSuccessPanel({
 
   const newStartTime = new Date(newSlot.startISO)
   const newEndTime = new Date(newSlot.endISO)
-  const newDateStr = dateFormatter.format(newStartTime)
-  const newTimeStr = `${timeFormatter.format(newStartTime)}–${timeFormatter.format(newEndTime)}`
+  const newDateStr = format(newStartTime, 'EEEE, d MMMM', { locale: dateLocale })
+  const newTimeStr = `${format(newStartTime, 'HH:mm')}–${format(newEndTime, 'HH:mm')}`
+  
+  const procedureName = translateProcedureName(booking.procedureName, language)
 
   return (
     <div className="space-y-4">
@@ -48,7 +63,7 @@ export default function TimeChangeSuccessPanel({
           {/* Procedure */}
           <div>
             <span className="text-sm font-medium text-green-800 dark:text-green-200">{t('management.treatmentLabel')}</span>
-            <p className="text-green-900 dark:text-green-100 font-medium">{booking.procedureName}</p>
+            <p className="text-green-900 dark:text-green-100 font-medium">{procedureName}</p>
           </div>
 
           {/* New Time - highlighted in green */}

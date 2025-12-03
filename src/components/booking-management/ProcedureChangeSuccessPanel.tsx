@@ -1,5 +1,10 @@
 "use client"
+import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
+import { format } from 'date-fns'
+import { pl, enGB, uk } from 'date-fns/locale'
+import { useCurrentLanguage } from '@/contexts/LanguageContext'
+import { translateProcedureName } from '@/lib/procedure-translator'
 import type { BookingResult, ProcedureOption } from './types'
 
 interface ProcedureChangeSuccessPanelProps {
@@ -14,13 +19,18 @@ export default function ProcedureChangeSuccessPanel({
   onBackToResults,
 }: ProcedureChangeSuccessPanelProps) {
   const { t } = useTranslation()
-  const dateLabel = new Intl.DateTimeFormat('pl-PL', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(booking.startTime)
+  const language = useCurrentLanguage()
+
+  const dateLocale = useMemo(() => {
+    switch (language) {
+      case 'uk': return uk
+      case 'en': return enGB
+      default: return pl
+    }
+  }, [language])
+
+  const dateLabel = format(booking.startTime, 'EEEE, d MMMM, HH:mm', { locale: dateLocale })
+  const procedureName = translateProcedureName(newProcedure.name_pl, language)
 
   return (
     <div className="space-y-4">
@@ -46,7 +56,7 @@ export default function ProcedureChangeSuccessPanel({
           <div className="bg-green-100 dark:bg-green-800/30 rounded-lg p-3 border border-green-300 dark:border-green-700">
             <span className="text-sm font-medium text-green-800 dark:text-green-200">{t('management.newProcedure')}</span>
             <p className="text-green-900 dark:text-green-100 font-semibold text-lg">
-              {newProcedure.name_pl}
+              {procedureName}
             </p>
             <p className="text-green-800 dark:text-green-200 text-sm">
               {newProcedure.duration_min} min • {newProcedure.price_pln}zł

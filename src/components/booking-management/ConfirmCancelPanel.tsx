@@ -1,6 +1,7 @@
 "use client"
 import { useTranslation } from 'react-i18next'
 import { useCurrentLanguage } from '@/contexts/LanguageContext'
+import { translateProcedureName } from '@/lib/procedure-translator'
 import type { BookingResult } from './types'
 
 interface ConfirmCancelPanelProps {
@@ -30,6 +31,8 @@ export default function ConfirmCancelPanel({
     minute: '2-digit',
   }).format(booking.startTime)
 
+  const procedureName = translateProcedureName(booking.procedureName, language)
+
   return (
     <div className="overflow-y-auto space-y-4 pr-1 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent">
       <div className="text-sm text-neutral-600 dark:text-dark-muted">
@@ -37,7 +40,7 @@ export default function ConfirmCancelPanel({
       </div>
 
       <div className="rounded-xl border border-red-300 bg-red-50 p-3 dark:border-red-400 dark:bg-red-400/10">
-        <div className="text-sm font-medium text-red-700 dark:text-red-400">{booking.procedureName}</div>
+        <div className="text-sm font-medium text-red-700 dark:text-red-400">{procedureName}</div>
         <div className="text-xs text-red-700/80 dark:text-red-300">{dateLabel}</div>
       </div>
 
