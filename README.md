@@ -6,11 +6,11 @@ Next.js application for face massage booking with GDPR compliance features.
 
 - 📅 **Booking System**: Google Calendar integration for appointment scheduling
 - 👥 **Multi-Master Support**: Separate calendars and schedules for multiple beauty masters
-- 🛡️ **GDPR Compliance**: Data export, erasure, and consent management
+- 🛡️ **GDPR Compliance**: Data export, erasure, and consent management.
 - 🔒 **Security**: Turnstile protection, rate limiting, data masking
-- 🌙 **Dark/Light Theme**: Automatic theme switching with localStorage persistence
+- 🌙 **Dark/Light Theme**: Automatic theme switching with localStorage persistence.
 - 📱 **Mobile Responsive**: Optimized for all device sizes
-- ✨ **Smooth Animations**: Framer Motion transitions with reduced motion support
+- ✨ **Smooth Animations**: Framer Motion transitions with reduced motion support.
 - 💬 **Support System**: Secure contact form with N8N integration
 
 ## Setup

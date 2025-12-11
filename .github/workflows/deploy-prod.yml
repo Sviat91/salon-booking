@@ -52,6 +52,8 @@ jobs:
           ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} "
             set -e
             cd '$APP_DIR'
+            # Purge Next.js build cache so optimized images regenerate on deploy
+            rm -rf .next
             npm ci || npm install
             TSC_COMPILE_ON_ERROR=1 npm run build
             pm2 describe '$PM2_NAME' >/dev/null 2>&1 \
